@@ -1,0 +1,711 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>포트핏 ETF 건강검진</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: 검진 대상(ETF 추가·금액) 왼쪽 + 결과지(판정·노출·중복) 오른쪽, 좁으면 위아래로 쌓임. 병원 검진 결과지처럼 '결과 · 참고 기준 · 판정' 칸을 쓴다. */
+:root {
+  --bg: #F3F6F7;
+  --surface: #FFFFFF;
+  --ink: #14212B;
+  --muted: #586976;
+  --line: #D7DFE4;
+  --soft: #E9EEF1;
+  --accent: #0E7A6A;
+  --accent-soft: #DDF1EC;
+  --good: #23784A;  --good-bg: #E1F2E8;
+  --warn: #9A6412;  --warn-bg: #FBEFD9;
+  --bad:  #B5401B;  --bad-bg:  #FBE4DB;
+  --c1: #2F6DB3; --c2: #D07A22; --c3: #2E9483; --c4: #8757B3;
+  --c5: #C24157; --c6: #5E8A1F; --c7: #9C6B2B; --c8: #3E8BA3;
+  --rest: #B9C4CB;
+  --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0E1418; --surface: #161F25; --ink: #E4ECF0; --muted: #94A4AF;
+    --line: #2A3740; --soft: #1D2830; --accent: #3FC4AA; --accent-soft: #163A33;
+    --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
+    --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
+    --rest: #4A5862;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0E1418; --surface: #161F25; --ink: #E4ECF0; --muted: #94A4AF;
+  --line: #2A3740; --soft: #1D2830; --accent: #3FC4AA; --accent-soft: #163A33;
+  --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
+  --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
+  --rest: #4A5862;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 28px 56px;
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+.num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+
+header { display: grid; gap: 6px; }
+.brand { font-size: 12px; letter-spacing: 0.12em; color: var(--accent); font-weight: 700; }
+.brand span { color: var(--muted); font-weight: 500; letter-spacing: 0.04em; }
+h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 0; text-wrap: balance; font-weight: 700; }
+.lead { margin: 0; color: var(--muted); max-width: 62ch; }
+
+.layout { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-width: 0; }
+.panel h2 { font-size: 16px; margin: 0 0 4px; font-weight: 700; }
+.panel .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
+.label { font-size: 11.5px; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
+
+/* 입력 */
+.inputs { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 16px); }
+@media (max-width: 860px) { .inputs { position: static; } }
+.add { display: grid; gap: 6px; margin-bottom: 10px; }
+.add label { font-size: 12.5px; font-weight: 500; }
+select {
+  width: 100%; font: inherit; font-size: 14px; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px;
+}
+select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.etf-list { display: grid; margin: 0; padding: 0; list-style: none; }
+.etf-row { display: grid; grid-template-columns: 10px minmax(0, 1fr) 88px 28px; gap: 8px; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--soft); }
+.etf-row:last-child { border-bottom: 0; }
+.dot { width: 10px; height: 10px; border-radius: 3px; }
+.etf-name { font-size: 14px; font-weight: 500; line-height: 1.35; }
+.etf-meta { font-size: 11.5px; color: var(--muted); }
+.amt { display: flex; align-items: center; gap: 4px; }
+.amt input {
+  width: 100%; min-width: 0; padding: 7px 8px; text-align: right;
+  font-family: var(--font-num); font-size: 14px; color: var(--ink);
+  background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+}
+.amt input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.amt span { font-size: 12px; color: var(--muted); white-space: nowrap; }
+.rm { width: 28px; height: 28px; padding: 0; border-radius: 50%; color: var(--muted); font-size: 16px; line-height: 1; }
+.empty-list { font-size: 13px; color: var(--muted); padding: 12px 0; }
+.total { display: flex; justify-content: space-between; align-items: baseline; margin-top: 8px; padding-top: 12px; border-top: 1px solid var(--line); font-size: 14px; }
+.total strong { font-size: 17px; }
+.btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
+button {
+  font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+}
+button:hover { border-color: var(--muted); }
+button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 500; }
+.example-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); background: var(--soft); border-radius: 6px; padding: 8px 10px; }
+
+.results { display: grid; gap: 20px; min-width: 0; }
+
+/* 결과지 */
+.report-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+.verdict { font-size: 18px; font-weight: 700; margin: 0; text-wrap: balance; }
+.table-scroll { overflow-x: auto; }
+table.report { width: 100%; border-collapse: collapse; font-size: 14px; }
+@media (max-width: 520px) { .report th:nth-child(3), .report td.ref { display: none; } }
+.report th { text-align: left; font-size: 11.5px; letter-spacing: 0.06em; color: var(--muted); font-weight: 500; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.report td { padding: 11px 10px; border-bottom: 1px solid var(--soft); vertical-align: middle; }
+.report tr:last-child td { border-bottom: 0; }
+.report .item { font-weight: 500; }
+.report .item small { display: block; font-weight: 400; color: var(--muted); font-size: 12px; }
+.report .val { font-size: 15px; }
+.report .ref { color: var(--muted); font-size: 13px; }
+.pill { display: inline-block; font-size: 12px; font-weight: 700; padding: 2px 10px; border-radius: 999px; white-space: nowrap; }
+.pill.good { color: var(--good); background: var(--good-bg); }
+.pill.warn { color: var(--warn); background: var(--warn-bg); }
+.pill.bad  { color: var(--bad);  background: var(--bad-bg); }
+.pill.info { color: var(--muted); background: var(--soft); }
+
+/* 노출 막대 */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 0 0 14px; padding: 0; list-style: none; font-size: 12px; color: var(--muted); }
+.legend li { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+.bars { display: grid; gap: 9px; }
+.bar-row { display: grid; grid-template-columns: minmax(100px, 150px) minmax(0, 1fr) 58px; gap: 10px; align-items: center; font-size: 13.5px; }
+.bar-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; }
+.bar-name .nm { overflow: hidden; text-overflow: ellipsis; }
+.av { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--soft); border: 1px solid var(--line); color: var(--ink); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; letter-spacing: -0.03em; }
+.bar-track { height: 16px; background: var(--soft); border-radius: 4px; display: flex; overflow: hidden; }
+.bar-track > span { height: 100%; }
+.bar-track > span + span { box-shadow: inset 1px 0 0 var(--surface); }
+.bar-val { text-align: right; font-size: 13.5px; }
+.bar-row.top .bar-name, .bar-row.top .bar-val { font-weight: 700; }
+.fine { font-size: 12px; color: var(--muted); margin: 12px 0 0; }
+
+.country { display: flex; height: 26px; border-radius: 5px; overflow: hidden; margin: 6px 0 4px; }
+.country span { display: flex; align-items: center; padding: 0 8px; font-size: 12px; font-weight: 500; color: var(--surface); white-space: nowrap; overflow: hidden; }
+
+/* 중복 매트릭스 */
+table.matrix { border-collapse: separate; border-spacing: 3px; font-size: 12.5px; }
+.matrix th { font-weight: 500; color: var(--muted); padding: 4px 6px; text-align: left; white-space: nowrap; }
+.matrix thead th { text-align: center; max-width: 96px; white-space: normal; line-height: 1.3; vertical-align: bottom; }
+.matrix td { width: 64px; height: 40px; text-align: center; border-radius: 5px; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
+.matrix td.self { background: transparent; color: var(--line); }
+.pairs { display: grid; gap: 8px; margin-top: 14px; }
+.pair { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 13.5px; padding: 8px 10px; background: var(--soft); border-radius: 6px; }
+.pair b { font-weight: 700; }
+.tag { font-size: 11px; font-weight: 700; color: var(--bad); background: var(--bad-bg); padding: 1px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
+
+/* 점수 · 기준선 · 기록 */
+.score-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
+.score { display: flex; align-items: baseline; gap: 4px; }
+.score b { font-family: var(--font-num); font-size: 42px; line-height: 1; color: var(--accent); font-weight: 500; }
+.score span { color: var(--muted); font-size: 13px; }
+.score-row .verdict { flex: 1 1 240px; }
+.delta { font-size: 13px; color: var(--muted); margin: -6px 0 12px; }
+.up-bad { color: var(--bad); font-weight: 500; }
+.up-good { color: var(--good); font-weight: 500; }
+details.th { margin-top: 14px; border-top: 1px solid var(--soft); padding-top: 12px; }
+details.th summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 500; }
+.th-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
+.th-grid label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.th-grid input { width: 100%; padding: 6px 8px; font-family: var(--font-num); font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; text-align: right; }
+.th-grid input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.report-actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-top: 14px; }
+#saveMsg, #histMsg { font-size: 12.5px; color: var(--accent); }
+svg.trend { width: 100%; height: auto; display: block; margin-top: 8px; }
+.hist-list { display: grid; gap: 6px; margin: 14px 0 0; padding: 0; list-style: none; }
+.hist-list li { display: grid; grid-template-columns: 92px 64px minmax(0, 1fr); gap: 10px; font-size: 13px; padding: 7px 10px; background: var(--soft); border-radius: 6px; align-items: baseline; }
+.hist-list li span:last-child { color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 520px) { .hist-list li { grid-template-columns: 80px 56px; } .hist-list li span:last-child { grid-column: 1 / -1; } }
+
+/* 공유 */
+.share pre {
+  margin: 0; white-space: pre-wrap; word-break: keep-all; font-family: var(--font-body); font-size: 14px;
+  background: var(--accent-soft); border-radius: 8px; padding: 14px 16px; line-height: 1.7;
+}
+.share .btns { align-items: center; }
+#copyMsg { font-size: 12.5px; color: var(--accent); }
+
+.empty { text-align: center; padding: 40px 16px; color: var(--muted); }
+
+footer { font-size: 12px; color: var(--muted); display: grid; gap: 6px; max-width: 80ch; }
+footer a { color: var(--accent); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .bar-track > span { transition: width 0.35s ease; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">PORTFIT <span>· ETF 건강검진 베타</span></div>
+    <h1>ETF 여러 개 샀다고 분산된 걸까?</h1>
+    <p class="lead">가진 ETF와 금액을 넣으면, 각 ETF 안에 든 종목까지 풀어서 실제로 어디에 얼마가 들어가 있는지 보여드려요. 종목을 추천하지 않고, 지금 상태만 진단합니다.</p>
+  </header>
+
+  <div class="layout">
+    <section class="panel inputs" aria-labelledby="in-title">
+      <h2 id="in-title">검진 대상</h2>
+      <p class="sub">가진 ETF를 추가하고, 보유 금액을 만 원 단위로 입력하세요.</p>
+      <div class="add">
+        <label for="addEtf">ETF 추가 <span class="num" id="etfCount" style="color:var(--muted);font-weight:400"></span></label>
+        <select id="addEtf"></select>
+      </div>
+      <ul class="etf-list" id="etfList"></ul>
+      <div class="total"><span>총 금액</span><strong class="num" id="total">0만 원</strong></div>
+      <div class="btns">
+        <button type="button" id="resetBtn">예시로 되돌리기</button>
+        <button type="button" id="clearBtn">모두 지우기</button>
+      </div>
+      <p class="example-note" id="exampleNote">처음 보이는 구성은 예시예요. ETF 4개에 월급을 나눠 넣는 20대 직장인을 가정했어요.</p>
+    </section>
+
+    <div class="results" id="results"></div>
+  </div>
+
+  <footer>
+    <div><b>데이터:</b> 각 ETF의 상위 10개 구성종목과 비중, 2026년 10월 기준(RISE 미국S&P500은 9월 기준). 출처는 <a href="https://etfshopping.com/etf/069500" target="_blank" rel="noopener">ETF쇼핑</a>의 ETF별 페이지, 2026-10-23 확인. 상위 10개 밖의 종목은 'ETF별 그 외 종목'으로 묶었어요. 그래서 ETF 간 중복률은 실제보다 낮게 나올 수 있어요.</div>
+    <div><b>분류:</b> 섹터와 국가는 포트핏이 종목별로 붙인 분류예요. SK스퀘어는 SK하이닉스 지분이 핵심 자산이라 반도체로 분류했어요. 알파벳은 A·C 두 종류 주식을 합쳤어요. 판정 기준은 베타용 임시 기준이에요.</div>
+    <div>포트핏은 입력한 정보를 바탕으로 현재 상태를 계산해 보여줄 뿐, 특정 금융투자상품의 매매를 권유하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</div>
+  </footer>
+</div>
+
+<script>
+// ---------- 데이터: ETF별 상위 10개 구성종목 (%), 2026년 10월 ----------
+const ETFS = [
+  { code: "069500", name: "KODEX 200", index: "코스피200", group: "국내 대표지수", country: "한국", holdings: [
+    ["삼성전자", 33.84], ["SK하이닉스", 24.34], ["SK스퀘어", 2.42], ["삼성전기", 2.22], ["KB금융", 1.64],
+    ["현대차", 1.43], ["신한지주", 1.28], ["삼성SDI", 1.09], ["셀트리온", 1.03], ["하나금융지주", 1.02] ] },
+  { code: "102110", name: "TIGER 200", index: "코스피200", group: "국내 대표지수", country: "한국", holdings: [
+    ["삼성전자", 33.49], ["SK하이닉스", 23.92], ["SK스퀘어", 2.36], ["삼성전기", 2.15], ["KB금융", 1.63],
+    ["현대차", 1.46], ["신한지주", 1.25], ["삼성SDI", 1.19], ["셀트리온", 1.03], ["하나금융지주", 1.00] ] },
+  { code: "229200", name: "KODEX 코스닥150", index: "코스닥150", group: "국내 대표지수", country: "한국", holdings: [
+    ["알테오젠", 7.66], ["에코프로", 4.91], ["주성엔지니어링", 4.06], ["에코프로비엠", 3.91], ["HLB", 3.02],
+    ["이오테크닉스", 2.34], ["원익IPS", 2.22], ["HPSP", 2.17], ["리노공업", 2.17], ["심텍", 1.97] ] },
+  { code: "396500", name: "TIGER 반도체TOP10", index: "반도체 TOP10", group: "국내 업종·테마", country: "한국", holdings: [
+    ["삼성전자", 26.87], ["SK하이닉스", 24.56], ["SK스퀘어", 22.16], ["한미반도체", 5.71], ["주성엔지니어링", 5.25],
+    ["이수페타시스", 4.06], ["이오테크닉스", 2.79], ["원익IPS", 2.62], ["리노공업", 2.61], ["DB하이텍", 2.47] ] },
+  { code: "091160", name: "KODEX 반도체", index: "KRX 반도체", group: "국내 업종·테마", country: "한국", holdings: [
+    ["삼성전자", 17.37], ["SK하이닉스", 14.90], ["한미반도체", 10.75], ["주성엔지니어링", 8.00], ["이오테크닉스", 4.57],
+    ["원익IPS", 4.37], ["HPSP", 4.29], ["리노공업", 4.28], ["DB하이텍", 4.01], ["심텍", 3.87] ] },
+  { code: "305720", name: "KODEX 2차전지산업", index: "2차전지산업", group: "국내 업종·테마", country: "한국", holdings: [
+    ["LG에너지솔루션", 22.98], ["삼성SDI", 14.77], ["POSCO홀딩스", 13.51], ["LG화학", 10.49], ["에코프로", 7.16],
+    ["SK이노베이션", 6.98], ["에코프로비엠", 6.51], ["포스코퓨처엠", 4.89], ["엘앤에프", 2.23], ["SKC", 1.66] ] },
+  { code: "364980", name: "TIGER 2차전지TOP10", index: "2차전지 TOP10", group: "국내 업종·테마", country: "한국", holdings: [
+    ["LG에너지솔루션", 27.76], ["삼성SDI", 25.29], ["POSCO홀딩스", 21.79], ["SK이노베이션", 5.73], ["LG화학", 5.59],
+    ["에코프로", 4.27], ["에코프로비엠", 3.35], ["포스코퓨처엠", 3.21], ["엘앤에프", 1.53], ["SKC", 1.22] ] },
+  { code: "360750", name: "TIGER 미국S&P500", index: "S&P500", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 7.85], ["애플", 7.60], ["마이크로소프트", 5.95], ["알파벳", 5.46], ["아마존", 3.72],
+    ["브로드컴", 2.37], ["메타", 2.37], ["일라이릴리", 1.52], ["테슬라", 1.51] ] },
+  { code: "379800", name: "KODEX 미국S&P500", index: "S&P500", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 7.88], ["애플", 7.49], ["마이크로소프트", 6.01], ["알파벳", 5.53], ["아마존", 3.75],
+    ["브로드컴", 2.46], ["메타", 2.44], ["마이크론", 1.58], ["테슬라", 1.53] ] },
+  { code: "360200", name: "ACE 미국S&P500", index: "S&P500", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 8.08], ["애플", 7.82], ["마이크로소프트", 6.13], ["알파벳", 5.61], ["아마존", 3.83],
+    ["브로드컴", 2.43], ["메타", 2.42], ["테슬라", 1.55], ["일라이릴리", 1.54] ] },
+  { code: "379780", name: "RISE 미국S&P500", index: "S&P500", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 7.97], ["애플", 7.51], ["마이크로소프트", 5.60], ["알파벳", 5.56], ["아마존", 3.70],
+    ["브로드컴", 2.47], ["메타", 2.27], ["마이크론", 1.61], ["테슬라", 1.55] ] },
+  { code: "379810", name: "KODEX 미국나스닥100", index: "나스닥100", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 8.08], ["애플", 7.70], ["마이크로소프트", 6.18], ["알파벳", 6.10], ["마이크론", 4.48],
+    ["아마존", 4.24], ["AMD", 3.91], ["메타", 3.38], ["테슬라", 2.94] ] },
+  { code: "367380", name: "ACE 미국나스닥100", index: "나스닥100", group: "미국 대표지수", country: "미국", holdings: [
+    ["엔비디아", 8.19], ["애플", 7.95], ["마이크로소프트", 6.25], ["알파벳", 6.12], ["마이크론", 4.35],
+    ["아마존", 4.28], ["AMD", 3.78], ["메타", 3.34], ["테슬라", 2.96] ] },
+  { code: "381170", name: "TIGER 미국테크TOP10", index: "미국테크TOP10", group: "미국 업종·테마", country: "미국", holdings: [
+    ["애플", 18.83], ["엔비디아", 18.67], ["알파벳", 15.56], ["마이크로소프트", 14.54], ["아마존", 9.22],
+    ["메타", 6.78], ["브로드컴", 5.77], ["테슬라", 3.76], ["마이크론", 3.72], ["AMD", 3.23] ] },
+  { code: "465580", name: "ACE 미국빅테크TOP7 Plus", index: "미국빅테크TOP7", group: "미국 업종·테마", country: "미국", holdings: [
+    ["마이크로소프트", 19.26], ["애플", 15.20], ["엔비디아", 15.07], ["아마존", 14.92], ["알파벳", 12.84],
+    ["스페이스X", 9.92], ["브로드컴", 8.04], ["메타", 1.76], ["마이크론", 1.51], ["테슬라", 1.49] ] },
+  { code: "381180", name: "TIGER 미국필라델피아반도체나스닥", index: "필라델피아반도체", group: "미국 업종·테마", country: "미국", holdings: [
+    ["엔비디아", 12.07], ["브로드컴", 9.21], ["마이크론", 7.61], ["AMD", 4.66], ["아날로그디바이스", 4.53],
+    ["마벨", 4.47], ["텍사스인스트루먼트", 4.40], ["퀄컴", 4.19], ["인텔", 4.16], ["TSMC", 4.12] ] },
+  { code: "390390", name: "KODEX 미국반도체", index: "미국 반도체 지수", group: "미국 업종·테마", country: "미국", holdings: [
+    ["엔비디아", 20.43], ["TSMC", 9.58], ["브로드컴", 5.52], ["AMD", 5.41], ["텍사스인스트루먼트", 5.04],
+    ["마이크론", 4.60], ["마벨", 4.53], ["아날로그디바이스", 4.52], ["ASML", 4.48], ["KLA", 4.20] ] },
+  { code: "458730", name: "TIGER 미국배당다우존스", index: "미국배당다우존스", group: "미국 배당", country: "미국", holdings: [
+    ["텍사스인스트루먼트", 4.38], ["P&G", 4.36], ["코노코필립스", 4.30], ["코카콜라", 4.29], ["셰브론", 4.29],
+    ["퀄컴", 4.09], ["유나이티드헬스", 4.05], ["암젠", 3.94], ["홈디포", 3.92], ["머크", 3.88] ] },
+  { code: "446720", name: "SOL 미국배당다우존스", index: "미국배당다우존스", group: "미국 배당", country: "미국", holdings: [
+    ["텍사스인스트루먼트", 4.37], ["P&G", 4.33], ["셰브론", 4.27], ["코노코필립스", 4.26], ["코카콜라", 4.25],
+    ["유나이티드헬스", 4.21], ["퀄컴", 4.14], ["홈디포", 3.97], ["암젠", 3.97], ["머크", 3.92] ] },
+  { code: "489250", name: "KODEX 미국배당다우존스", index: "미국배당다우존스", group: "미국 배당", country: "미국", holdings: [
+    ["텍사스인스트루먼트", 4.38], ["P&G", 4.33], ["셰브론", 4.28], ["코노코필립스", 4.26], ["코카콜라", 4.25],
+    ["유나이티드헬스", 4.21], ["퀄컴", 4.15], ["암젠", 3.98], ["홈디포", 3.97], ["머크", 3.93] ] },
+];
+const GROUPS = ["국내 대표지수", "국내 업종·테마", "미국 대표지수", "미국 업종·테마", "미국 배당"];
+const BY_CODE = Object.fromEntries(ETFS.map(e => [e.code, e]));
+
+const SECTOR = {
+  "삼성전자": "반도체", "SK하이닉스": "반도체", "SK스퀘어": "반도체", "한미반도체": "반도체", "주성엔지니어링": "반도체",
+  "이오테크닉스": "반도체", "원익IPS": "반도체", "리노공업": "반도체", "DB하이텍": "반도체", "HPSP": "반도체",
+  "엔비디아": "반도체", "브로드컴": "반도체", "마이크론": "반도체", "AMD": "반도체", "텍사스인스트루먼트": "반도체", "퀄컴": "반도체",
+  "아날로그디바이스": "반도체", "마벨": "반도체", "인텔": "반도체", "TSMC": "반도체", "ASML": "반도체", "KLA": "반도체",
+  "삼성전기": "전자부품", "이수페타시스": "전자부품", "심텍": "전자부품",
+  "애플": "IT기기", "마이크로소프트": "소프트웨어", "알파벳": "인터넷·플랫폼", "메타": "인터넷·플랫폼",
+  "아마존": "소비재·유통", "홈디포": "소비재·유통", "P&G": "필수소비재", "코카콜라": "필수소비재",
+  "현대차": "자동차", "테슬라": "자동차", "KB금융": "금융", "신한지주": "금융", "하나금융지주": "금융",
+  "삼성SDI": "2차전지", "LG에너지솔루션": "2차전지", "에코프로": "2차전지", "에코프로비엠": "2차전지", "포스코퓨처엠": "2차전지", "엘앤에프": "2차전지",
+  "POSCO홀딩스": "소재", "LG화학": "소재", "SKC": "소재", "SK이노베이션": "에너지",
+  "셀트리온": "헬스케어", "알테오젠": "헬스케어", "HLB": "헬스케어", "일라이릴리": "헬스케어", "유나이티드헬스": "헬스케어", "암젠": "헬스케어", "머크": "헬스케어",
+  "코노코필립스": "에너지", "셰브론": "에너지", "스페이스X": "우주항공",
+};
+const STOCK_COUNTRY = { "TSMC": "대만", "ASML": "네덜란드" };   // 그 밖의 종목은 ETF의 투자 국가를 따름
+const COUNTRY_COLOR = { "한국": "var(--c1)", "미국": "var(--c2)", "대만": "var(--c3)", "네덜란드": "var(--c4)" };
+const REST_SECTOR = "상위 10 밖 종목";
+
+const EXAMPLE = [["069500", 100], ["396500", 100], ["360750", 150], ["379810", 150]];
+const COLORS = ["--c1", "--c2", "--c3", "--c4", "--c5", "--c6", "--c7", "--c8"];
+const STORE_KEY = "portfit-portfolio-v2";
+const TH_KEY = "portfit-thresholds-v1";
+const HIST_KEY = "portfit-records-v1";
+const TH_DEFAULT = { single: 10, top3: 25, semi: 30, overlap: 20 };   // '양호' 상한, 그 2배를 넘으면 '쏠림'
+const TH_LABEL = { single: "단일 종목 (%)", top3: "상위 3개 합계 (%)", semi: "반도체 섹터 (%)", overlap: "ETF 간 중복률 (%)" };
+
+function loadJSON(key, fallback) {
+  try { const raw = localStorage.getItem(key); if (raw) return JSON.parse(raw); } catch (_) {}
+  return fallback;
+}
+function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (_) {} }
+let TH = { ...TH_DEFAULT, ...(loadJSON(TH_KEY, {}) || {}) };
+let records = Array.isArray(loadJSON(HIST_KEY, [])) ? loadJSON(HIST_KEY, []) : [];
+let thOpen = false;
+let lastResult = null;
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
+
+// ---------- 계산 엔진 (노트북과 같은 공식) ----------
+function analyze(rows) {
+  const held = rows.filter(([, amt]) => amt > 0).map(([code, amt]) => ({ etf: BY_CODE[code], amt }));
+  const total = held.reduce((s, h) => s + h.amt, 0);
+  if (total <= 0) return null;
+
+  const stocks = {}, sectors = {}, countries = {};
+  for (const { etf, amt } of held) {
+    const acct = amt / total;                                 // 계좌에서 이 ETF 비중
+    let named = 0;
+    for (const [name, w] of etf.holdings) {
+      const v = w * acct;                                     // 실질 비중(%)
+      named += w;
+      stocks[name] = stocks[name] || { total: 0, parts: {} };
+      stocks[name].total += v;
+      stocks[name].parts[etf.code] = (stocks[name].parts[etf.code] || 0) + v;
+      const sec = SECTOR[name] || "기타";
+      sectors[sec] = (sectors[sec] || 0) + v;
+      const c = STOCK_COUNTRY[name] || etf.country;
+      countries[c] = (countries[c] || 0) + v;
+    }
+    const rest = Math.max(0, 100 - named) * acct;             // 상위 10 밖 묶음
+    sectors[REST_SECTOR] = (sectors[REST_SECTOR] || 0) + rest;
+    countries[etf.country] = (countries[etf.country] || 0) + rest;
+  }
+
+  const ranked = Object.entries(stocks).map(([name, d]) => ({ name, ...d })).sort((a, b) => b.total - a.total);
+  const etfs = held.map(h => h.etf);
+  const pairs = [];
+  for (let i = 0; i < etfs.length; i++) {
+    for (let j = i + 1; j < etfs.length; j++) {
+      pairs.push({ a: etfs[i], b: etfs[j], overlap: overlap(etfs[i], etfs[j]), same: etfs[i].index === etfs[j].index });
+    }
+  }
+  pairs.sort((x, y) => y.overlap - x.overlap);
+  const top3 = ranked.slice(0, 3).reduce((s, r) => s + r.total, 0);
+  return { etfs, total, ranked, sectors, countries, pairs, top3 };
+}
+
+function overlap(a, b) {
+  const mb = Object.fromEntries(b.holdings);
+  return a.holdings.reduce((s, [name, w]) => s + (name in mb ? Math.min(w, mb[name]) : 0), 0);
+}
+
+function grade(v, good, warn) { return v <= good ? "good" : v <= warn ? "warn" : "bad"; }
+const LABEL = { good: "양호", warn: "주의", bad: "쏠림" };
+const fmt = (v, d = 1) => v.toFixed(d);
+const esc = s => String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;");
+// 종목 아이콘: 로고 대신 이름 머리글자 (로고는 정식 데이터 제공처를 연결할 때 교체)
+function avatar(name) {
+  const m = name.match(/^[A-Za-z&]+/);
+  const t = m ? m[0].slice(0, 3).toUpperCase() : name[0];
+  return `<span class="av" aria-hidden="true">${esc(t)}</span>`;
+}
+
+// ---------- 상태 ----------
+function load() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    if (raw) {
+      const v = JSON.parse(raw);
+      if (Array.isArray(v)) return v.filter(r => Array.isArray(r) && BY_CODE[r[0]]).map(([c, a]) => [c, Math.max(0, Number(a) || 0)]);
+    }
+  } catch (_) {}
+  return EXAMPLE.map(r => [...r]);
+}
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(portfolio)); } catch (_) {} }
+let portfolio = load();
+const colorOf = code => `var(${COLORS[Math.max(0, portfolio.findIndex(r => r[0] === code)) % COLORS.length]})`;
+
+// ---------- 입력 화면 ----------
+const list = document.getElementById("etfList");
+const select = document.getElementById("addEtf");
+const results = document.getElementById("results");
+
+function buildSelect() {
+  const heldCodes = new Set(portfolio.map(r => r[0]));
+  const avail = ETFS.filter(e => !heldCodes.has(e.code));
+  select.innerHTML = `<option value="">${avail.length ? "ETF를 골라 추가하세요" : "목록의 ETF를 모두 추가했어요"}</option>` +
+    GROUPS.map(g => {
+      const opts = avail.filter(e => e.group === g);
+      return opts.length ? `<optgroup label="${g}">${opts.map(e => `<option value="${e.code}">${esc(e.name)} (${e.code})</option>`).join("")}</optgroup>` : "";
+    }).join("");
+  select.disabled = avail.length === 0;
+  document.getElementById("etfCount").textContent = `· 전체 ${ETFS.length}개 중 선택`;
+}
+
+function buildList() {
+  list.innerHTML = portfolio.length ? portfolio.map(([code, amt]) => {
+    const e = BY_CODE[code];
+    return `<li class="etf-row" data-code="${code}">
+      <span class="dot" style="background:${colorOf(code)}"></span>
+      <label for="amt-${code}">
+        <div class="etf-name">${esc(e.name)}</div>
+        <div class="etf-meta"><span class="num">${code}</span> · ${esc(e.index)} 추종</div>
+      </label>
+      <div class="amt"><input id="amt-${code}" type="number" inputmode="numeric" min="0" step="10" value="${amt}"><span>만 원</span></div>
+      <button type="button" class="rm" data-rm="${code}" aria-label="${esc(e.name)} 빼기">×</button>
+    </li>`;
+  }).join("") : `<li class="empty-list">위에서 가진 ETF를 골라 추가하세요.</li>`;
+
+  list.querySelectorAll("input").forEach(inp => inp.addEventListener("input", () => {
+    const code = inp.id.slice(4);
+    const row = portfolio.find(r => r[0] === code);
+    if (row) row[1] = Math.max(0, Number(inp.value) || 0);
+    save(); renderResults();
+  }));
+  list.querySelectorAll("[data-rm]").forEach(btn => btn.addEventListener("click", () => {
+    portfolio = portfolio.filter(r => r[0] !== btn.dataset.rm);
+    save(); renderAll();
+  }));
+}
+
+select.addEventListener("change", () => {
+  const code = select.value;
+  if (!code) return;
+  portfolio.push([code, 100]);
+  save(); renderAll();
+  const inp = document.getElementById(`amt-${code}`);
+  if (inp) { inp.focus(); inp.select(); }
+});
+document.getElementById("resetBtn").addEventListener("click", () => { portfolio = EXAMPLE.map(r => [...r]); save(); renderAll(); });
+document.getElementById("clearBtn").addEventListener("click", () => { portfolio = []; save(); renderAll(); });
+
+function renderAll() { buildSelect(); buildList(); renderResults(); }
+
+// ---------- 결과 화면 ----------
+function renderResults() {
+  const isExample = portfolio.length === EXAMPLE.length && EXAMPLE.every(([c, a], i) => portfolio[i] && portfolio[i][0] === c && portfolio[i][1] === a);
+  document.getElementById("exampleNote").hidden = !isExample;
+  const totalMan = portfolio.reduce((s, r) => s + r[1], 0);
+  document.getElementById("total").textContent = `${totalMan.toLocaleString("ko-KR")}만 원`;
+
+  const r = analyze(portfolio);
+  if (!r) {
+    results.innerHTML = `<section class="panel empty">ETF를 추가하고 금액을 입력하면 검진 결과가 여기에 나와요.</section>`;
+    return;
+  }
+
+  const top = r.ranked[0];
+  const semi = r.sectors["반도체"] || 0;
+  const bigPair = r.pairs[0];
+  const ctry = Object.entries(r.countries).sort((a, b) => b[1] - a[1]);
+
+  const rows = [
+    { item: "가장 큰 단일 종목", note: top.name, val: top.total, ref: `${TH.single}% 이하`, g: grade(top.total, TH.single, TH.single * 2) },
+    { item: "상위 3개 종목 합계", note: r.ranked.slice(0, 3).map(x => x.name).join(", "), val: r.top3, ref: `${TH.top3}% 이하`, g: grade(r.top3, TH.top3, TH.top3 * 2) },
+    { item: "반도체 섹터", note: "국내·해외 반도체 합산", val: semi, ref: `${TH.semi}% 이하`, g: grade(semi, TH.semi, TH.semi * 2) },
+    bigPair
+      ? { item: "ETF 간 최대 중복률", note: `${bigPair.a.name} ↔ ${bigPair.b.name}${bigPair.same ? " (같은 지수)" : ""}`, val: bigPair.overlap, ref: `${TH.overlap}% 이하`, g: bigPair.same ? "bad" : grade(bigPair.overlap, TH.overlap, TH.overlap * 2) }
+      : { item: "ETF 간 최대 중복률", note: "ETF가 1개라 비교할 쌍이 없어요", val: null, ref: `${TH.overlap}% 이하`, g: "info" },
+    { item: "국가 비중", note: ctry.map(([k, v]) => `${k} ${fmt(v)}%`).join(" · "), val: ctry[0][1], ref: "참고용", g: "info", label: `${ctry[0][0]} 최대` },
+  ];
+  const flagged = rows.filter(x => x.g === "bad" || x.g === "warn").length;
+  const verdict = flagged === 0
+    ? `ETF ${r.etfs.length}개, 큰 쏠림 없이 고르게 나뉘어 있어요.`
+    : `ETF ${r.etfs.length}개로 나눴지만, ${flagged}개 항목에서 쏠림이 보여요.`;
+
+  // 건강 점수: 판정 항목마다 양호 1점, 주의 0.5점, 쏠림 0점 → 100점 만점
+  const judged = rows.filter(x => x.g !== "info");
+  const score = Math.round(judged.reduce((s, x) => s + (x.g === "good" ? 1 : x.g === "warn" ? 0.5 : 0), 0) / Math.max(judged.length, 1) * 100);
+  lastResult = {
+    d: today(), score, n: r.etfs.length, etfs: r.etfs.map(e => e.name),
+    top: top.name, topV: +top.total.toFixed(2), top3: +r.top3.toFixed(2), semi: +semi.toFixed(2),
+    ov: bigPair ? +bigPair.overlap.toFixed(2) : null,
+  };
+  const prev = records.filter(h => h.d !== lastResult.d).at(-1);
+  const signed = (v, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d)}`;
+  const deltaHTML = prev ? (() => {
+    const ds = score - prev.score, dsemi = semi - prev.semi;
+    return `<p class="delta">지난 기록(${prev.d}) 대비 점수 <span class="${ds >= 0 ? "up-good" : "up-bad"}">${signed(ds, 0)}점</span> · 반도체 <span class="${dsemi <= 0 ? "up-good" : "up-bad"}">${signed(dsemi)}%p</span> · 1위 종목 ${esc(prev.top)} ${fmt(prev.topV)}% → ${esc(top.name)} ${fmt(top.total)}%</p>`;
+  })() : "";
+
+  const top10 = r.ranked.slice(0, 10);
+  const scale = Math.max(top10[0].total, 1);
+  const codes = r.etfs.map(e => e.code);
+
+  const secs = Object.entries(r.sectors).filter(([k]) => k !== REST_SECTOR).sort((a, b) => b[1] - a[1]);
+  const rest = r.sectors[REST_SECTOR] || 0;
+  const secScale = Math.max(...secs.map(s => s[1]), rest, 1);
+
+  const ovMap = {};
+  r.pairs.forEach(p => { ovMap[p.a.code + p.b.code] = p; ovMap[p.b.code + p.a.code] = p; });
+
+  const shareText = [
+    `[포트핏 ETF 건강검진]`,
+    `보유 ETF ${r.etfs.length}개: ${r.etfs.map(e => e.name).join(", ")}`,
+    `· 실질 1위 종목: ${top.name} ${fmt(top.total)}%`,
+    `· 상위 3개 종목 합계: ${fmt(r.top3)}%`,
+    `· 반도체 섹터: ${fmt(semi)}%`,
+    bigPair ? `· 가장 많이 겹치는 ETF: ${bigPair.a.name} ↔ ${bigPair.b.name} (상위 10종목 기준 ${fmt(bigPair.overlap, 0)}%)` : null,
+  ].filter(Boolean).join("\n");
+
+  results.innerHTML = `
+    <section class="panel" aria-labelledby="rep-title">
+      <div class="report-head">
+        <h2 id="rep-title" class="label">검진 결과지</h2>
+        <span class="label num">${r.etfs.length}개 ETF · ${totalMan.toLocaleString("ko-KR")}만 원</span>
+      </div>
+      <div class="score-row">
+        <div class="score" aria-label="건강 점수 ${score}점"><b>${score}</b><span>/ 100점</span></div>
+        <p class="verdict">${verdict}</p>
+      </div>
+      ${deltaHTML}
+      <div class="table-scroll">
+        <table class="report">
+          <thead><tr><th>항목</th><th>결과</th><th>참고 기준</th><th>판정</th></tr></thead>
+          <tbody>${rows.map(x => `
+            <tr>
+              <td class="item">${x.item}<small>${esc(x.note)}</small></td>
+              <td class="val num">${x.val == null ? "–" : fmt(x.val) + "%"}</td>
+              <td class="ref">${x.ref}</td>
+              <td><span class="pill ${x.g}">${x.label || LABEL[x.g] || "참고"}</span></td>
+            </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+      <p class="fine">건강 점수는 판정 항목마다 양호 1점, 주의 0.5점, 쏠림 0점으로 계산해 100점 만점으로 바꾼 값이에요. 기준의 2배를 넘으면 '쏠림'으로 판정해요.</p>
+      <div class="report-actions">
+        <button type="button" class="primary" id="saveRec">이번 검진 기록하기</button>
+        <span id="saveMsg" role="status"></span>
+      </div>
+      <details class="th" id="thBox"${thOpen ? " open" : ""}>
+        <summary>나만의 기준선 정하기</summary>
+        <p class="fine" style="margin-top:8px">'양호'로 볼 최대 비중을 정하세요. 바꾼 기준은 이 기기에 저장돼요.</p>
+        <div class="th-grid">${Object.keys(TH_DEFAULT).map(k => `
+          <label for="th-${k}">${TH_LABEL[k]}<input id="th-${k}" type="number" min="1" max="100" step="1" value="${TH[k]}"></label>`).join("")}
+        </div>
+        <div class="report-actions"><button type="button" id="thReset">기본 기준으로</button></div>
+      </details>
+    </section>
+
+    ${historyHTML()}
+
+    <section class="panel" aria-labelledby="exp-title">
+      <h2 id="exp-title">실제로 가장 많이 산 종목 10개</h2>
+      <p class="sub">막대 색은 그 종목이 어느 ETF를 통해 들어왔는지 보여줘요. 여러 색이 섞인 종목은 여러 ETF에서 겹쳐 산 거예요.</p>
+      <ul class="legend">${codes.map(c => `<li><i style="background:${colorOf(c)}"></i>${esc(BY_CODE[c].name)}</li>`).join("")}</ul>
+      <div class="bars">${top10.map((s, i) => `
+        <div class="bar-row${i === 0 ? " top" : ""}" title="${esc(s.name)}: ${codes.filter(c => s.parts[c]).map(c => `${esc(BY_CODE[c].name)} ${fmt(s.parts[c], 2)}%`).join(", ")}">
+          <span class="bar-name">${avatar(s.name)}<span class="nm">${esc(s.name)}</span></span>
+          <span class="bar-track">${codes.filter(c => s.parts[c]).map(c => `<span style="width:${(s.parts[c] / scale * 100).toFixed(2)}%;background:${colorOf(c)}"></span>`).join("")}</span>
+          <span class="bar-val num">${fmt(s.total)}%</span>
+        </div>`).join("")}
+      </div>
+      <p class="fine">계좌 전체를 100%로 놓고 계산한 실질 비중이에요. 막대에 마우스를 올리면 ETF별로 나눈 값이 보여요.</p>
+    </section>
+
+    <section class="panel" aria-labelledby="sec-title">
+      <h2 id="sec-title">섹터별 실질 비중</h2>
+      <p class="sub">상위 10개 종목 기준으로 나눈 섹터예요.</p>
+      <div class="bars">${secs.map(([k, v]) => `
+        <div class="bar-row${k === "반도체" ? " top" : ""}">
+          <span class="bar-name"><span class="nm">${k}</span></span>
+          <span class="bar-track"><span style="width:${(v / secScale * 100).toFixed(2)}%;background:${k === "반도체" ? "var(--accent)" : "var(--muted)"}"></span></span>
+          <span class="bar-val num">${fmt(v)}%</span>
+        </div>`).join("")}
+        <div class="bar-row">
+          <span class="bar-name" style="color:var(--muted)"><span class="nm">${REST_SECTOR}</span></span>
+          <span class="bar-track"><span style="width:${(rest / secScale * 100).toFixed(2)}%;background:var(--rest)"></span></span>
+          <span class="bar-val num" style="color:var(--muted)">${fmt(rest)}%</span>
+        </div>
+      </div>
+      <h2 style="margin-top:20px">국가별 비중</h2>
+      <div class="country">${ctry.map(([k, v]) => `<span style="width:${v}%;background:${COUNTRY_COLOR[k] || "var(--muted)"}" title="${k} ${fmt(v)}%">${v >= 8 ? `${k} ${fmt(v, 0)}%` : ""}</span>`).join("")}</div>
+      <p class="fine" style="margin-top:4px">${ctry.map(([k, v]) => `${k} ${fmt(v)}%`).join(" · ")}</p>
+    </section>
+
+    <section class="panel" aria-labelledby="ov-title">
+      <h2 id="ov-title">ETF끼리 얼마나 겹치나</h2>
+      <p class="sub">두 ETF에 함께 든 종목마다 더 작은 비중을 골라 더한 값이에요. 상위 10종목만 비교하므로 실제로는 더 높을 수 있어요.</p>
+      ${r.etfs.length < 2 ? `<p class="fine">ETF를 2개 이상 넣으면 비교할 수 있어요.</p>` : `
+      <div class="table-scroll">
+        <table class="matrix">
+          <thead><tr><th></th>${r.etfs.map(e => `<th scope="col">${esc(e.name)}</th>`).join("")}</tr></thead>
+          <tbody>${r.etfs.map(a => `<tr><th scope="row">${esc(a.name)}</th>${r.etfs.map(b => {
+            if (a.code === b.code) return `<td class="self">·</td>`;
+            const o = ovMap[a.code + b.code].overlap;
+            const alpha = Math.min(1, o / 70);
+            return `<td style="background:color-mix(in srgb, var(--accent) ${Math.round(alpha * 70)}%, var(--soft));color:${alpha > 0.55 ? "var(--surface)" : "var(--ink)"}">${fmt(o, 0)}</td>`;
+          }).join("")}</tr>`).join("")}</tbody>
+        </table>
+      </div>
+      <div class="pairs">${r.pairs.filter(p => p.overlap > 0).slice(0, 3).map(p => `
+        <div class="pair"><span>${esc(p.a.name)} ↔ ${esc(p.b.name)}${p.same ? `<span class="tag">같은 지수</span>` : ""}</span><b class="num">${fmt(p.overlap, 0)}%</b></div>`).join("") || `<p class="fine">상위 10종목 기준으로 겹치는 ETF가 없어요.</p>`}
+      </div>`}
+    </section>
+
+    <section class="panel share" aria-labelledby="share-title">
+      <h2 id="share-title">결과 공유하기</h2>
+      <p class="sub">금액은 빼고 비율만 담았어요. 친구에게 보내 보세요.</p>
+      <pre id="shareText">${esc(shareText)}</pre>
+      <div class="btns"><button type="button" class="primary" id="copyBtn">결과 복사</button><span id="copyMsg" role="status"></span></div>
+    </section>`;
+
+  document.getElementById("thBox").addEventListener("toggle", e => { thOpen = e.target.open; });
+  Object.keys(TH_DEFAULT).forEach(k => document.getElementById(`th-${k}`).addEventListener("change", ev => {
+    const v = Math.round(Number(ev.target.value));
+    if (v >= 1 && v <= 100) { TH[k] = v; saveJSON(TH_KEY, TH); }
+    renderResults();
+  }));
+  document.getElementById("thReset").addEventListener("click", () => { TH = { ...TH_DEFAULT }; saveJSON(TH_KEY, TH); renderResults(); });
+  document.getElementById("saveRec").addEventListener("click", () => {
+    const replaced = records.some(h => h.d === lastResult.d);
+    records = records.filter(h => h.d !== lastResult.d).concat([lastResult]).slice(-36);
+    saveJSON(HIST_KEY, records);
+    renderResults();
+    document.getElementById("saveMsg").textContent = replaced ? "오늘 기록을 새 결과로 바꿨어요." : "기록했어요. 다음 달에 다시 검진해 보세요.";
+  });
+  const clearHist = document.getElementById("clearHist");
+  if (clearHist) clearHist.addEventListener("click", () => {
+    if (clearHist.dataset.armed !== "1") { clearHist.dataset.armed = "1"; clearHist.textContent = "한 번 더 누르면 모두 지워져요"; return; }
+    records = []; saveJSON(HIST_KEY, records); renderResults();
+  });
+
+  document.getElementById("copyBtn").addEventListener("click", () => {
+    const msg = document.getElementById("copyMsg");
+    const pre = document.getElementById("shareText");
+    const fallback = () => {
+      const range = document.createRange();
+      range.selectNodeContents(pre);
+      const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      msg.textContent = "선택했어요. 복사(Ctrl+C)해 주세요.";
+    };
+    try { navigator.clipboard.writeText(pre.textContent).then(() => { msg.textContent = "복사했어요."; }, fallback); }
+    catch (_) { fallback(); }
+  });
+}
+
+// ---------- 검진 기록 ----------
+function historyHTML() {
+  if (!records.length) {
+    return `<section class="panel" aria-labelledby="hist-title">
+      <h2 id="hist-title">검진 기록</h2>
+      <p class="sub" style="margin:0">아직 기록이 없어요. 매달 같은 날 검진하고 '이번 검진 기록하기'를 누르면, 점수와 쏠림이 어떻게 변하는지 여기에 쌓여요.</p>
+    </section>`;
+  }
+  const H = records;
+  const W = 760, Ht = 180, L = 40, R = 24, T = 24, B = 34;
+  const x0 = L + 28, x1 = W - R - 28;
+  const x = i => H.length === 1 ? (x0 + x1) / 2 : x0 + i * (x1 - x0) / (H.length - 1);
+  const y = v => T + (100 - v) / 100 * (Ht - T - B);
+  const chart = H.length < 2 ? "" : `
+    <svg class="trend" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="건강 점수 추이">
+      ${[0, 50, 100].map(v => `<line x1="${L}" x2="${W - R}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${L - 8}" y="${y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`).join("")}
+      <polyline points="${H.map((h, i) => `${x(i)},${y(h.score)}`).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2"/>
+      ${H.map((h, i) => `<circle cx="${x(i)}" cy="${y(h.score)}" r="${i === H.length - 1 ? 5 : 3.5}" fill="${i === H.length - 1 ? "var(--accent)" : "var(--surface)"}" stroke="var(--accent)" stroke-width="2"><title>${h.d}: ${h.score}점</title></circle>
+        <text x="${x(i)}" y="${y(h.score) - 10}" text-anchor="middle" font-size="11.5" fill="var(--ink)">${h.score}</text>
+        ${H.length <= 12 || i % Math.ceil(H.length / 12) === 0 || i === H.length - 1 ? `<text x="${x(i)}" y="${Ht - 10}" text-anchor="middle" font-size="11" fill="var(--muted)">${h.d.slice(2).replace(/-/g, ".")}</text>` : ""}`).join("")}
+    </svg>`;
+  return `<section class="panel" aria-labelledby="hist-title">
+    <h2 id="hist-title">검진 기록</h2>
+    <p class="sub">기록 ${H.length}개 · 이 기기의 브라우저에만 저장돼요.${H.length < 2 ? " 한 번 더 기록하면 점수 변화 그래프가 나와요." : ""}</p>
+    ${chart}
+    <ul class="hist-list">${H.slice().reverse().slice(0, 6).map(h => `
+      <li><span class="num">${h.d}</span><span class="num"><b>${h.score}</b>점</span><span>${esc(h.top)} ${fmt(h.topV)}% · 반도체 ${fmt(h.semi)}% · ETF ${h.n}개</span></li>`).join("")}
+    </ul>
+    <div class="report-actions"><button type="button" id="clearHist">기록 모두 지우기</button></div>
+  </section>`;
+}
+
+renderAll();
+</script>
+
+</body>
+</html>
