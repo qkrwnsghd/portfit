@@ -20,6 +20,10 @@
 
 지원 ETF: 국내 상장 ETF 20종 (KODEX·TIGER·ACE·RISE·SOL의 코스피200, 코스닥150, 반도체, 2차전지, 미국 S&P500, 나스닥100, 미국 반도체, 미국 배당다우존스 등)
 
+## 데이터 자동 갱신
+
+평일 한국 시간 18:10에 GitHub Actions가 `collect.py`를 실행해 한국거래소에서 국내 ETF 전체 구성종목을 받아 `holdings.json`을 갱신합니다. 계산기는 페이지를 열 때 이 파일을 읽어 최신 데이터로 계산합니다. 거래소 로그인 정보는 저장소 Secrets(`KRX_ID`, `KRX_PW`)에 보관합니다.
+
 ## 계산 방법
 
 - **실질 비중:** 종목 j의 실질 비중 = Σ (계좌에서 ETF i 비중 × ETF i 안에서 종목 j 비중)
@@ -40,7 +44,9 @@
 | `index.html` | 웹 계산기 (HTML·CSS·JavaScript 한 파일) |
 | `portfit_step1_etf_xray.ipynb` | 같은 계산을 파이썬(pandas)으로 구현한 실습 노트북 |
 | `portfit_step2_holdings_collector.ipynb` | 한국거래소에서 ETF 전체 구성종목을 받아 `holdings.json`으로 저장하는 수집기 (코랩, KRX 로그인 필요) |
-| `holdings.json` | 수집한 국내 ETF 전체 구성종목 데이터 |
+| `holdings.json` | 국내 ETF 전체 구성종목 데이터 (평일마다 자동 갱신) |
+| `collect.py` | 자동 수집 스크립트 (GitHub Actions가 실행) |
+| `.github/workflows/update-holdings.yml` | 평일 18:10(한국 시간)에 `collect.py`를 실행하고 바뀐 데이터를 커밋하는 자동화 설정 |
 
 ## 로드맵
 
@@ -50,7 +56,7 @@
 - [ ] 로그인과 서버 저장 (기기와 상관없이 기록 유지)
 - [x] 국내 ETF 전체 구성종목 데이터 (한국거래소)
 - [ ] 미국 ETF 전체 구성종목 (해외 주가로 비중 계산)
-- [ ] 데이터 자동 갱신
+- [x] 데이터 자동 갱신 (GitHub Actions, 평일 장 마감 후)
 - [x] 매매 습관 진단 (처분효과, 손익비, 물타기, 매매 빈도)
 - [ ] 추격매수 진단 (시세 데이터 연동 필요)
 - [ ] 모바일 앱
