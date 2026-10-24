@@ -2934,7 +2934,7 @@ function levNow(sym, H, live, nowSec) {
     const qu = live.quotes[m.u];
     if (q && q.p > 0 && qu && qu.p > 0 && q.t > tsT + 60) {
       Enow = q.p; Unow = qu.p; at = q.t; uLive = true;
-      mode = /REGULAR|PRE|POST/.test(q.state) && nowSec - q.t < 900 ? "live" : "close";
+      mode = /REGULAR|PRE|POST/.test(q.state) && nowSec - q.t < 900 ? "live" : "last";
     }
   }
   return { Enow, Unow, FXnow, fxLive: !!(fxq && fxq.p > 0), mode, at, T, uLive, state: q ? q.state : null };
@@ -3164,7 +3164,7 @@ function levCardHTML(g) {
   const { m, now } = g, uName = LEV_U[m.u].ko, L = m.L, inv = L < 0;
   const errs = g.lots.filter(r => r.err);
   if (!g.ok.length) return `<section class="panel"><h2>${g.sym}</h2><p class="note">${esc(errs[0] ? errs[0].err : "계산할 수 없어요.")}</p></section>`;
-  const tag = now.mode === "live" ? `<span class="pill good">● 실시간</span>` : now.mode === "est" ? `<span class="pill warn" title="ETF 마지막 거래 가격 × 그 뒤 코인 움직임 × 배율">추정가</span>` : `<span class="pill info">${levHist.dates[now.T].slice(5).replace("-", "/")} 종가 기준</span>`;
+  const tag = now.mode === "live" ? `<span class="pill good">● 실시간</span>` : now.mode === "est" ? `<span class="pill warn" title="ETF 마지막 거래 가격 × 그 뒤 코인 움직임 × 배율">추정가</span>` : now.mode === "last" ? `<span class="pill info">마지막 거래가 (애프터장 포함)</span>` : `<span class="pill info">${levHist.dates[now.T].slice(5).replace("-", "/")} 종가 기준</span>`;
   const up = g.ru >= 0, levTxt = g.lev >= 0 ? "레버리지 덕분에 더 번 돈" : "레버리지 때문에 더 잃은 돈";
   const max = Math.max(...[g.one, g.lev, g.amp, g.decay, g.fx].map(Math.abs));
   const decayTxt = g.decay <= 0 ? "음의 복리·비용으로 녹은 돈" : "출렁임 덕분에 오히려 더 생긴 돈";
