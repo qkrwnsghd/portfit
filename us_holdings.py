@@ -67,7 +67,11 @@ ALIAS = {
     "STMICROELECTRONICS": "STM", "FERROVIAL": "FER", "NEBIUS": "NBIS", "LINDE": "LIN", "BERKSHIRE HATHWAY": "BRK.B",
     "BERKSHIRE HATHAWAY": "BRK.B", "BLACKSTONE": "BX", "BOSTON PROPERTIES": "BXP", "CH ROBINSON WORLDWIDE": "CHRW",
     "FNF": "FNF", "SHOPIFY": "SHOP", "PDD": "PDD", "ASTRAZENECA": "AZN", "MERCADOLIBRE": "MELI",
-    "COCA COLA EUROPACIFIC PARTNERS": "CCEP", "GLOBALFOUNDRIES": "GFS", "NXP SEMICONDUCTORS": "NXPI", "UNITED MICROELECTRONICS": "UMC",
+    "COCA COLA EUROPACIFIC PARTNERS": "CCEP", "INTERNATIONAL BUSINESS MACHINES": "IBM", "HUNT JB TRANSPRT SVCS": "JBHT",
+    "EXPEDITORS INTERNATIONAL WASH": "EXPD", "INTERNATIONAL FLAVORS AND FRAGRANCES": "IFF", "JM SMUCKER": "SJM",
+    "DAVITA HEALTHCARE PARTNERS I": "DVA", "DELL TECHNOLOGY C": "DELL", "DELL TECHNOLOGY": "DELL", "GENERAL AEROSPACE": "GE",
+    "ROCKET LAB USA": "RKLB", "MOELIS AND": "MC", "PREFERRED BANK": "PFBC", "PREFERRED BANK ANGELES": "PFBC", "PREFERRED BANK ANGELES CA": "PFBC", "WENDY S": "WEN", "WENDY": "WEN",
+    "FEDERAL AGRIC MTG": "AGM", "INDEPENDENT BANK MICH": "IBCP", "ORRSTOWN FINL SERVICES": "ORRF", "GLOBALFOUNDRIES": "GFS", "NXP SEMICONDUCTORS": "NXPI", "UNITED MICROELECTRONICS": "UMC",
 }
 
 
@@ -77,6 +81,7 @@ def norm(name):
     s = re.sub(r"\s*-\s*[A-C]\s*$", " ", s)            # 'CBRE GROUP INC - A', 'COGNIZANT ...-A'
     s = re.sub(r"/[A-Z]{1,4}\b", " ", s)                 # 'CDW CORP/DE', 'BUCKLE INC/THE', '/OH'
     s = re.sub(r"\bTECH\b", "TECHNOLOGY", s)
+    s = re.sub(r"\bINTL\b", "INTERNATIONAL", s)
     s = re.sub(r"[^A-Z0-9 ]", " ", s)
     s = re.sub(SUFFIX, " ", s)
     return re.sub(r"\s+", " ", s).strip()
@@ -150,7 +155,7 @@ def main(dry):
         time.sleep(0.5)
 
     names = {nm for rows in raw.values() for nm, _ in rows}
-    todo = [n for n in names if norm(n) not in cache]
+    todo = [n for n in names if not cache.get(norm(n), {}).get("t")]   # 처음 보거나 지난번에 못 찾은 이름
     if todo:
         wiki = wiki_universe()
         wiki_sector = {t: sec for t, sec in wiki.values()}
