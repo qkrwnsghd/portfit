@@ -791,7 +791,18 @@ function renderResults() {
 }
 
 // 토스증권 「주문내역」 화면 글자 → 거래 목록
-// 화면 구조(위가 최신): [날짜] 종목명 … 주당 N원 / (N주|N원) (구매|판매) 완료
+// 화면 구조(위가 최신): [날짜] 종목명 / (N주|N원) (구매|판매) 완료 + 주당 N원
+// 글자 인식 결과에서 '주당 가격'은 종목명 줄에 붙기도 하고, 아래 구매/판매 줄에 붙기도 해서 둘 다 받아들임
+const TOSS_HEADER = /주문\s*내역|전체|국내|해외|채권|모든\s*주문|취소\s*포함|LTE|5G|Wi-?Fi|^\d{1,2}:\d{2}/i;
+function cleanTossName(s) {
+  return String(s).replace(/[|>›»"'“”‘’`_~^*]+/g, " ").replace(/\s+/g, " ").trim()
+    .replace(/^[^A-Za-z가-힣0-9]+|[^A-Za-z가-힣0-9)]+$/g, "");
+}
+function isTossName(s) {
+  if (!s || TOSS_HEADER.test(s) || /구매|판매|완료|주\s?당/.test(s)) return false;
+  const letters = (s.match(/[A-Za-z가-힣]/g) || []).length;
+  return letters >= 2 && s.length <= 30;
+}
 function parseTossText(pages, today) {
   today = today || new Date();
   const year = today.getFullYear(), curMonth = today.getMonth() + 1;
@@ -800,7 +811,15 @@ function parseTossText(pages, today) {
   let date = null;
   for (const text of pages) {
     const found = [];
-    let head = null;                                   // { name, price }
+    let name = null, price = null, act = null;
+    const emit = () => {
+      if (!(name && price && act && date)) return;
+      const amount = num(act[1]);
+      const qty = act[2] === "주" ? amount : Math.round(amount / price * 10000) / 10000;
+      const side = /구매|매수/.test(act[3]) ? "매수" : "매도";
+      if (qty > 0) found.push({ date, name, side, qty, price, raw: act[1] + act[2] });
+      name = null; price = null; act = null;
+    };
     const lines = String(text).replace(/\r/g, "").split("\n").map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean);
     for (let line of lines) {
       const d = line.match(/^(\d{1,2})\s?[.,·]\s?(\d{1,2})(?=\s|[A-Za-z가-힣])\s*(.*)$/);
@@ -809,20 +828,16 @@ function parseTossText(pages, today) {
         date = `${y}-${String(m).padStart(2, "0")}-${String(+d[2]).padStart(2, "0")}`;
         line = d[3];
       }
-      const price = line.match(/주\s?당\s*([\d,]{3,})\s*원/);
-      const act = line.match(/([\d,]+(?:\.\d+)?)\s*(주|원)\s*(구매|판매|매수|매도)/);
-      if (price) {
-        let name = line.slice(0, price.index).replace(/[|>›»]/g, " ").trim();
-        if (act && act.index < price.index) name = line.slice(0, act.index).trim();
-        head = { name, price: num(price[1]) };
+      const pm = line.match(/주\s?당\s*([\d,]{3,})\s*원/);
+      const am = line.match(/([\d,]+(?:\.\d+)?)\s*(주|원)\s*(구매|판매|매수|매도)/);
+      const cut = Math.min(pm ? pm.index : Infinity, am ? am.index : Infinity);
+      const before = cleanTossName(cut === Infinity ? line : line.slice(0, cut));
+      if (isTossName(before)) {                      // 새 종목명이 나오면 이전 미완성 거래는 버림
+        if (name !== before || cut === Infinity) { name = before; price = null; act = null; }
       }
-      if (act && head && date) {
-        const amount = num(act[1]);
-        const qty = act[2] === "주" ? amount : Math.round(amount / head.price * 10000) / 10000;
-        const side = /구매|매수/.test(act[3]) ? "매수" : "매도";
-        if (head.name && qty > 0 && head.price > 0) found.push({ date, name: head.name, side, qty, price: head.price, raw: act[1] + act[2] });
-        head = null;
-      }
+      if (pm) price = num(pm[1]);
+      if (am) act = am;
+      emit();
     }
     // 캡처끼리 겹친 부분(앞 캡처의 끝 = 다음 캡처의 시작) 지우기
     const same = (a, b) => a.date === b.date && a.name === b.name && a.side === b.side && a.raw === b.raw && a.price === b.price;
@@ -850,6 +865,29 @@ function loadScript(src) {
     document.head.appendChild(el);
   });
 }
+// 인식 전 처리: 흑백으로 바꾸고 짧은 변이 1600px 이상이 되게 키워 작은 한글도 잘 읽히게
+async function prepImage(file) {
+  try {
+    const bmp = await createImageBitmap(file);
+    const scale = Math.min(3, Math.max(1, 1600 / Math.min(bmp.width, bmp.height)));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    const g = c.getContext("2d");
+    g.imageSmoothingQuality = "high";
+    g.drawImage(bmp, 0, 0, c.width, c.height);
+    const img = g.getImageData(0, 0, c.width, c.height), px = img.data;
+    let sum = 0;
+    for (let i = 0; i < px.length; i += 4) sum += px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+    const dark = sum / (px.length / 4) < 128;                  // 어두운 화면이면 흑백 반전
+    for (let i = 0; i < px.length; i += 4) {
+      let y = px[i] * 0.299 + px[i + 1] * 0.587 + px[i + 2] * 0.114;
+      if (dark) y = 255 - y;
+      px[i] = px[i + 1] = px[i + 2] = y;
+    }
+    g.putImageData(img, 0, 0);
+    return c;
+  } catch (_) { return file; }
+}
 async function readScreens(files) {
   const box = document.getElementById("ocrMsg");
   const say = h => { box.innerHTML = h; };
@@ -869,7 +907,7 @@ async function readScreens(files) {
     const pages = [];
     for (let i = 0; i < files.length; i++) {
       cur = i + 1;
-      const { data } = await worker.recognize(files[i]);
+      const { data } = await worker.recognize(await prepImage(files[i]));
       pages.push(data.text || "");
     }
     await worker.terminate(); worker = null;
