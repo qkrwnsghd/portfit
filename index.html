@@ -254,6 +254,38 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 .install-x { border: 0; background: none; padding: 4px 0; color: var(--muted); font-size: 12.5px; text-decoration: underline; font-weight: 400; }
 #installBtn { margin: 4px 0 6px; }
 
+/* 의견 보내기 */
+.fb-fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 20px; z-index: 40; border-radius: 999px; padding: 10px 16px; font-weight: 700; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(11, 18, 48, .18); }
+.fb-fab:hover { box-shadow: 0 0 0 3px var(--btn-glow), 0 6px 20px rgba(11, 18, 48, .18); }
+@media (max-width: 720px) { .fb-fab { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); padding: 8px 13px; font-size: 13px; } }
+dialog#fbDlg, dialog#welcomeDlg { border: 0; border-radius: 22px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog#fbDlg::backdrop, dialog#welcomeDlg::backdrop { background: rgba(6, 10, 24, .55); }
+.fb-rate { display: flex; gap: 8px; margin: 2px 0 4px; }
+.fb-rate button { font-size: 26px; padding: 6px 12px; border-radius: 14px; background: var(--soft); border: 2px solid transparent; }
+.fb-rate button[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+.acct textarea { font: inherit; font-size: 14px; min-height: 110px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical; }
+.link-btn { border: 0; background: none; padding: 0; color: var(--accent); font: inherit; font-size: inherit; text-decoration: underline; font-weight: 400; }
+/* 첫 방문 안내 */
+.welcome { position: relative; padding: 26px 24px 22px; display: grid; gap: 10px; }
+.wel-x { position: absolute; top: 12px; right: 12px; border: 0; background: none; font-size: 24px; color: var(--muted); padding: 4px 8px; }
+.wel-slide { display: grid; gap: 10px; }
+.wel-slide h2 { margin: 0; font-size: 20px; line-height: 1.35; }
+.wel-slide p { margin: 0; color: var(--muted); font-size: 14.5px; }
+.wel-art { height: 120px; border-radius: 18px; display: grid; place-items: center; font-size: 34px; font-weight: 700; color: var(--neon); letter-spacing: .08em;
+  background: radial-gradient(circle at 85% 120%, rgba(60, 242, 208, .4), transparent 60%), linear-gradient(135deg, var(--hero-a), var(--hero-b) 65%, var(--hero-c)); }
+.wel-logo { width: 72px; height: 72px; border-radius: 18px; display: block; box-shadow: 0 0 30px rgba(60, 242, 208, .35); }
+.wel-list, .wel-steps { margin: 0; padding-left: 0; list-style: none; display: grid; gap: 8px; font-size: 14px; }
+.wel-steps { padding-left: 20px; list-style: decimal; }
+.wel-list li { background: var(--soft); border-radius: 12px; padding: 10px 12px; color: var(--muted); }
+.wel-list b { display: block; color: var(--ink); }
+.wel-dots { display: flex; gap: 6px; justify-content: center; margin-top: 4px; }
+.wel-dots i { width: 7px; height: 7px; border-radius: 99px; background: var(--line); transition: width .2s; }
+.wel-dots i.on { width: 20px; background: var(--accent); }
+.wel-btns { justify-content: space-between; margin-top: 4px; }
+.pulse-hint { position: relative; animation: pulseRing 1.4s ease-out 3; border-radius: 12px; }
+@keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(60, 242, 208, .7); } 100% { box-shadow: 0 0 0 14px rgba(60, 242, 208, 0); } }
+.hint-bubble { display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: #061024; background: var(--neon); padding: 5px 10px; border-radius: 10px; }
+
 /* 홈 */
 .home { display: grid; gap: 16px; }
 .hero { position: relative; overflow: hidden; border-radius: 24px; padding: 24px; color: #fff; display: grid; gap: 8px;
@@ -492,6 +524,48 @@ footer a { color: var(--accent); }
   </div>
   </div>
 
+  <button type="button" class="fb-fab" id="fbFab" aria-label="의견 보내기">💬 의견</button>
+
+  <dialog id="fbDlg" aria-labelledby="fb-title">
+    <form method="dialog" class="acct" id="fbForm" novalidate>
+      <div class="acct-head"><h2 id="fb-title">의견 보내기</h2><button type="button" class="x" id="fbClose" aria-label="닫기">×</button></div>
+      <p class="sub">불편한 점, 헷갈린 점, 있었으면 하는 기능을 편하게 적어 주세요. 개발자가 직접 읽어요.</p>
+      <div class="fb-rate" role="group" aria-label="포트핏 만족도">
+        <button type="button" data-r="1" aria-label="별로예요">😞</button><button type="button" data-r="2" aria-label="그저 그래요">😐</button><button type="button" data-r="3" aria-label="좋아요">🙂</button><button type="button" data-r="4" aria-label="아주 좋아요">😍</button>
+      </div>
+      <label>하고 싶은 말<textarea id="fbMsg" maxlength="2000" rows="5" placeholder="예: 토스 캡처를 올렸는데 종목 이름이 틀리게 나왔어요"></textarea></label>
+      <label>답장 받을 연락처 (선택)<input id="fbContact" type="text" maxlength="100" placeholder="이메일이나 카톡 아이디"></label>
+      <div class="btns"><button type="button" class="primary" id="fbSend">보내기</button></div>
+      <p class="fine" id="fbStatus" role="status"></p>
+      <p class="fine">어느 화면에서 보냈는지와 함께 저장돼요. 연락처는 답장할 때만 써요.</p>
+    </form>
+  </dialog>
+
+  <dialog id="welcomeDlg" aria-labelledby="wel-title">
+    <div class="welcome">
+      <button type="button" class="x wel-x" id="welSkip" aria-label="닫기">×</button>
+      <div class="wel-slide" data-s="0">
+        <div class="wel-art" aria-hidden="true"><span class="wel-logo"></span></div>
+        <h2 id="wel-title">포트핏은 내 투자 건강검진이에요</h2>
+        <p>병원 검진처럼, 내 투자를 세 가지로 점검해요. 종목을 추천하지 않고 지금 상태만 보여줘요.</p>
+        <ul class="wel-list"><li><b>📊 ETF 검진</b> 여러 개 샀는데 사실 한 종목에 쏠린 건 아닐까?</li><li><b>🧾 습관 진단</b> 손실은 오래 버티고 이익은 빨리 파는 건 아닐까?</li><li><b>🎯 목표 계산</b> 목표까지 1년에 몇 %씩 불려야 할까?</li></ul>
+      </div>
+      <div class="wel-slide" data-s="1" hidden>
+        <div class="wel-art" aria-hidden="true">①→②→③</div>
+        <h2>이렇게 써 보세요</h2>
+        <ol class="wel-steps"><li><b>ETF 검진</b>에서 가진 ETF와 금액을 넣으면 실제로 어디에 얼마가 들어갔는지 나와요.</li><li><b>습관</b> 탭에 토스증권 주문내역 캡처를 올리면 매매 습관과 고치는 방법이 나와요.</li><li><b>목표</b>에 목표 금액과 기간을 넣으면 필요한 수익률을 알려줘요.</li></ol>
+      </div>
+      <div class="wel-slide" data-s="2" hidden>
+        <div class="wel-art" aria-hidden="true">🔒</div>
+        <h2>기록은 안전하게</h2>
+        <p>넣은 정보는 이 기기에만 저장돼요. 오른쪽 위 <b>로그인</b>을 하면 폰과 PC에서 같은 기록을 볼 수 있어요. 증권사 캡처와 거래내역 원본은 저장하지 않아요.</p>
+        <p class="fine">폰에서는 홈 화면에 추가하면 앱처럼 쓸 수 있어요.</p>
+      </div>
+      <div class="wel-dots" aria-hidden="true"><i></i><i></i><i></i></div>
+      <div class="btns wel-btns"><button type="button" id="welPrev">이전</button><button type="button" class="primary" id="welNext" autofocus>다음</button></div>
+    </div>
+  </dialog>
+
   <dialog id="acctDlg" aria-labelledby="acct-title">
     <form method="dialog" class="acct" id="acctForm" novalidate>
       <div class="acct-head"><h2 id="acct-title">로그인</h2><button type="button" class="x" id="acctClose" aria-label="닫기">×</button></div>
@@ -528,7 +602,7 @@ footer a { color: var(--accent); }
     <div><b>분류:</b> 섹터와 국가는 포트핏이 종목별로 붙인 분류예요. SK스퀘어는 SK하이닉스 지분이 핵심 자산이라 반도체로 분류했어요. 알파벳은 A·C 두 종류 주식을 합쳤어요. 판정 기준은 베타용 임시 기준이에요.</div>
     <div><b>매매 습관 진단:</b> 붙여넣은 거래내역은 이 브라우저 안에서만 계산되고 저장되거나 전송되지 않아요. 지표는 행동재무학의 처분효과(이익은 빨리, 손실은 늦게 파는 경향) 등을 참고한 베타 기준이에요.</div>
     <div>포트핏은 입력한 정보를 바탕으로 현재 상태를 계산해 보여줄 뿐, 특정 금융투자상품의 매매를 권유하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</div>
-    <div><a href="https://qkrwnsghd.github.io/portfit/terms.html" target="_blank" rel="noopener">이용약관</a> · <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener"><b>개인정보처리방침</b></a></div>
+    <div><button type="button" class="link-btn" id="fbFoot">의견 보내기</button> · <a href="https://qkrwnsghd.github.io/portfit/terms.html" target="_blank" rel="noopener">이용약관</a> · <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener"><b>개인정보처리방침</b></a></div>
   </footer>
 </div>
 
@@ -862,6 +936,11 @@ function renderResults() {
     ov: bigPair ? +bigPair.overlap.toFixed(2) : null,
   };
   etfHome = { score, verdict, isExample, total: totalMan, top: top.name, topV: top.total, n: r.etfs.length };
+  etfCard = { kind: "etf", title: "내 ETF 건강검진 결과", score, verdict,
+    sub: `ETF ${r.etfs.length}개 · ${r.etfs.slice(0, 3).map(e => e.name).join(", ")}${r.etfs.length > 3 ? " 외" : ""}`,
+    rows: rows.filter(x => x.val != null).slice(0, 4).map(x => ({ label: x.item, value: `${fmt(x.val)}%`, g: x.g, tag: x.label || LABEL[x.g] || "참고" })),
+    bars: r.ranked.slice(0, 5).map(x => ({ name: x.name, pct: x.total })), barsTitle: "실제로 가장 많이 산 종목" };
+  if (!isExample) track("etf_custom", { n: r.etfs.length });
   if (!document.getElementById("view-home").hidden) renderHome();
   const prev = records.filter(h => h.d !== lastResult.d).at(-1);
   const signed = (v, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d)}`;
@@ -994,10 +1073,11 @@ function renderResults() {
 
     <section class="panel share" aria-labelledby="share-title">
       <h2 id="share-title">결과 공유하기</h2>
-      <p class="sub">금액은 빼고 비율만 담았어요. 친구에게 보내 보세요.</p>
+      <p class="sub">금액은 빼고 비율만 담았어요. 이미지로 만들어 카톡이나 인스타에 올리거나, 글로 복사해 보내 보세요.</p>
       <pre id="shareText">${esc(shareText)}</pre>
-      <div class="btns"><button type="button" class="primary" id="copyBtn">결과 복사</button><span id="copyMsg" role="status"></span></div>
+      <div class="btns"><button type="button" class="primary" id="shareImgEtf">이미지로 공유</button><button type="button" id="copyBtn">글로 복사</button><span id="copyMsg" role="status"></span></div>
     </section>`;
+  document.getElementById("shareImgEtf").addEventListener("click", () => shareCard(etfCard, "portfit-etf.png", document.getElementById("copyMsg")));
 
   document.getElementById("thBox").addEventListener("toggle", e => { thOpen = e.target.open; });
   Object.keys(TH_DEFAULT).forEach(k => document.getElementById(`th-${k}`).addEventListener("change", ev => {
@@ -1161,7 +1241,7 @@ async function readScreens(files) {
       return;
     }
     tradeText.value = tradesToCSV(trades);
-    runTrades();
+    lastTradeSrc = "ocr"; runTrades();
     say(`<p class="note ok">캡처 ${files.length}장에서 거래 ${trades.length}건을 읽었어요. 무료 글자 인식이라 빠지거나 틀린 거래가 많을 수 있어요. 칸의 내용을 캡처와 꼭 비교해서 고친 뒤 「진단하기」를 다시 누르세요.</p>${raw}`);
   } catch (err) {
     if (worker) { try { await worker.terminate(); } catch (_) {} }
@@ -1285,7 +1365,7 @@ async function readScreensAI(files) {
       return;
     }
     tradeText.value = tradesToCSV(trades);
-    runTrades();
+    lastTradeSrc = viaServer ? "ai_server" : "ai_claude"; runTrades();
     if (viaServer) setTossHint();
     say(`<p class="note ok">캡처 ${files.length}장에서 거래 ${trades.length}건을 읽었어요. AI도 가끔 틀릴 수 있으니 칸의 숫자를 캡처와 한 번 비교해 보세요. 고쳤다면 「진단하기」를 다시 누르면 돼요.</p>`);
   } catch (e) {
@@ -1509,6 +1589,7 @@ function runTrades() {
         </table>
       </div>
       <p class="fine">수수료와 세금은 빼고 계산했어요. 같은 종목을 여러 번 샀다면 먼저 산 것부터 판 것으로 봐요(선입선출).</p>
+      <div class="btns"><button type="button" id="shareImgTrades">결과 이미지로 공유</button><span id="shareTradesMsg" class="fine" role="status" style="margin:0"></span></div>
       <details class="th">
         <summary>왜 이 기준이에요?</summary>
         <ul class="why">
@@ -1550,10 +1631,16 @@ function runTrades() {
       </div>
     </section>
     ${a.openPos.length ? `<section class="panel" id="openPanel" aria-labelledby="open-title"></section>` : ""}`;
+  tradeCard = { kind: "trades", title: "내 매매 습관 진단 결과", score, verdict,
+    sub: `거래 ${a.trades.length}건 · ${a.trades[0].date} ~ ${a.trades.at(-1).date}`,
+    rows: rows.map(x => ({ label: x.item, value: x.val, g: x.g, tag: x.label || TLABEL[x.g] })),
+    bars: null };
   lastTrade = { a, isSample: tradeText.value.trim() === SAMPLE_TRADES.trim(),
     m: { holdRatio, payoff, avgDownRate: a.avgDownRate, perMonth: a.perMonth, busy: a.busyDays.length, score,
          n: a.trades.length, from: a.trades[0].date, to: a.trades.at(-1).date } };
   tradeResults.querySelectorAll("[data-rule]").forEach(b => b.addEventListener("click", () => focusRule(b.dataset.rule)));
+  document.getElementById("shareImgTrades").addEventListener("click", () => shareCard(tradeCard, "portfit-habit.png", document.getElementById("shareTradesMsg")));
+  if (!lastTrade.isSample) track("trades_run", { n: a.trades.length, src: lastTradeSrc || "text" });
   renderOpen();
   renderRules(); renderCmp();
 }
@@ -1685,6 +1772,7 @@ function renderRules() {
     box.querySelectorAll("[data-k]").forEach(i => { rules[i.dataset.k] = Math.max(Number(i.min), Number(i.value) || 0); });
     box.querySelectorAll("[data-on]").forEach(c => { rules.on[c.dataset.on] = c.checked; });
     if (!rules.start) rules.start = today();
+    track("rules_saved", { on: Object.keys(rules.on).filter(k => rules.on[k]).join(",") });
     saveJSON(RULE_KEY, rules); renderRules();
     document.getElementById("ruleMsg").textContent = `규칙을 저장했어요. 규칙을 정한 날: ${rules.start}`;
   });
@@ -1734,6 +1822,7 @@ function renderCmp() {
   sv.addEventListener("click", () => {
     if (lastTrade.isSample) return;
     const h = loadJSON(TRADE_HIST_KEY, []); h.push({ ...cur, d: today() }); saveJSON(TRADE_HIST_KEY, h.slice(-24)); renderCmp();
+    track("diag_saved", { n: h.length });
   });
   const cl = document.getElementById("diagClear");
   if (cl) cl.addEventListener("click", () => {
@@ -1789,6 +1878,7 @@ document.getElementById("gSave").addEventListener("click", () => {
   const { pv, fv, months, pmt } = goalDraft;
   if (!(fv > 0 && months > 0)) return;
   goalSaved = { pv0: pv, fv, months, pmt, start: today(), log: [{ d: today(), v: pv }] };
+  track("goal_saved", { months, ratePct: Math.round(toAnnual(requiredMonthlyRate(pv, pmt, months, fv)) * 1000) / 10 });
   saveJSON(GOAL_KEY, goalSaved); renderGoal();
   const m = document.getElementById("gSaveMsg"); if (m) m.textContent = "목표를 저장했어요. 매달 지금 금액을 기록하면 계획과 비교해 드려요.";
 });
@@ -1893,6 +1983,7 @@ function renderGoal() {
     document.getElementById("gLogBtn").addEventListener("click", () => {
       const v = Math.max(0, Number(document.getElementById("gLogV").value) || 0);
       goalSaved.log = goalSaved.log.filter(e => e.d !== today()).concat([{ d: today(), v }]);
+      track("goal_log");
       saveJSON(GOAL_KEY, goalSaved); renderGoal();
       document.getElementById("gSaveMsg").textContent = "기록했어요.";
     });
@@ -2028,7 +2119,7 @@ async function acctAuth(kind) {
   const { data, error } = kind === "signup" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
   if (error) { acctStatus(authKo(error), true); return; }
   if (!data.session) { acctStatus("가입은 됐지만 이메일 인증이 켜져 있어요. Supabase에서 'Confirm email'을 꺼 주세요.", true); return; }
-  sbUser = data.session.user; acctStatus("불러오는 중…"); await syncPull(); checkAiServer();
+  sbUser = data.session.user; track(kind === "signup" ? "signup" : "login"); acctStatus("불러오는 중…"); await syncPull(); checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
 }
 function clearLocalAndReload(note) {
@@ -2160,7 +2251,7 @@ function installHTML() {
 }
 function bindInstall() {
   const b = document.getElementById("installBtn");
-  if (b) b.addEventListener("click", async () => { if (!installEvt) return; installEvt.prompt(); try { await installEvt.userChoice; } catch (_) {} installEvt = null; renderHome(); });
+  if (b) b.addEventListener("click", async () => { if (!installEvt) return; track("install_click"); installEvt.prompt(); try { await installEvt.userChoice; } catch (_) {} installEvt = null; renderHome(); });
   const h = document.getElementById("installHide");
   if (h) h.addEventListener("click", () => { try { localStorage.setItem(INSTALL_HIDE, "1"); } catch (_) {} renderHome(); });
 }
@@ -2248,11 +2339,207 @@ function renderHome() {
         <div><b>🧾 습관 진단</b>거래내역으로 손실을 오래 버티는지, 물타기와 잦은 거래가 있는지 보고 고치는 방법을 알려줘요.</div>
         <div><b>🎯 목표 계산</b>목표 금액까지 1년에 몇 %씩 불려야 하는지, 계획대로 가고 있는지 보여줘요.</div>
       </div>
+      <div class="btns"><button type="button" id="fbHome">💬 의견 보내기</button><button type="button" id="welAgain">처음 안내 다시 보기</button></div>
       <p class="fine">${sbUser ? `${esc(sbUser.email)} 계정에 기록이 저장돼요.` : sbReady ? "지금은 기록이 이 기기의 브라우저에만 저장돼요. 오른쪽 위 '로그인'을 누르면 폰과 PC에서 같은 기록을 볼 수 있어요." : "기록은 이 기기의 브라우저에만 저장돼요."} 포트핏은 종목을 추천하지 않고, 지금 상태만 진단해요.</p>
     </section>`;
   box.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => goTab(b.dataset.go)));
   bindInstall();
+  document.getElementById("fbHome").addEventListener("click", openFeedback);
+  document.getElementById("welAgain").addEventListener("click", () => openWelcome(true));
 }
+
+// ---------- 익명 사용 통계 ----------
+// 기기마다 무작위 번호 하나만 쓰고, 이메일·로그인 계정과 연결하지 않음. 누른 기능 이름과 숫자 몇 개만 기록.
+// GitHub 사이트에서만 보내고, 브라우저의 '추적 안 함' 설정이 켜져 있으면 보내지 않음.
+let etfCard = null, tradeCard = null, lastTradeSrc = null;
+const ANON_KEY = "portfit-anon-v1", VISIT_KEY = "portfit-visit-v1";
+const trackQueue = [], trackSeen = new Set();
+const NO_TRACK = (() => { try { return navigator.doNotTrack === "1" || window.doNotTrack === "1"; } catch (_) { return false; } })();
+function anonId() {
+  let id = null; try { id = localStorage.getItem(ANON_KEY); } catch (_) {}
+  if (!id) { id = (crypto.randomUUID ? crypto.randomUUID() : String(Date.now()) + Math.random().toString(16).slice(2)); try { localStorage.setItem(ANON_KEY, id); } catch (_) {} }
+  return id;
+}
+function track(event, meta) {
+  if (NO_TRACK) return;
+  const once = /^(tab_|etf_custom|trades_run)/.test(event);          // 같은 화면을 여러 번 봐도 한 번만
+  if (once) { if (trackSeen.has(event)) return; trackSeen.add(event); }
+  trackQueue.push({ event, meta: meta || {}, at: new Date().toISOString() });
+  flushTrack();
+}
+async function flushTrack() {
+  if (!sb || !trackQueue.length) return;
+  const rows = trackQueue.splice(0).map(e => ({ anon_id: anonId(), event: e.event, meta: e.meta, created_at: e.at }));
+  try { await sb.from("events").insert(rows); } catch (_) {}
+}
+function trackVisit() {
+  let last = null; try { last = localStorage.getItem(VISIT_KEY); } catch (_) {}
+  if (last === today()) return;
+  try { localStorage.setItem(VISIT_KEY, today()); } catch (_) {}
+  track("visit", { standalone: IS_STANDALONE, returning: !!last, mobile: /iphone|android/i.test(navigator.userAgent) });
+}
+
+// ---------- 의견 보내기 ----------
+let fbRating = null;
+function openFeedback() {
+  const dlg = document.getElementById("fbDlg");
+  document.getElementById("fbStatus").textContent = sbReady ? "" : "이 화면에서는 메일 앱으로 보내져요.";
+  dlg.showModal(); setTimeout(() => document.getElementById("fbMsg").focus(), 50);
+}
+document.getElementById("fbFab").addEventListener("click", openFeedback);
+document.getElementById("fbFoot").addEventListener("click", openFeedback);
+document.getElementById("fbClose").addEventListener("click", () => document.getElementById("fbDlg").close());
+document.querySelectorAll(".fb-rate button").forEach(b => b.addEventListener("click", () => {
+  fbRating = Number(b.dataset.r);
+  document.querySelectorAll(".fb-rate button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+}));
+document.getElementById("fbSend").addEventListener("click", async () => {
+  const msg = document.getElementById("fbMsg").value.trim(), contact = document.getElementById("fbContact").value.trim();
+  const st = document.getElementById("fbStatus"), page = location.hash.slice(1) || "home";
+  if (!msg && !fbRating) { st.textContent = "얼굴을 고르거나 하고 싶은 말을 적어 주세요."; return; }
+  if (!sbReady) {
+    location.href = `mailto:human30709@naver.com?subject=${encodeURIComponent("[포트핏 의견]")}&body=${encodeURIComponent(`만족도: ${fbRating ?? "-"}/4\n화면: ${page}\n\n${msg}\n\n연락처: ${contact}`)}`;
+    return;
+  }
+  st.textContent = "보내는 중…";
+  const { error } = await sb.from("feedback").insert({ message: msg || "(내용 없음)", rating: fbRating, contact: contact || null, page, user_id: sbUser ? sbUser.id : null, standalone: IS_STANDALONE });
+  if (error) { st.textContent = "보내지 못했어요. 잠시 뒤 다시 해 주세요."; return; }
+  track("feedback", { rating: fbRating });
+  document.getElementById("fbMsg").value = ""; document.getElementById("fbContact").value = ""; fbRating = null;
+  document.querySelectorAll(".fb-rate button").forEach(x => x.setAttribute("aria-pressed", "false"));
+  st.textContent = "고마워요! 잘 받았어요. 🙏";
+  setTimeout(() => { const d = document.getElementById("fbDlg"); if (d.open) d.close(); st.textContent = ""; }, 1600);
+});
+
+// ---------- 결과 이미지 공유 (1080×1350, 인스타·카톡용) ----------
+function wrapText(g, text, maxW) {
+  const out = []; let line = "";
+  for (const ch of String(text)) {
+    if (g.measureText(line + ch).width > maxW && line) { out.push(line); line = ch.trim() ? ch : ""; } else line += ch;
+  }
+  if (line) out.push(line); return out;
+}
+async function drawCard(c) {
+  try { await document.fonts.ready; } catch (_) {}
+  const W = 1080, H = 1350, cv = document.createElement("canvas"); cv.width = W; cv.height = H;
+  const g = cv.getContext("2d"), F = w => `${w} ${"$"}px 'IBM Plex Sans KR', 'Apple SD Gothic Neo', sans-serif`;
+  const font = (w, px) => F(w).replace("$px", px + "px");
+  // 배경: 딥스페이스 그라데이션 + 격자 + 민트 빛
+  const bg = g.createLinearGradient(0, 0, W, H); bg.addColorStop(0, "#080E26"); bg.addColorStop(.6, "#1A2668"); bg.addColorStop(1, "#0C5E66");
+  g.fillStyle = bg; g.fillRect(0, 0, W, H);
+  const glow = g.createRadialGradient(W * .9, H * 1.02, 10, W * .9, H * 1.02, 760); glow.addColorStop(0, "rgba(60,242,208,.45)"); glow.addColorStop(1, "rgba(60,242,208,0)");
+  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.strokeStyle = "rgba(255,255,255,.05)"; g.lineWidth = 1;
+  for (let x = 0; x < W; x += 54) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, H); g.stroke(); }
+  for (let y = 0; y < H; y += 54) { g.beginPath(); g.moveTo(0, y); g.lineTo(W, y); g.stroke(); }
+  // 머리: 로고 + 이름
+  const P = 80;
+  g.fillStyle = "#0B1230"; g.beginPath(); g.roundRect(P, 72, 76, 76, 18); g.fill();
+  g.fillStyle = "#fff"; g.font = font(700, 46); g.textBaseline = "middle"; g.fillText("P", P + 24, 106);
+  g.strokeStyle = "#3CF2D0"; g.lineWidth = 4; g.shadowColor = "#3CF2D0"; g.shadowBlur = 12;
+  g.beginPath(); g.moveTo(P + 8, 136); g.lineTo(P + 26, 136); g.lineTo(P + 32, 126); g.lineTo(P + 39, 142); g.lineTo(P + 45, 132); g.lineTo(P + 68, 132); g.stroke(); g.shadowBlur = 0;
+  g.fillStyle = "#fff"; g.font = font(700, 36); g.fillText("포트핏", P + 96, 98);
+  g.fillStyle = "rgba(255,255,255,.65)"; g.font = font(500, 24); g.fillText("내 투자 건강검진", P + 96, 134);
+  g.fillStyle = "rgba(255,255,255,.55)"; g.font = font(500, 24); g.textAlign = "right"; g.fillText(today().replace(/-/g, "."), W - P, 106); g.textAlign = "left";
+  // 제목·점수
+  g.fillStyle = "#3CF2D0"; g.font = font(700, 30); g.fillText(c.title, P, 236);
+  g.fillStyle = "#fff"; g.font = font(700, 180); g.textBaseline = "alphabetic";
+  g.shadowColor = "rgba(60,242,208,.55)"; g.shadowBlur = 30; g.fillText(String(c.score), P - 6, 438); g.shadowBlur = 0;
+  const sw = g.measureText(String(c.score)).width;
+  g.fillStyle = "rgba(255,255,255,.6)"; g.font = font(500, 38); g.fillText("/ 100점", P + sw + 10, 434);
+  g.fillStyle = "#fff"; g.font = font(700, 40);
+  let y = 512; wrapText(g, c.verdict, W - 2 * P).slice(0, 2).forEach(l => { g.fillText(l, P, y); y += 54; });
+  g.fillStyle = "rgba(255,255,255,.55)"; g.font = font(500, 26); g.fillText(wrapText(g, c.sub, W - 2 * P)[0], P, y + 6); y += 56;
+  // 판정 줄
+  const col = { good: ["#5FE3A1", "rgba(95,227,161,.16)"], warn: ["#FFC861", "rgba(255,200,97,.16)"], bad: ["#FF8A6B", "rgba(255,138,107,.18)"], info: ["#B8C2E8", "rgba(184,194,232,.14)"] };
+  const rowH = c.bars ? 72 : 96;
+  c.rows.forEach(r => {
+    g.fillStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.roundRect(P, y, W - 2 * P, rowH - 12, 18); g.fill();
+    const mid = y + (rowH - 12) / 2 + 2; g.textBaseline = "middle";
+    g.fillStyle = "#fff"; g.font = font(600, 30); g.fillText(r.label, P + 28, mid);
+    const [fg, bgc] = col[r.g] || col.info; g.font = font(700, 24); const tw = g.measureText(r.tag).width + 36;
+    g.fillStyle = bgc; g.beginPath(); g.roundRect(W - P - 28 - tw, mid - 22, tw, 44, 22); g.fill();
+    g.fillStyle = fg; g.textAlign = "center"; g.fillText(r.tag, W - P - 28 - tw / 2, mid + 1);
+    g.fillStyle = "#fff"; g.font = font(700, 32); g.textAlign = "right"; g.fillText(String(r.value), W - P - 48 - tw, mid); g.textAlign = "left";
+    y += rowH; g.textBaseline = "alphabetic";
+  });
+  // 막대 (ETF)
+  if (c.bars && c.bars.length) {
+    y += 22; g.fillStyle = "rgba(255,255,255,.7)"; g.font = font(600, 26); g.fillText(c.barsTitle, P, y); y += 26;
+    const max = Math.max(...c.bars.map(b => b.pct), 1), bw = W - 2 * P - 330;
+    c.bars.forEach(b => {
+      if (y + 44 > H - 172) return;                                // 바닥 글자와 겹치지 않게
+      g.fillStyle = "#fff"; g.font = font(500, 26); g.textBaseline = "middle";
+      const nm = wrapText(g, b.name, 220)[0]; g.fillText(nm, P, y + 20);
+      g.fillStyle = "rgba(255,255,255,.08)"; g.beginPath(); g.roundRect(P + 240, y + 8, bw, 24, 12); g.fill();
+      const gr = g.createLinearGradient(P + 240, 0, P + 240 + bw, 0); gr.addColorStop(0, "#22B5D6"); gr.addColorStop(1, "#3CF2D0");
+      g.fillStyle = gr; g.beginPath(); g.roundRect(P + 240, y + 8, Math.max(24, bw * b.pct / max), 24, 12); g.fill();
+      g.fillStyle = "#fff"; g.font = font(700, 26); g.textAlign = "right"; g.fillText(`${fmt(b.pct)}%`, W - P, y + 20); g.textAlign = "left";
+      y += 46; g.textBaseline = "alphabetic";
+    });
+  }
+  // 바닥
+  g.fillStyle = "rgba(255,255,255,.12)"; g.fillRect(P, H - 150, W - 2 * P, 2);
+  g.fillStyle = "#3CF2D0"; g.font = font(700, 30); g.fillText("나도 검진해 보기 → qkrwnsghd.github.io/portfit", P, H - 96);
+  g.fillStyle = "rgba(255,255,255,.45)"; g.font = font(500, 21); g.fillText("포트핏은 종목을 추천하지 않고, 입력한 정보로 지금 상태만 계산해요.", P, H - 56);
+  return cv;
+}
+async function shareCard(c, filename, msgEl) {
+  if (!c) return;
+  const say = t => { if (msgEl) msgEl.textContent = t; };
+  say("이미지 만드는 중…");
+  try {
+    const cv = await drawCard(c);
+    const blob = await new Promise(r => cv.toBlob(r, "image/png"));
+    const file = new File([blob], filename, { type: "image/png" });
+    track("share_image", { kind: c.kind });
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try { await navigator.share({ files: [file], title: c.title, text: "포트핏으로 내 투자 건강검진 해봤어요" }); say(""); return; }
+      catch (e) { if (e && e.name === "AbortError") { say(""); return; } }
+    }
+    const url = URL.createObjectURL(blob), a = document.createElement("a");
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    say("이미지를 저장했어요. 카톡이나 인스타에 올려 보세요.");
+  } catch (_) { say("이미지를 만들지 못했어요."); }
+}
+
+// ---------- 처음 온 사람 안내 ----------
+const WELCOME_KEY = "portfit-welcome-v1";
+let welIdx = 0;
+function welShow(i) {
+  welIdx = Math.max(0, Math.min(2, i));
+  document.querySelectorAll(".wel-slide").forEach(sl => { sl.hidden = Number(sl.dataset.s) !== welIdx; });
+  document.querySelectorAll(".wel-dots i").forEach((d, k) => d.classList.toggle("on", k === welIdx));
+  document.getElementById("welPrev").style.visibility = welIdx ? "visible" : "hidden";
+  document.getElementById("welNext").textContent = welIdx === 2 ? "ETF 검진부터 시작하기" : "다음";
+}
+function openWelcome(force) {
+  let seen = false; try { seen = localStorage.getItem(WELCOME_KEY) === "1"; } catch (_) {}
+  if (seen && !force) return;
+  const logo = document.querySelector(".wel-logo"), hdr = document.querySelector(".logo");
+  if (logo && hdr) logo.style.background = getComputedStyle(hdr).background;
+  welShow(0); document.getElementById("welcomeDlg").showModal();
+}
+function closeWelcome(how) {
+  try { localStorage.setItem(WELCOME_KEY, "1"); } catch (_) {}
+  const d = document.getElementById("welcomeDlg"); if (d.open) d.close();
+  track("onboard_" + how);
+}
+document.getElementById("welPrev").addEventListener("click", () => welShow(welIdx - 1));
+document.getElementById("welNext").addEventListener("click", () => {
+  if (welIdx < 2) { welShow(welIdx + 1); return; }
+  closeWelcome("start"); goTab("etf");
+  const sel = document.getElementById("addEtf"), wrap = sel && sel.closest(".add");
+  if (wrap) {
+    wrap.classList.add("pulse-hint");
+    if (!wrap.querySelector(".hint-bubble")) wrap.insertAdjacentHTML("beforeend", `<span class="hint-bubble">여기서 가진 ETF를 골라 추가하고, 아래에 금액을 넣어요</span>`);
+    setTimeout(() => { wrap.classList.remove("pulse-hint"); const h = wrap.querySelector(".hint-bubble"); if (h) h.remove(); }, 6000);
+    wrap.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+});
+document.getElementById("welSkip").addEventListener("click", () => closeWelcome("skip"));
+document.getElementById("welcomeDlg").addEventListener("cancel", () => closeWelcome("skip"));
 
 // ---------- 탭 ----------
 function showTab(name) {
@@ -2263,6 +2550,7 @@ function showTab(name) {
   });
   if (t === "goal") renderGoal();
   if (t === "home") renderHome();
+  track("tab_" + t);
 }
 function goTab(name) { showTab(name); try { history.replaceState(null, "", "#" + name); } catch (_) {} window.scrollTo({ top: 0 }); }
 document.getElementById("tab-home").addEventListener("click", () => goTab("home"));
@@ -2273,7 +2561,9 @@ document.getElementById("tab-trades").addEventListener("click", () => { showTab(
 tradeText.value = SAMPLE_TRADES;
 runTrades();
 showTab(location.hash.slice(1));
-initAccount();
+initAccount().then(() => flushTrack());
+trackVisit();
+if (!location.hash || location.hash === "#home") setTimeout(() => openWelcome(false), 400);
 
 // ---------- 검진 기록 ----------
 function historyHTML() {
