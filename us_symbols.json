@@ -1,0 +1,2550 @@
+{
+"1ST SOURCE": {
+"s": "금융",
+"t": "SRCE"
+},
+"3M": {
+"s": "산업재",
+"t": "MMM"
+},
+"ABBOTT LABORATORIES": {
+"s": "헬스케어",
+"t": "ABT"
+},
+"ABBVIE": {
+"s": "헬스케어",
+"t": "ABBV"
+},
+"ACCENTURE": {
+"s": "IT",
+"t": "ACN"
+},
+"ADOBE": {
+"s": "IT",
+"t": "ADBE"
+},
+"ADVANCED MICRO DEVICES": {
+"s": "반도체",
+"t": "AMD"
+},
+"AES": {
+"s": "유틸리티",
+"t": "AES"
+},
+"AFLAC": {
+"s": "금융",
+"t": "AFL"
+},
+"AGILENT TECHNOLOGIES": {
+"s": "헬스케어",
+"t": "A"
+},
+"AIR PRODUCTS AND CHEMICALS": {
+"s": "소재",
+"t": "APD"
+},
+"AIRBNB": {
+"s": "소비재·유통",
+"t": "ABNB"
+},
+"AKAMAI TECHNOLOGIES": {
+"s": "IT",
+"t": "AKAM"
+},
+"ALBEMARLE": {
+"s": "소재",
+"t": "ALB"
+},
+"ALEXANDRIA REAL ESTATE EQUIT": {
+"s": "부동산",
+"t": "ARE"
+},
+"ALIGN TECHNOLOGY": {
+"s": "헬스케어",
+"t": "ALGN"
+},
+"ALLEGION": {
+"s": "산업재",
+"t": "ALLE"
+},
+"ALLIANT ENERGY": {
+"s": "유틸리티",
+"t": "LNT"
+},
+"ALLSTATE": {
+"s": "금융",
+"t": "ALL"
+},
+"ALNYLAM PHARMACEUTICALS": {
+"s": "헬스케어",
+"t": "ALNY"
+},
+"ALPHABET": {
+"s": "인터넷·플랫폼",
+"t": "GOOGL"
+},
+"ALTRIA": {
+"s": "필수소비재",
+"t": "MO"
+},
+"AMAZON COM": {
+"s": "소비재·유통",
+"t": "AMZN"
+},
+"AMCOR": {
+"s": "소재",
+"t": "AMCR"
+},
+"AMEREN": {
+"s": "유틸리티",
+"t": "AEE"
+},
+"AMERICAN ELECTRIC POWER": {
+"s": "유틸리티",
+"t": "AEP"
+},
+"AMERICAN EXPRESS": {
+"s": "금융",
+"t": "AXP"
+},
+"AMERICAN FINANCIAL": {
+"s": "금융",
+"t": "FAF"
+},
+"AMERICAN INTERNATIONAL": {
+"s": "금융",
+"t": "AIG"
+},
+"AMERICAN TOWER": {
+"s": "부동산",
+"t": "AMT"
+},
+"AMERICAN WATER WORKS": {
+"s": "유틸리티",
+"t": "AWK"
+},
+"AMERIPRISE FINANCIAL": {
+"s": "금융",
+"t": "AMP"
+},
+"AMERISAFE": {
+"s": "금융",
+"t": "AMSF"
+},
+"AMETEK": {
+"s": "산업재",
+"t": "AME"
+},
+"AMGEN": {
+"s": "헬스케어",
+"t": "AMGN"
+},
+"AMPHENOL": {
+"s": "IT",
+"t": "APH"
+},
+"ANALOG DEVICES": {
+"s": "반도체",
+"t": "ADI"
+},
+"AON": {
+"s": "금융",
+"t": "AON"
+},
+"APA": {
+"s": "에너지",
+"t": "APA"
+},
+"APOLLO GLOBAL MANAGEMENT": {
+"s": "금융",
+"t": "APO"
+},
+"APPLE": {
+"s": "IT",
+"t": "AAPL"
+},
+"APPLIED MATERIALS": {
+"s": "반도체",
+"t": "AMAT"
+},
+"APPLOVIN": {
+"s": "인터넷·플랫폼",
+"t": "APP"
+},
+"APTIV": {
+"s": "소비재·유통",
+"t": "APTV"
+},
+"ARCH CAPITAL": {
+"s": "금융",
+"t": "ACGL"
+},
+"ARCHER DANIELS MIDLAND": {
+"s": "필수소비재",
+"t": "ADM"
+},
+"ARES MANAGEMENT": {
+"s": "금융",
+"t": "ARES"
+},
+"ARISTA NETWORKS": {
+"s": "IT",
+"t": "ANET"
+},
+"ARM": {
+"s": "반도체",
+"t": "ARM"
+},
+"ARTHUR J GALLAGHER AND": {
+"s": "금융",
+"t": "AJG"
+},
+"ARTISAN PARTNERS ASSET MA": {
+"s": "금융",
+"t": "APAM"
+},
+"ARTISAN PARTNERS ASSET MANAGEM": {
+"s": "금융",
+"t": "APAM"
+},
+"ASML": {
+"s": "반도체",
+"t": "ASML"
+},
+"ASSURANT": {
+"s": "금융",
+"t": "AIZ"
+},
+"ASTERA LABS": {
+"s": "반도체",
+"t": "ALAB"
+},
+"AT AND T": {
+"s": "인터넷·플랫폼",
+"t": "T"
+},
+"ATMOS ENERGY": {
+"s": "유틸리티",
+"t": "ATO"
+},
+"AUTODESK": {
+"s": "IT",
+"t": "ADSK"
+},
+"AUTOLIV": {
+"s": "소비재·유통",
+"t": "ALV"
+},
+"AUTOMATIC DATA PROCESSING": {
+"s": "산업재",
+"t": "ADP"
+},
+"AUTOZONE": {
+"s": "소비재·유통",
+"t": "AZO"
+},
+"AVERY DENNISON": {
+"s": "소재",
+"t": "AVY"
+},
+"AXON ENTERPRISE": {
+"s": "산업재",
+"t": "AXON"
+},
+"BAKER HUGHES": {
+"s": "에너지",
+"t": "BKR"
+},
+"BAKER HUGHES A GE": {
+"s": "에너지",
+"t": "BKR"
+},
+"BALL": {
+"s": "소재",
+"t": "BALL"
+},
+"BANK OF AMERICA": {
+"s": "금융",
+"t": "BAC"
+},
+"BANK OF YORK MELLON": {
+"s": "금융",
+"t": "BAC"
+},
+"BANK OZK": {
+"s": "금융",
+"t": "OZK"
+},
+"BANNER": {
+"s": "금융",
+"t": "BANR"
+},
+"BAXTER INTERNATIONAL": {
+"s": "헬스케어",
+"t": "BAX"
+},
+"BECTON DICKINSON AND": {
+"s": "헬스케어",
+"t": "BDX"
+},
+"BERKSHIRE HATHAWAY": {
+"s": "금융",
+"t": "BRK.B"
+},
+"BERKSHIRE HATHWAY": {
+"s": "금융",
+"t": "BRK.B"
+},
+"BEST BUY": {
+"s": "소비재·유통",
+"t": "BBY"
+},
+"BIO TECHNE": {
+"s": "헬스케어",
+"t": "TECH"
+},
+"BIOGEN": {
+"s": "헬스케어",
+"t": "BIIB"
+},
+"BLACKROCK": {
+"s": "금융",
+"t": "BLK"
+},
+"BLACKSTONE": {
+"s": "금융",
+"t": "BX"
+},
+"BLOCK": {
+"s": "금융",
+"t": "XYZ"
+},
+"BLOOM ENERGY": {
+"s": "산업재",
+"t": "BE"
+},
+"BOEING": {
+"s": "산업재",
+"t": "BA"
+},
+"BOOKING": {
+"s": "소비재·유통",
+"t": "BKNG"
+},
+"BOOZ ALLEN HAMILTON": {
+"s": "산업재",
+"t": "BAH"
+},
+"BOSTON PROPERTIES": {
+"s": "부동산",
+"t": "BXP"
+},
+"BOSTON SCIENTIFIC": {
+"s": "헬스케어",
+"t": "BSX"
+},
+"BRISTOL MYERS SQUIBB": {
+"s": "헬스케어",
+"t": "BMY"
+},
+"BROADCOM": {
+"s": "반도체",
+"t": "AVGO"
+},
+"BROADRIDGE FINANCIAL SOLUTIO": {
+"s": "산업재",
+"t": "BR"
+},
+"BROADRIDGE FINANCIAL SOLUTIONS": {
+"s": "산업재",
+"t": "BR"
+},
+"BROWN AND BROWN": {
+"s": "금융",
+"t": "BRO"
+},
+"BROWN FORMAN": {
+"s": "필수소비재",
+"t": "BF.B"
+},
+"BUCKLE": {
+"s": "소비재·유통",
+"t": "BKE"
+},
+"BUNGE GLOBAL": {
+"s": "필수소비재",
+"t": "BG"
+},
+"BXP": {
+"s": "부동산",
+"t": "BXP"
+},
+"C H ROBINSON WORLDWIDE": {
+"s": "산업재",
+"t": "CHRW"
+},
+"CADENCE DESIGN SYS": {
+"s": "IT",
+"t": "CDNS"
+},
+"CADENCE DESIGN SYSTEMS": {
+"s": "IT",
+"t": "CDNS"
+},
+"CAMDEN PROPERTY TRUST": {
+"s": "부동산",
+"t": "CPT"
+},
+"CAPITAL CITY BANK": {
+"s": "금융",
+"t": "CCBG"
+},
+"CAPITAL ONE FINANCIAL": {
+"s": "금융",
+"t": "COF"
+},
+"CARDINAL HEALTH": {
+"s": "헬스케어",
+"t": "CAH"
+},
+"CARNIVAL": {
+"s": "소비재·유통",
+"t": "CCL"
+},
+"CARRIER GLOBAL": {
+"s": "산업재",
+"t": "CARR"
+},
+"CARVANA": {
+"s": "소비재·유통",
+"t": "CVNA"
+},
+"CASEY S GENERAL STORES": {
+"s": "필수소비재",
+"t": "CASY"
+},
+"CASEYS GENERAL STORES": {
+"s": "소비재·유통",
+"t": "CASY"
+},
+"CATERPILLAR": {
+"s": "산업재",
+"t": "CAT"
+},
+"CBOE": {
+"s": "금융",
+"t": "CBOE"
+},
+"CBOE GLOBAL MARKETS": {
+"s": "금융",
+"t": "CBOE"
+},
+"CBRE": {
+"s": "부동산",
+"t": "CBRE"
+},
+"CDW": {
+"s": "IT",
+"t": "CDW"
+},
+"CENCORA": {
+"s": "헬스케어",
+"t": "COR"
+},
+"CENTENE": {
+"s": "헬스케어",
+"t": "CNC"
+},
+"CENTERPOINT ENERGY": {
+"s": "유틸리티",
+"t": "CNP"
+},
+"CENTRAL PACIFIC FINANCIAL": {
+"s": "금융",
+"t": "CPF"
+},
+"CF INDUSTRIES": {
+"s": "소재",
+"t": "CF"
+},
+"CH ROBINSON WORLDWIDE": {
+"s": "산업재",
+"t": "CHRW"
+},
+"CHARLES RIVER LABORATORIES": {
+"s": "헬스케어",
+"t": "CRL"
+},
+"CHARTER COMMUNICATIONS": {
+"s": "인터넷·플랫폼",
+"t": "CHTR"
+},
+"CHEVRON": {
+"s": "에너지",
+"t": "CVX"
+},
+"CHIPOTLE MEXICAN GRILL": {
+"s": "소비재·유통",
+"t": "CMG"
+},
+"CHUBB": {
+"s": "금융",
+"t": "CB"
+},
+"CHURCH AND DWIGHT": {
+"s": "필수소비재",
+"t": "CHD"
+},
+"CIENA": {
+"s": "IT",
+"t": "CIEN"
+},
+"CIGNA": {
+"s": "헬스케어",
+"t": "CI"
+},
+"CINCINNATI FINANCIAL": {
+"s": "금융",
+"t": "CINF"
+},
+"CINTAS": {
+"s": "산업재",
+"t": "CTAS"
+},
+"CISCO SYSTEMS": {
+"s": "IT",
+"t": "CSCO"
+},
+"CITIGROUP": {
+"s": "금융",
+"t": "C"
+},
+"CITIZENS FINANCIAL": {
+"s": "금융",
+"t": "CFG"
+},
+"CITY": {
+"s": "산업재",
+"t": "CP"
+},
+"CLEARWAY ENERGY": {
+"s": "유틸리티",
+"t": "CWEN"
+},
+"CLOROX": {
+"s": "필수소비재",
+"t": "CLX"
+},
+"CME": {
+"s": "금융",
+"t": "CME"
+},
+"CMS ENERGY": {
+"s": "유틸리티",
+"t": "CMS"
+},
+"CNA FINANCIAL": {
+"s": "금융",
+"t": "CNA"
+},
+"COCA COLA": {
+"s": "필수소비재",
+"t": "KO"
+},
+"COCA COLA EUROPACIFIC PARTNERS": {
+"s": "",
+"t": "CCEP"
+},
+"COCA COLA EUROPEAN PARTNERS": {
+"s": "필수소비재",
+"t": "KO"
+},
+"COGNIZANT TECHNOLOGY SOLUTIONS": {
+"s": "IT",
+"t": "CTSH"
+},
+"COHEN AND STEERS": {
+"s": "금융",
+"t": "RFI"
+},
+"COHERENT": {
+"s": "IT",
+"t": "COHR"
+},
+"COINBASE GLOBAL": {
+"s": "금융",
+"t": "COIN"
+},
+"COLGATE PALMOLIVE": {
+"s": "필수소비재",
+"t": "CL"
+},
+"COLUMBIA BANKING SYSTEM": {
+"s": "금융",
+"t": "COLB"
+},
+"COMCAST": {
+"s": "인터넷·플랫폼",
+"t": "CMCSA"
+},
+"COMFORT SYSTEMS USA": {
+"s": "산업재",
+"t": "FIX"
+},
+"CONOCOPHILLIPS": {
+"s": "에너지",
+"t": "COP"
+},
+"CONSOLIDATED EDISON": {
+"s": "유틸리티",
+"t": "ED"
+},
+"CONSTELLATION BRANDS": {
+"s": "필수소비재",
+"t": "STZ"
+},
+"CONSTELLATION ENERGY": {
+"s": "유틸리티",
+"t": "CEG"
+},
+"COOPER": {
+"s": "헬스케어",
+"t": "COO"
+},
+"COPART": {
+"s": "산업재",
+"t": "CPRT"
+},
+"COREWEAVE": {
+"s": "IT",
+"t": "CRWV"
+},
+"CORNING": {
+"s": "IT",
+"t": "GLW"
+},
+"CORPAY": {
+"s": "금융",
+"t": "CPAY"
+},
+"CORTEVA": {
+"s": "소재",
+"t": "CTVA"
+},
+"COSTAR": {
+"s": "부동산",
+"t": "CSGP"
+},
+"COSTCO WHOLESALE": {
+"s": "필수소비재",
+"t": "COST"
+},
+"CREDO TECHNOLOGY HOLDI": {
+"s": "",
+"t": null
+},
+"CRH": {
+"s": "소재",
+"t": "CRH"
+},
+"CROWDSTRIKE": {
+"s": "IT",
+"t": "CRWD"
+},
+"CROWN CASTLE": {
+"s": "부동산",
+"t": "CCI"
+},
+"CSX": {
+"s": "산업재",
+"t": "CSX"
+},
+"CUMMINS": {
+"s": "산업재",
+"t": "CMI"
+},
+"CVB FINANCIAL": {
+"s": "금융",
+"t": "CVBF"
+},
+"CVS HEALTH": {
+"s": "헬스케어",
+"t": "CVS"
+},
+"DANAHER": {
+"s": "헬스케어",
+"t": "DHR"
+},
+"DARDEN RESTAURANTS": {
+"s": "소비재·유통",
+"t": "DRI"
+},
+"DATADOG": {
+"s": "IT",
+"t": "DDOG"
+},
+"DAVITA": {
+"s": "헬스케어",
+"t": "DVA"
+},
+"DAVITA HEALTHCARE PARTNERS I": {
+"s": "헬스케어",
+"t": "DVA"
+},
+"DECKERS OUTDOOR": {
+"s": "소비재·유통",
+"t": "DECK"
+},
+"DEERE AND": {
+"s": "산업재",
+"t": "DE"
+},
+"DELL TECHNOLOGIES": {
+"s": "IT",
+"t": "DELL"
+},
+"DELL TECHNOLOGY": {
+"s": "IT",
+"t": "DELL"
+},
+"DELTA AIR LINES": {
+"s": "산업재",
+"t": "DAL"
+},
+"DEVON ENERGY": {
+"s": "에너지",
+"t": "DVN"
+},
+"DEXCOM": {
+"s": "헬스케어",
+"t": "DXCM"
+},
+"DIAMONDBACK ENERGY": {
+"s": "에너지",
+"t": "FANG"
+},
+"DIGITAL REALTY TRUST": {
+"s": "부동산",
+"t": "DLR"
+},
+"DOLLAR GENERAL": {
+"s": "필수소비재",
+"t": "DG"
+},
+"DOLLAR TREE": {
+"s": "필수소비재",
+"t": "DLTR"
+},
+"DOMINION ENERGY": {
+"s": "유틸리티",
+"t": "D"
+},
+"DOMINION RESOURCES": {
+"s": "유틸리티",
+"t": "D"
+},
+"DOMINO S PIZZA": {
+"s": "소비재·유통",
+"t": "DPZ"
+},
+"DOMINOS PIZZA": {
+"s": "소비재·유통",
+"t": "DPZ"
+},
+"DOORDASH": {
+"s": "소비재·유통",
+"t": "DASH"
+},
+"DOVER": {
+"s": "산업재",
+"t": "DOV"
+},
+"DOW": {
+"s": "소재",
+"t": "DOW"
+},
+"DR HORTON": {
+"s": "소비재·유통",
+"t": "DHI"
+},
+"DTE ENERGY": {
+"s": "유틸리티",
+"t": "DTE"
+},
+"DUKE ENERGY": {
+"s": "유틸리티",
+"t": "DUK"
+},
+"DUPONT DE NEMOURS": {
+"s": "소재",
+"t": "DD"
+},
+"EAST WEST BANCORP": {
+"s": "금융",
+"t": "EWBC"
+},
+"EATON": {
+"s": "산업재",
+"t": "ETN"
+},
+"EBAY": {
+"s": "소비재·유통",
+"t": "EBAY"
+},
+"ECHOSTAR": {
+"s": "인터넷·플랫폼",
+"t": "ECHO"
+},
+"ECOLAB": {
+"s": "소재",
+"t": "ECL"
+},
+"EDISON INTERNATIONAL": {
+"s": "유틸리티",
+"t": "EIX"
+},
+"EDWARDS LIFESCIENCES": {
+"s": "헬스케어",
+"t": "EW"
+},
+"ELEVANCE HEALTH": {
+"s": "헬스케어",
+"t": "ELV"
+},
+"ELI LILLY AND": {
+"s": "헬스케어",
+"t": "LLY"
+},
+"EMCOR": {
+"s": "산업재",
+"t": "EME"
+},
+"EMERSON ELECTRIC": {
+"s": "산업재",
+"t": "EMR"
+},
+"ENNIS": {
+"s": "산업재",
+"t": "EBF"
+},
+"ENTEGRIS": {
+"s": "반도체",
+"t": "ENTG"
+},
+"ENTERGY": {
+"s": "유틸리티",
+"t": "ETR"
+},
+"EOG RESOURCES": {
+"s": "에너지",
+"t": "EOG"
+},
+"EQT": {
+"s": "에너지",
+"t": "EQT"
+},
+"EQUIFAX": {
+"s": "산업재",
+"t": "EFX"
+},
+"EQUINIX": {
+"s": "부동산",
+"t": "EQIX"
+},
+"ERIE INDEMNITY": {
+"s": "금융",
+"t": "ERIE"
+},
+"ESSEX PROPERTY TRUST": {
+"s": "부동산",
+"t": "ESS"
+},
+"ESTEE LAUDER": {
+"s": "필수소비재",
+"t": "EL"
+},
+"ETHAN ALLEN INTERIORS": {
+"s": "소비재·유통",
+"t": "ETD"
+},
+"EVEREST": {
+"s": "금융",
+"t": "EG"
+},
+"EVERGY": {
+"s": "유틸리티",
+"t": "EVRG"
+},
+"EVERPURE": {
+"s": "IT",
+"t": "P"
+},
+"EVERSOURCE ENERGY": {
+"s": "유틸리티",
+"t": "ES"
+},
+"EXELON": {
+"s": "유틸리티",
+"t": "EXC"
+},
+"EXPAND ENERGY": {
+"s": "에너지",
+"t": "EXE"
+},
+"EXPEDIA": {
+"s": "소비재·유통",
+"t": "EXPE"
+},
+"EXPEDITORS INTERNATIONAL WASH": {
+"s": "산업재",
+"t": "EXPD"
+},
+"EXTRA SPACE STORAGE": {
+"s": "부동산",
+"t": "EXR"
+},
+"EXXON MOBIL": {
+"s": "에너지",
+"t": "XOM"
+},
+"EXXONMOBIL": {
+"s": "에너지",
+"t": "XOM"
+},
+"F5": {
+"s": "IT",
+"t": "FFIV"
+},
+"FACTSET RESEARCH SYSTEMS": {
+"s": "금융",
+"t": "FDS"
+},
+"FAIR ISAAC": {
+"s": "IT",
+"t": "FICO"
+},
+"FASTENAL": {
+"s": "산업재",
+"t": "FAST"
+},
+"FEDERAL AGRIC MTG": {
+"s": "",
+"t": "AGM"
+},
+"FEDERAL AGRICULTURAL MORTGAGE": {
+"s": "금융",
+"t": "AGM"
+},
+"FEDERAL REALTY INVS TRUST": {
+"s": "부동산",
+"t": "FRT"
+},
+"FEDERATED HERMES": {
+"s": "금융",
+"t": "FHI"
+},
+"FEDEX": {
+"s": "산업재",
+"t": "FDX"
+},
+"FEDEX FREIGHT": {
+"s": "산업재",
+"t": "FDXF"
+},
+"FERGUSON": {
+"s": "산업재",
+"t": "FERG"
+},
+"FERGUSON ENTERPRISES": {
+"s": "산업재",
+"t": "FERG"
+},
+"FERROVIAL": {
+"s": "",
+"t": "FER"
+},
+"FIDELITY NATIONAL FINANCIAL": {
+"s": "금융",
+"t": "FIS"
+},
+"FIDELITY NATIONAL INFO SERV": {
+"s": "금융",
+"t": "FIS"
+},
+"FIFTH THIRD BANCORP": {
+"s": "금융",
+"t": "FITB"
+},
+"FIRST FINANCIAL": {
+"s": "금융",
+"t": "FFBC"
+},
+"FIRST SOLAR": {
+"s": "반도체",
+"t": "FSLR"
+},
+"FIRSTENERGY": {
+"s": "유틸리티",
+"t": "FE"
+},
+"FISERV": {
+"s": "금융",
+"t": "FISV"
+},
+"FLEX": {
+"s": "IT",
+"t": "FLEX"
+},
+"FLEXTRONICS INTERNATIONAL": {
+"s": "IT",
+"t": "FLEX"
+},
+"FLOWERS FOODS": {
+"s": "필수소비재",
+"t": "FLO"
+},
+"FNF": {
+"s": "",
+"t": "FNF"
+},
+"FORD MOTOR": {
+"s": "소비재·유통",
+"t": "F"
+},
+"FORTINET": {
+"s": "IT",
+"t": "FTNT"
+},
+"FORTIVE": {
+"s": "산업재",
+"t": "FTV"
+},
+"FOX": {
+"s": "인터넷·플랫폼",
+"t": "FOXA"
+},
+"FRANKLIN TEMPLETON": {
+"s": "금융",
+"t": "BEN"
+},
+"FREEPORT MCMORAN": {
+"s": "소재",
+"t": "FCX"
+},
+"GARMIN": {
+"s": "소비재·유통",
+"t": "GRMN"
+},
+"GARTNER": {
+"s": "IT",
+"t": "IT"
+},
+"GE HEALTHCARE TECHNOLOGIES": {
+"s": "헬스케어",
+"t": "GEHC"
+},
+"GE HEALTHCARE TECHNOLOGY": {
+"s": "헬스케어",
+"t": "GEHC"
+},
+"GE VERNOVA": {
+"s": "산업재",
+"t": "GEV"
+},
+"GE VERNOVA LLC": {
+"s": "산업재",
+"t": "GEV"
+},
+"GEN DIGITAL": {
+"s": "IT",
+"t": "GEN"
+},
+"GENERAC": {
+"s": "산업재",
+"t": "GNRC"
+},
+"GENERAL AEROSPACE": {
+"s": "산업재",
+"t": "GE"
+},
+"GENERAL DYNAMICS": {
+"s": "산업재",
+"t": "GD"
+},
+"GENERAL ELECTRIC": {
+"s": "산업재",
+"t": "GE"
+},
+"GENERAL MILLS": {
+"s": "필수소비재",
+"t": "GIS"
+},
+"GENERAL MOTORS": {
+"s": "소비재·유통",
+"t": "GM"
+},
+"GENUINE PARTS": {
+"s": "소비재·유통",
+"t": "GPC"
+},
+"GERMAN AMERICAN BANCORP": {
+"s": "금융",
+"t": "GABC"
+},
+"GILEAD SCIENCES": {
+"s": "헬스케어",
+"t": "GILD"
+},
+"GLOBAL PAYMENTS": {
+"s": "금융",
+"t": "GPN"
+},
+"GLOBALFOUNDRIES": {
+"s": "반도체",
+"t": "GFS"
+},
+"GLOBE LIFE": {
+"s": "금융",
+"t": "GL"
+},
+"GODADDY": {
+"s": "IT",
+"t": "GDDY"
+},
+"GOLDMAN SACHS": {
+"s": "금융",
+"t": "GS"
+},
+"GOLDMAN SACHS GP EQUITY": {
+"s": "금융",
+"t": "GS"
+},
+"HALLIBURTON": {
+"s": "에너지",
+"t": "HAL"
+},
+"HANMI FINANCIAL": {
+"s": "금융",
+"t": "HAFC"
+},
+"HARTFORD INSURANCE": {
+"s": "금융",
+"t": "HIG"
+},
+"HASBRO": {
+"s": "소비재·유통",
+"t": "HAS"
+},
+"HCA": {
+"s": "헬스케어",
+"t": "HCA"
+},
+"HCA HEALTHCARE": {
+"s": "헬스케어",
+"t": "HCA"
+},
+"HEALTHPEAK PROPERTIES": {
+"s": "부동산",
+"t": "DOC"
+},
+"HENRY SCHEIN": {
+"s": "헬스케어",
+"t": "HSIC"
+},
+"HERSHEY": {
+"s": "필수소비재",
+"t": "HSY"
+},
+"HEWLETT PACKARD ENTERPRIS": {
+"s": "IT",
+"t": "HPE"
+},
+"HEWLETT PACKARD ENTERPRISE": {
+"s": "IT",
+"t": "HPE"
+},
+"HF SINCLAIR": {
+"s": "에너지",
+"t": "DINO"
+},
+"HILTON WORLDWIDE IN": {
+"s": "소비재·유통",
+"t": "HLT"
+},
+"HOME DEPOT": {
+"s": "소비재·유통",
+"t": "HD"
+},
+"HONEYWELL AEROSPACE": {
+"s": "산업재",
+"t": "HONA"
+},
+"HONEYWELL INTERNATIONAL": {
+"s": "산업재",
+"t": "HON"
+},
+"HORMEL FOODS": {
+"s": "필수소비재",
+"t": "HRL"
+},
+"HOST HOTELS AND RESORTS": {
+"s": "부동산",
+"t": "HST"
+},
+"HOWMET AEROSPACE": {
+"s": "산업재",
+"t": "HWM"
+},
+"HP": {
+"s": "IT",
+"t": "HPQ"
+},
+"HUBBELL": {
+"s": "산업재",
+"t": "HUBB"
+},
+"HUMANA": {
+"s": "헬스케어",
+"t": "HUM"
+},
+"HUNT JB TRANSPRT SVCS": {
+"s": "산업재",
+"t": "JBHT"
+},
+"HUNTINGTON BANCSHARES": {
+"s": "금융",
+"t": "HBAN"
+},
+"HUNTINGTON INGALLS INDUSTRIE": {
+"s": "산업재",
+"t": "HII"
+},
+"IDEX": {
+"s": "산업재",
+"t": "IEX"
+},
+"IDEXX LABORATORIES": {
+"s": "헬스케어",
+"t": "IDXX"
+},
+"ILLINOIS TOOL WORKS": {
+"s": "산업재",
+"t": "ITW"
+},
+"ILLUMINA": {
+"s": "헬스케어",
+"t": "ILMN"
+},
+"INCYTE": {
+"s": "헬스케어",
+"t": "INCY"
+},
+"INDEPENDENT BANK": {
+"s": "금융",
+"t": "INDB"
+},
+"INDEPENDENT BANK MICH": {
+"s": "",
+"t": "IBCP"
+},
+"INGERSOLL RAND": {
+"s": "산업재",
+"t": "IR"
+},
+"INSPERITY": {
+"s": "산업재",
+"t": "NSP"
+},
+"INSULET": {
+"s": "헬스케어",
+"t": "PODD"
+},
+"INTEL": {
+"s": "반도체",
+"t": "INTC"
+},
+"INTERACTIVE BROKERS": {
+"s": "금융",
+"t": "IBKR"
+},
+"INTERACTIVE BROKERS GRO": {
+"s": "금융",
+"t": "IBKR"
+},
+"INTERCONTINENTAL EXCHANGE IN": {
+"s": "금융",
+"t": "ICE"
+},
+"INTERNATIONAL BUSINESS MACHINES": {
+"s": "IT",
+"t": "IBM"
+},
+"INTERNATIONAL FLAVORS AND FRAGRANCES": {
+"s": "소재",
+"t": "IFF"
+},
+"INTERNATIONAL PAPER": {
+"s": "소재",
+"t": "IP"
+},
+"INTERPARFUMS": {
+"s": "필수소비재",
+"t": "IPAR"
+},
+"INTUIT": {
+"s": "IT",
+"t": "INTU"
+},
+"INTUITIVE SURGICAL": {
+"s": "헬스케어",
+"t": "ISRG"
+},
+"INVESCO": {
+"s": "금융",
+"t": "IVZ"
+},
+"INVITATION HOMES": {
+"s": "부동산",
+"t": "INVH"
+},
+"IQVIA": {
+"s": "헬스케어",
+"t": "IQV"
+},
+"IRON MOUNTAIN": {
+"s": "부동산",
+"t": "IRM"
+},
+"JABIL": {
+"s": "IT",
+"t": "JBL"
+},
+"JACK HENRY AND ASSOCIATES": {
+"s": "금융",
+"t": "JKHY"
+},
+"JACOBS SOLUTIONS": {
+"s": "산업재",
+"t": "J"
+},
+"JM SMUCKER": {
+"s": "필수소비재",
+"t": "SJM"
+},
+"JOHNSON AND JOHNSON": {
+"s": "헬스케어",
+"t": "JNJ"
+},
+"JOHNSON CONTROLS INT": {
+"s": "산업재",
+"t": "JCI"
+},
+"JOHNSON CONTROLS INTERNATION": {
+"s": "산업재",
+"t": "JCI"
+},
+"JPMORGAN CHASE AND": {
+"s": "금융",
+"t": "JPM"
+},
+"KENVUE": {
+"s": "필수소비재",
+"t": "KVUE"
+},
+"KEURIG DR PEPPER": {
+"s": "필수소비재",
+"t": "KDP"
+},
+"KEYCORP": {
+"s": "금융",
+"t": "KEY"
+},
+"KEYSIGHT TECHNOLOGIES IN": {
+"s": "IT",
+"t": "KEYS"
+},
+"KEYSIGHT TECHNOLOGY": {
+"s": "IT",
+"t": "KEYS"
+},
+"KIMBERLY CLARK": {
+"s": "필수소비재",
+"t": "KMB"
+},
+"KIMCO REALTY": {
+"s": "부동산",
+"t": "KIM"
+},
+"KINDER MORGAN": {
+"s": "에너지",
+"t": "KMI"
+},
+"KKR AND": {
+"s": "금융",
+"t": "KKR"
+},
+"KKR AND A EQUITY": {
+"s": "금융",
+"t": "KKR"
+},
+"KLA": {
+"s": "반도체",
+"t": "KLAC"
+},
+"KORN FERRY": {
+"s": "산업재",
+"t": "KFY"
+},
+"KRAFT HEINZ": {
+"s": "필수소비재",
+"t": "KHC"
+},
+"KROGER": {
+"s": "필수소비재",
+"t": "KR"
+},
+"L3HARRIS TECHNOLOGIES": {
+"s": "산업재",
+"t": "LHX"
+},
+"LABCORP": {
+"s": "헬스케어",
+"t": "LH"
+},
+"LABORATORY CRP OF AMER": {
+"s": "",
+"t": null
+},
+"LAKELAND FINANCIAL": {
+"s": "금융",
+"t": "LKFN"
+},
+"LAM RESEARCH": {
+"s": "반도체",
+"t": "LRCX"
+},
+"LAS VEGAS SANDS": {
+"s": "소비재·유통",
+"t": "LVS"
+},
+"LATTICE SEMICONDUCTOR": {
+"s": "반도체",
+"t": "LSCC"
+},
+"LEIDOS": {
+"s": "산업재",
+"t": "LDOS"
+},
+"LENNAR": {
+"s": "소비재·유통",
+"t": "LEN"
+},
+"LENNOX INTERNATIONAL": {
+"s": "산업재",
+"t": "LII"
+},
+"LINDE": {
+"s": "소재",
+"t": "LIN"
+},
+"LIVE NATION ENTERTAINMENT IN": {
+"s": "인터넷·플랫폼",
+"t": "LYV"
+},
+"LOCKHEED MARTIN": {
+"s": "산업재",
+"t": "LMT"
+},
+"LOEWS": {
+"s": "금융",
+"t": "L"
+},
+"LOWE S": {
+"s": "소비재·유통",
+"t": "LOW"
+},
+"LOWES": {
+"s": "소비재·유통",
+"t": "LOW"
+},
+"LULULEMON ATHLETICA": {
+"s": "소비재·유통",
+"t": "LULU"
+},
+"LUMENTUM": {
+"s": "IT",
+"t": "LITE"
+},
+"LYONDELLBASELL INDU": {
+"s": "소재",
+"t": "LYB"
+},
+"M AND T BANK": {
+"s": "금융",
+"t": "MTB"
+},
+"MACOM TECHNOLOGY SOLUTIONS H": {
+"s": "반도체",
+"t": "MTSI"
+},
+"MACY S": {
+"s": "소비재·유통",
+"t": "M"
+},
+"MACYS": {
+"s": "소비재·유통",
+"t": "M"
+},
+"MARATHON PETROLEUM": {
+"s": "에너지",
+"t": "MPC"
+},
+"MARRIOTT INTERNATIONAL": {
+"s": "소비재·유통",
+"t": "MAR"
+},
+"MARSH AND MCLENNAN": {
+"s": "",
+"t": null
+},
+"MARTIN MARIETTA MATERIALS": {
+"s": "소재",
+"t": "MLM"
+},
+"MARVELL TECHNOLOGY": {
+"s": "반도체",
+"t": "MRVL"
+},
+"MARZETTI": {
+"s": "필수소비재",
+"t": "MZTI"
+},
+"MASCO": {
+"s": "산업재",
+"t": "MAS"
+},
+"MASTERCARD": {
+"s": "금융",
+"t": "MA"
+},
+"MCCORMICK AND NON VTG SHRS": {
+"s": "필수소비재",
+"t": "MKC"
+},
+"MCDONALD S": {
+"s": "소비재·유통",
+"t": "MCD"
+},
+"MCDONALDS": {
+"s": "소비재·유통",
+"t": "MCD"
+},
+"MCKESSON": {
+"s": "헬스케어",
+"t": "MCK"
+},
+"MEDTRONIC": {
+"s": "헬스케어",
+"t": "MDT"
+},
+"MERCADOLIBRE": {
+"s": "",
+"t": "MELI"
+},
+"MERCK AND": {
+"s": "헬스케어",
+"t": "MRK"
+},
+"META PLATFORMS": {
+"s": "인터넷·플랫폼",
+"t": "META"
+},
+"METLIFE": {
+"s": "금융",
+"t": "MET"
+},
+"METTLER TOLEDO INTERNATIONAL": {
+"s": "헬스케어",
+"t": "MTD"
+},
+"MGM RESORTS INTE EQUITY": {
+"s": "소비재·유통",
+"t": "MGM"
+},
+"MGM RESORTS INTERNATIONAL": {
+"s": "소비재·유통",
+"t": "MGM"
+},
+"MICROCHIP TECHNOLOGY": {
+"s": "반도체",
+"t": "MCHP"
+},
+"MICRON TECHNOLOGY": {
+"s": "반도체",
+"t": "MU"
+},
+"MICROSOFT": {
+"s": "IT",
+"t": "MSFT"
+},
+"MID AMERICA APARTMENT COMM": {
+"s": "부동산",
+"t": "MAA"
+},
+"MODERNA": {
+"s": "헬스케어",
+"t": "MRNA"
+},
+"MOELIS AND": {
+"s": "",
+"t": "MC"
+},
+"MONDELEZ INTERNATIONAL": {
+"s": "필수소비재",
+"t": "MDLZ"
+},
+"MONOLITHIC POWER SYSTEMS": {
+"s": "반도체",
+"t": "MPWR"
+},
+"MONSTER BEVERAGE": {
+"s": "필수소비재",
+"t": "MNST"
+},
+"MOODY S": {
+"s": "금융",
+"t": "MCO"
+},
+"MOODYS": {
+"s": "금융",
+"t": "MCO"
+},
+"MORGAN STANLEY": {
+"s": "금융",
+"t": "MS"
+},
+"MOSAIC": {
+"s": "소재",
+"t": "MOS"
+},
+"MOTOROLA SOLUTIONS": {
+"s": "IT",
+"t": "MSI"
+},
+"MSC INDUSTRIAL DIRECT": {
+"s": "산업재",
+"t": "MSM"
+},
+"MSCI": {
+"s": "금융",
+"t": "MSCI"
+},
+"MURPHY OIL": {
+"s": "에너지",
+"t": "MUR"
+},
+"NASDAQ": {
+"s": "금융",
+"t": "NDAQ"
+},
+"NATIONAL BANK": {
+"s": "금융",
+"t": "NKSH"
+},
+"NATIONAL BANK HOLD": {
+"s": "금융",
+"t": "NBHC"
+},
+"NEBIUS": {
+"s": "",
+"t": "NBIS"
+},
+"NETAPP": {
+"s": "IT",
+"t": "NTAP"
+},
+"NETFLIX": {
+"s": "인터넷·플랫폼",
+"t": "NFLX"
+},
+"NEWMONT": {
+"s": "소재",
+"t": "NEM"
+},
+"NEWS": {
+"s": "인터넷·플랫폼",
+"t": "NWSA"
+},
+"NEXSTAR MEDIA": {
+"s": "인터넷·플랫폼",
+"t": "NXST"
+},
+"NEXTERA ENERGY": {
+"s": "유틸리티",
+"t": "NEE"
+},
+"NIKE": {
+"s": "소비재·유통",
+"t": "NKE"
+},
+"NISOURCE": {
+"s": "유틸리티",
+"t": "NI"
+},
+"NORDSON": {
+"s": "산업재",
+"t": "NDSN"
+},
+"NORFOLK SOUTHERN": {
+"s": "산업재",
+"t": "NSC"
+},
+"NORTHERN TRUST": {
+"s": "금융",
+"t": "NTRS"
+},
+"NORTHROP GRUMMAN": {
+"s": "산업재",
+"t": "NOC"
+},
+"NORWEGIAN CRUISE LINE HOLDIN": {
+"s": "소비재·유통",
+"t": "NCLH"
+},
+"NRG ENERGY": {
+"s": "유틸리티",
+"t": "NRG"
+},
+"NUCOR": {
+"s": "소재",
+"t": "NUE"
+},
+"NVIDIA": {
+"s": "반도체",
+"t": "NVDA"
+},
+"NVR": {
+"s": "소비재·유통",
+"t": "NVR"
+},
+"NXP SEMICONDUCTORS": {
+"s": "반도체",
+"t": "NXPI"
+},
+"O REILLY AUTOMOTIVE": {
+"s": "소비재·유통",
+"t": "ORLY"
+},
+"OCCIDENTAL PETROLEUM": {
+"s": "에너지",
+"t": "OXY"
+},
+"OFG BANCORP": {
+"s": "금융",
+"t": "OFG"
+},
+"OLD DOMINION FREIGHT LINE": {
+"s": "산업재",
+"t": "ODFL"
+},
+"OLD REPUBLIC INTERNATIONAL": {
+"s": "금융",
+"t": "ORI"
+},
+"OMNICOM": {
+"s": "인터넷·플랫폼",
+"t": "OMC"
+},
+"ON SEMICONDUCTOR": {
+"s": "반도체",
+"t": "ON"
+},
+"ONEOK": {
+"s": "에너지",
+"t": "OKE"
+},
+"ORACLE": {
+"s": "IT",
+"t": "ORCL"
+},
+"OREILLY AUTOMOTIVE": {
+"s": "소비재·유통",
+"t": "ORLY"
+},
+"ORRSTOWN FINANCIAL SERVICES": {
+"s": "금융",
+"t": "ORRF"
+},
+"ORRSTOWN FINL SERVICES": {
+"s": "",
+"t": "ORRF"
+},
+"OTIS WORLDWIDE": {
+"s": "산업재",
+"t": "OTIS"
+},
+"OXFORD INDUSTRIES": {
+"s": "소비재·유통",
+"t": "OXM"
+},
+"P G AND E": {
+"s": "",
+"t": "PCG-PA"
+},
+"PACCAR": {
+"s": "산업재",
+"t": "PCAR"
+},
+"PACKAGING OF AMERICA": {
+"s": "소재",
+"t": "PKG"
+},
+"PALANTIR TECHNOLOGIES": {
+"s": "IT",
+"t": "PLTR"
+},
+"PALO ALTO NETWORKS": {
+"s": "IT",
+"t": "PANW"
+},
+"PARKER HANNIFIN": {
+"s": "산업재",
+"t": "PH"
+},
+"PAYCHEX": {
+"s": "산업재",
+"t": "PAYX"
+},
+"PAYPAL": {
+"s": "금융",
+"t": "PYPL"
+},
+"PDD": {
+"s": "",
+"t": "PDD"
+},
+"PENSKE AUTOMOTIVE": {
+"s": "소비재·유통",
+"t": "PAG"
+},
+"PENTAIR": {
+"s": "산업재",
+"t": "PNR"
+},
+"PEPSICO": {
+"s": "필수소비재",
+"t": "PEP"
+},
+"PFIZER": {
+"s": "헬스케어",
+"t": "PFE"
+},
+"PHILIP MORRIS INTERNATIONAL": {
+"s": "필수소비재",
+"t": "PM"
+},
+"PHILLIPS 66": {
+"s": "에너지",
+"t": "PSX"
+},
+"PINNACLE WEST CAPITAL": {
+"s": "유틸리티",
+"t": "PNW"
+},
+"PNC FINANCIAL SERVICES": {
+"s": "금융",
+"t": "PNC"
+},
+"PPG INDUSTRIES": {
+"s": "소재",
+"t": "PPG"
+},
+"PPL": {
+"s": "유틸리티",
+"t": "PPL"
+},
+"PREFERRED BANK ANGELES": {
+"s": "",
+"t": "PFBC"
+},
+"PREFERRED BANK ANGELES CA": {
+"s": "",
+"t": "PFBC"
+},
+"PRINCIPAL FINANCIAL": {
+"s": "금융",
+"t": "PFG"
+},
+"PROCTER AND GAMBLE": {
+"s": "필수소비재",
+"t": "PG"
+},
+"PROGRESSIVE": {
+"s": "금융",
+"t": "PGR"
+},
+"PROLOGIS": {
+"s": "부동산",
+"t": "PLD"
+},
+"PRUDENTIAL FINANCIAL": {
+"s": "금융",
+"t": "PRU"
+},
+"PTC": {
+"s": "IT",
+"t": "PTC"
+},
+"PUBLIC SERVICE ENTERPRISE GP": {
+"s": "유틸리티",
+"t": "PEG"
+},
+"PUBLIC STORAGE": {
+"s": "부동산",
+"t": "PSA"
+},
+"PULTEGROUP": {
+"s": "소비재·유통",
+"t": "PHM"
+},
+"QNITY ELECTRONICS": {
+"s": "반도체",
+"t": "Q"
+},
+"QUALCOMM": {
+"s": "반도체",
+"t": "QCOM"
+},
+"QUANTA SERVICES": {
+"s": "산업재",
+"t": "PWR"
+},
+"QUEST DIAGNOSTICS": {
+"s": "헬스케어",
+"t": "DGX"
+},
+"RALPH LAUREN": {
+"s": "소비재·유통",
+"t": "RL"
+},
+"RAYMOND JAMES FINANCIAL": {
+"s": "금융",
+"t": "RJF"
+},
+"RAYTHEON TECHNOLOGIES": {
+"s": "",
+"t": null
+},
+"REALTY INCOME": {
+"s": "부동산",
+"t": "O"
+},
+"REDDIT": {
+"s": "인터넷·플랫폼",
+"t": "RDDT"
+},
+"REGENCY CENTERS": {
+"s": "부동산",
+"t": "REG"
+},
+"REGENERON PHARM": {
+"s": "헬스케어",
+"t": "REGN"
+},
+"REGENERON PHARMACEUTICALS": {
+"s": "헬스케어",
+"t": "REGN"
+},
+"REGIONS FINANCIAL": {
+"s": "금융",
+"t": "RF"
+},
+"REPUBLIC SERVICES": {
+"s": "산업재",
+"t": "RSG"
+},
+"RESMED": {
+"s": "헬스케어",
+"t": "RMD"
+},
+"REVVITY": {
+"s": "헬스케어",
+"t": "RVTY"
+},
+"ROBERT HALF": {
+"s": "산업재",
+"t": "RHI"
+},
+"ROBERT HALF INTERNATIONAL": {
+"s": "산업재",
+"t": "RHI"
+},
+"ROBINHOOD MARKETS": {
+"s": "금융",
+"t": "HOOD"
+},
+"ROCKET LAB": {
+"s": "산업재",
+"t": "RKLB"
+},
+"ROCKET LAB USA": {
+"s": "",
+"t": "RKLB"
+},
+"ROCKWELL AUTOMATION": {
+"s": "산업재",
+"t": "ROK"
+},
+"ROLLINS": {
+"s": "산업재",
+"t": "ROL"
+},
+"ROPER TECHNOLOGIES": {
+"s": "IT",
+"t": "ROP"
+},
+"ROSS STORES": {
+"s": "소비재·유통",
+"t": "ROST"
+},
+"ROYAL CARIBBEAN CRUISES": {
+"s": "소비재·유통",
+"t": "RCL"
+},
+"RTX": {
+"s": "산업재",
+"t": "RTX"
+},
+"S AND P GLOBAL": {
+"s": "금융",
+"t": "SPGI"
+},
+"S AND T BANCORP": {
+"s": "금융",
+"t": "SPGI"
+},
+"SALESFORCE": {
+"s": "IT",
+"t": "CRM"
+},
+"SANDISK": {
+"s": "IT",
+"t": "SNDK"
+},
+"SBA COMM": {
+"s": "부동산",
+"t": "SBAC"
+},
+"SBA COMMUNICATIONS": {
+"s": "부동산",
+"t": "SBAC"
+},
+"SCHWAB CHARLES": {
+"s": "",
+"t": null
+},
+"SEAGATE TECHNOLOGY": {
+"s": "IT",
+"t": "STX"
+},
+"SEMPRA": {
+"s": "유틸리티",
+"t": "SRE"
+},
+"SEMPRA ENERGY": {
+"s": "유틸리티",
+"t": "SRE"
+},
+"SERVICENOW": {
+"s": "IT",
+"t": "NOW"
+},
+"SHERWIN WILLIAMS": {
+"s": "소재",
+"t": "SHW"
+},
+"SHOPIFY": {
+"s": "",
+"t": "SHOP"
+},
+"SIMON PROPERTY": {
+"s": "부동산",
+"t": "SPG"
+},
+"SITIME": {
+"s": "반도체",
+"t": "SITM"
+},
+"SJM": {
+"s": "필수소비재",
+"t": "SJM"
+},
+"SK HYNIX": {
+"s": "반도체",
+"t": "SKHY"
+},
+"SKYDANCE": {
+"s": "인터넷·플랫폼",
+"t": "SKYD"
+},
+"SKYWORKS SOLUTIONS": {
+"s": "반도체",
+"t": "SWKS"
+},
+"SLB": {
+"s": "에너지",
+"t": "SLB"
+},
+"SMITH A O": {
+"s": "산업재",
+"t": "AOS"
+},
+"SMURFIT WESTROCK": {
+"s": "소재",
+"t": "SW"
+},
+"SNAP ON": {
+"s": "산업재",
+"t": "SNA"
+},
+"SOLVENTUM": {
+"s": "헬스케어",
+"t": "SOLV"
+},
+"SOUTHERN": {
+"s": "유틸리티",
+"t": "SO"
+},
+"SOUTHWEST AIRLINES": {
+"s": "산업재",
+"t": "LUV"
+},
+"SPACE EXPLORATION TECHNOLOGIES": {
+"s": "산업재",
+"t": "SPCX"
+},
+"STANLEY BLACK AND DECKER": {
+"s": "산업재",
+"t": "SWK"
+},
+"STARBUCKS": {
+"s": "소비재·유통",
+"t": "SBUX"
+},
+"STATE STREET": {
+"s": "금융",
+"t": "STT"
+},
+"STEEL DYNAMICS": {
+"s": "소재",
+"t": "STLD"
+},
+"STERIS": {
+"s": "헬스케어",
+"t": "STE"
+},
+"STMICROELECTRONICS": {
+"s": "반도체",
+"t": "STM"
+},
+"STRATEGY": {
+"s": "IT",
+"t": "MSTR"
+},
+"STRYKER": {
+"s": "헬스케어",
+"t": "SYK"
+},
+"SUPER MICRO COMPUTER": {
+"s": "IT",
+"t": "SMCI"
+},
+"SYNCHRONY FINANCIAL": {
+"s": "금융",
+"t": "SYF"
+},
+"SYNOPSYS": {
+"s": "IT",
+"t": "SNPS"
+},
+"SYSCO": {
+"s": "필수소비재",
+"t": "SYY"
+},
+"T MOBILE US": {
+"s": "인터넷·플랫폼",
+"t": "TMUS"
+},
+"T ROWE PRICE": {
+"s": "금융",
+"t": "TROW"
+},
+"TAIWAN SEMICONDUCTOR": {
+"s": "반도체",
+"t": "TSM"
+},
+"TAKE TWO INTERACTIVE SOFTWRE": {
+"s": "인터넷·플랫폼",
+"t": "TTWO"
+},
+"TAPESTRY": {
+"s": "소비재·유통",
+"t": "TPR"
+},
+"TARGA RESOURCES": {
+"s": "에너지",
+"t": "TRGP"
+},
+"TARGET": {
+"s": "필수소비재",
+"t": "TGT"
+},
+"TE CONNECTIVITY": {
+"s": "IT",
+"t": "TEL"
+},
+"TE CONNECTIVITY LT": {
+"s": "IT",
+"t": "TEL"
+},
+"TELEDYNE TECHNOLOGIES": {
+"s": "IT",
+"t": "TDY"
+},
+"TERADYNE": {
+"s": "반도체",
+"t": "TER"
+},
+"TESLA": {
+"s": "소비재·유통",
+"t": "TSLA"
+},
+"TESLA MOTORS": {
+"s": "소비재·유통",
+"t": "TSLA"
+},
+"TEXAS INSTRUMENTS": {
+"s": "반도체",
+"t": "TXN"
+},
+"TEXAS PACIFIC LAND": {
+"s": "에너지",
+"t": "TPL"
+},
+"TEXTRON": {
+"s": "산업재",
+"t": "TXT"
+},
+"THERMO FISHER SCIENTIFIC": {
+"s": "헬스케어",
+"t": "TMO"
+},
+"THOMSON REUTERS": {
+"s": "산업재",
+"t": "TRI"
+},
+"TJX": {
+"s": "소비재·유통",
+"t": "TJX"
+},
+"TKO": {
+"s": "인터넷·플랫폼",
+"t": "TKO"
+},
+"TOWER SEMICONDUCTOR": {
+"s": "반도체",
+"t": "TSEM"
+},
+"TRACTOR SUPPLY": {
+"s": "소비재·유통",
+"t": "TSCO"
+},
+"TRANE TECHNOLOGIES": {
+"s": "산업재",
+"t": "TT"
+},
+"TRANSDIGM": {
+"s": "산업재",
+"t": "TDG"
+},
+"TRAVELERS": {
+"s": "금융",
+"t": "TRV"
+},
+"TRIMBLE": {
+"s": "IT",
+"t": "TRMB"
+},
+"TRIMBLE NAVIGATION": {
+"s": "IT",
+"t": "TRMB"
+},
+"TRUIST FINANCIAL": {
+"s": "금융",
+"t": "TFC"
+},
+"TWILIO": {
+"s": "IT",
+"t": "TWLO"
+},
+"TYLER TECHNOLOGIES": {
+"s": "IT",
+"t": "TYL"
+},
+"TYSON FOODS": {
+"s": "필수소비재",
+"t": "TSN"
+},
+"UBER TECHNOLOGIE": {
+"s": "IT",
+"t": "UBER"
+},
+"UBER TECHNOLOGIES": {
+"s": "IT",
+"t": "UBER"
+},
+"UDR": {
+"s": "부동산",
+"t": "UDR"
+},
+"ULTA BEAUTY": {
+"s": "소비재·유통",
+"t": "ULTA"
+},
+"ULTA SALON COSMETICS AND FRAGR": {
+"s": "",
+"t": null
+},
+"UNION PACIFIC": {
+"s": "산업재",
+"t": "UNP"
+},
+"UNITED AIRLINES": {
+"s": "산업재",
+"t": "UAL"
+},
+"UNITED PARCEL SERVICE": {
+"s": "산업재",
+"t": "UPS"
+},
+"UNITED RENTALS": {
+"s": "산업재",
+"t": "URI"
+},
+"UNITEDHEALTH": {
+"s": "헬스케어",
+"t": "UNH"
+},
+"UNIVERSAL HEALTH SERVICES": {
+"s": "헬스케어",
+"t": "UHS"
+},
+"US BANCORP": {
+"s": "",
+"t": null
+},
+"VAIL RESORT": {
+"s": "소비재·유통",
+"t": "MTN"
+},
+"VAIL RESORTS": {
+"s": "소비재·유통",
+"t": "MTN"
+},
+"VALERO ENERGY": {
+"s": "에너지",
+"t": "VLO"
+},
+"VEEVA SYSTEM": {
+"s": "헬스케어",
+"t": "VEEV"
+},
+"VEEVA SYSTEMS": {
+"s": "헬스케어",
+"t": "VEEV"
+},
+"VENTAS": {
+"s": "부동산",
+"t": "VTR"
+},
+"VERALTO": {
+"s": "산업재",
+"t": "VLTO"
+},
+"VERISIGN": {
+"s": "IT",
+"t": "VRSN"
+},
+"VERISK ANALYTI": {
+"s": "산업재",
+"t": "VRSK"
+},
+"VERISK ANALYTICS": {
+"s": "산업재",
+"t": "VRSK"
+},
+"VERIZON COMMUNICATIONS": {
+"s": "인터넷·플랫폼",
+"t": "VZ"
+},
+"VERTEX PHARMACEUTICALS": {
+"s": "헬스케어",
+"t": "VRTX"
+},
+"VERTIV": {
+"s": "산업재",
+"t": "VRT"
+},
+"VIATRIS": {
+"s": "헬스케어",
+"t": "VTRS"
+},
+"VICI PROPERTIES": {
+"s": "부동산",
+"t": "VICI"
+},
+"VIRTUS INVESTMENT PARTNERS": {
+"s": "금융",
+"t": "VRTS"
+},
+"VISA SHARES": {
+"s": "",
+"t": null
+},
+"VISTRA": {
+"s": "유틸리티",
+"t": "VST"
+},
+"VISTRA ENERGY": {
+"s": "",
+"t": null
+},
+"VIVMARK RESIDENTIAL": {
+"s": "부동산",
+"t": "VMRK"
+},
+"VULCAN MATERIALS": {
+"s": "소재",
+"t": "VMC"
+},
+"VYLOR": {
+"s": "필수소비재",
+"t": "VYLR"
+},
+"WABTEC": {
+"s": "산업재",
+"t": "WAB"
+},
+"WAL MART STORES": {
+"s": "필수소비재",
+"t": "WMT"
+},
+"WALMART": {
+"s": "필수소비재",
+"t": "WMT"
+},
+"WALT DISNEY": {
+"s": "인터넷·플랫폼",
+"t": "DIS"
+},
+"WASTE MANAGEMENT": {
+"s": "산업재",
+"t": "WM"
+},
+"WATERS": {
+"s": "헬스케어",
+"t": "WAT"
+},
+"WATSCO": {
+"s": "산업재",
+"t": "WSO"
+},
+"WEC ENERGY": {
+"s": "유틸리티",
+"t": "WEC"
+},
+"WELLS FARGO AND": {
+"s": "금융",
+"t": "WFC"
+},
+"WELLTOWER": {
+"s": "부동산",
+"t": "WELL"
+},
+"WENDY S": {
+"s": "",
+"t": "WEN"
+},
+"WENDYS": {
+"s": "소비재·유통",
+"t": "WEN"
+},
+"WEST PHARMACEUTICAL SERVICES": {
+"s": "헬스케어",
+"t": "WST"
+},
+"WESTERN DIGITAL": {
+"s": "IT",
+"t": "WDC"
+},
+"WESTERN UNION": {
+"s": "금융",
+"t": "WU"
+},
+"WEYERHAEUSER": {
+"s": "부동산",
+"t": "WY"
+},
+"WILLIAMS": {
+"s": "에너지",
+"t": "WMB"
+},
+"WILLIAMS SONOMA": {
+"s": "소비재·유통",
+"t": "WSM"
+},
+"WILLIS TOWERS WATSON": {
+"s": "금융",
+"t": "WTW"
+},
+"WORKDAY": {
+"s": "IT",
+"t": "WDAY"
+},
+"WR BERKLEY": {
+"s": "",
+"t": null
+},
+"WW GRAINGER": {
+"s": "",
+"t": null
+},
+"WYNN RESORTS": {
+"s": "소비재·유통",
+"t": "WYNN"
+},
+"XCEL ENERGY": {
+"s": "유틸리티",
+"t": "XEL"
+},
+"XYLEM": {
+"s": "산업재",
+"t": "XYL"
+},
+"YUM BRANDS": {
+"s": "소비재·유통",
+"t": "YUM"
+},
+"ZEBRA TECHNOLOGIES": {
+"s": "IT",
+"t": "ZBRA"
+},
+"ZIMMER BIOMET": {
+"s": "헬스케어",
+"t": "ZBH"
+},
+"ZOETIS": {
+"s": "헬스케어",
+"t": "ZTS"
+}
+}
