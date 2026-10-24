@@ -348,6 +348,43 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .kpi span { display: block; font-size: 12px; color: var(--muted); }
 .kpi b { font-family: var(--font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pos { color: var(--good); } .neg { color: var(--bad); }
+.lev-list { list-style: none; margin: 0 0 12px; padding: 0; display: grid; gap: 10px; }
+.lev-item { background: var(--soft); border-radius: 14px; padding: 12px; }
+.lev-row1 { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+.lev-row1 select { flex: 1; min-width: 0; }
+.lev-row1 .x { border: 0; background: none; font-size: 20px; color: var(--muted); padding: 2px 8px; }
+.lev-row2 { display: grid; grid-template-columns: 1.2fr .8fr 1.4fr; gap: 8px; }
+.lev-row2 label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.lev-row2 input, .lev-row2 select { width: 100%; min-width: 0; }
+.lev-row2 > label > input, .lev-row1 select, .lev-imp-list select { box-sizing: border-box; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.lev-row2 .g-in select { width: auto; border: 0; background: none; padding: 0 2px; }
+.lev-item .src { display: block; margin-top: 6px; font-size: 11.5px; color: var(--muted); }
+@media (max-width: 520px) { .lev-row2 { grid-template-columns: 1fr 1fr; } .lev-row2 label:last-child { grid-column: 1 / -1; } }
+.lev-imp { background: var(--accent-soft); border-radius: 14px; padding: 10px 12px; margin-bottom: 12px; }
+.lev-imp summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.lev-imp-list { list-style: none; padding: 0; margin: 8px 0 10px; display: grid; gap: 6px; }
+.lev-imp-list li { display: flex; gap: 8px; align-items: center; justify-content: space-between; font-size: 13px; }
+.lev-imp-list li span { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.lev-imp-list small { color: var(--muted); margin-left: 6px; }
+.lev-imp-list select { max-width: 55%; }
+.lev-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.lev-head h2 small { font-size: 13px; color: var(--muted); font-weight: 600; margin-left: 4px; }
+.lev-px { font-size: 13px; color: var(--muted); margin: 6px 0 12px; }
+.lev-px b { color: var(--ink); }
+.lev-card .kpi small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.lev-big { font-size: 22px !important; }
+.lev-h3 { font-size: 14px; margin: 4px 0 8px; }
+.lev-bar { margin: 0 0 9px; }
+.lev-bar-t { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; align-items: baseline; }
+.lev-bar-t small { display: block; font-size: 11.5px; color: var(--muted); }
+.lev-bar.strong .lev-bar-t { font-weight: 700; font-size: 14.5px; }
+.lev-track { height: 7px; border-radius: 99px; background: var(--soft); margin-top: 4px; overflow: hidden; }
+.lev-track i { display: block; height: 100%; border-radius: 99px; transition: width .4s; }
+.lev-track i.up { background: var(--good); } .lev-track i.down { background: var(--bad); }
+.lev-sub { border-left: 2px solid var(--line); padding-left: 12px; margin: -2px 0 10px 4px; }
+.lev-sum { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; font-size: 14px; font-weight: 700; }
+.lev-story { font-size: 14px; line-height: 1.65; margin: 12px 0; }
+.lev-lots summary { cursor: pointer; font-size: 13.5px; font-weight: 600; margin: 10px 0 6px; }
 table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .trades td { padding: 7px 8px; border-bottom: 1px solid var(--soft); white-space: nowrap; }
@@ -444,6 +481,7 @@ footer a { color: var(--accent); }
     <button type="button" class="tab" role="tab" id="tab-home" aria-controls="view-home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>홈</span></button>
     <button type="button" class="tab" role="tab" id="tab-etf" aria-controls="view-etf" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>ETF 검진</span></button>
     <button type="button" class="tab" role="tab" id="tab-trades" aria-controls="view-trades" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><span>습관</span></button>
+    <button type="button" class="tab" role="tab" id="tab-lev" aria-controls="view-lev" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17l5-5 4 4 8-9"/><path d="M15 7h5v5"/></svg><span>레버리지</span></button>
     <button type="button" class="tab" role="tab" id="tab-goal" aria-controls="view-goal" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg><span>목표</span></button>
   </nav>
 
@@ -505,6 +543,28 @@ footer a { color: var(--accent); }
     </section>
 
     <div class="results" id="tradeResults"></div>
+  </div>
+  </div>
+
+  <div id="view-lev" role="tabpanel" aria-labelledby="tab-lev" hidden>
+  <div class="view-intro">
+    <h1>레버리지 때문에 얼마를 벌고, 얼마를 잃었을까?</h1>
+    <p class="lead">레버리지 ETF를 산 가격과 기초자산(비트코인, 나스닥 등) 시세를 실시간으로 이어서, 같은 돈으로 1배를 샀을 때보다 레버리지가 얼마를 더 벌어 주거나 잃게 했는지, 음의 복리로 얼마가 녹았는지 보여드려요.</p>
+  </div>
+  <div class="layout">
+    <section class="panel inputs" aria-labelledby="lev-in-title">
+      <h2 id="lev-in-title">내 레버리지 ETF</h2>
+      <p class="sub">산 날, 수량, 평균단가를 넣으세요. 토스증권처럼 원화 단가를 넣으면 돼요. 넣은 내용은 저장돼요.</p>
+      <div id="levImport"></div>
+      <ul class="lev-list" id="levList"></ul>
+      <div class="btns">
+        <button type="button" class="primary" id="levAdd">+ 직접 추가</button>
+        <button type="button" id="levClear">모두 지우기</button>
+      </div>
+      <p class="example-note" id="levExampleNote">처음 보이는 건 예시예요. 약 3달 전에 BITX(비트코인 2배) 10주를 샀다고 가정했어요.</p>
+    </section>
+
+    <div class="results" id="levResults"></div>
   </div>
   </div>
 
@@ -1551,8 +1611,10 @@ function analyzeTrades(trades, method = costMethod) {
       }
     }
   }
+  const openLots = {};
   for (const [name, L] of Object.entries(lots)) {
     const q = Math.round(L.reduce((s, l) => s + l.qty, 0) * 1e8) / 1e8, M = mav[name];
+    if (q > 0) openLots[name] = L.filter(l => l.qty > 1e-9).map(l => ({ date: l.date, qty: Math.round(l.qty * 1e8) / 1e8, price: l.price }));
     if (q > 0) openPos.push({ name, qty: q, avg: method === "avg" && M.qty > 1e-9 ? M.cost / M.qty : lotAvg(L), since: L[0].date });
   }
   const wins = realized.filter(r => r.pnl > 0), losses = realized.filter(r => r.pnl < 0);
@@ -1562,7 +1624,7 @@ function analyzeTrades(trades, method = costMethod) {
   const busyDays = Object.entries(byDay).filter(([, n]) => n >= 3);
   const months = Math.max(1, (Date.parse(trades.at(-1).date) - Date.parse(trades[0].date)) / (30.44 * 864e5));
   return {
-    trades, realized, openPos, avgDowns, skipped,
+    trades, realized, openPos, openLots, avgDowns, skipped,
     totalPnl: realized.reduce((s, r) => s + r.pnl, 0),
     winRate: realized.length ? wins.length / realized.length * 100 : null,
     winHold: mean(wins, r => r.hold), lossHold: mean(losses, r => r.hold),
@@ -2207,6 +2269,7 @@ function renderGoal() {
 // ---------- 평가손익: 아직 들고 있는 종목 × 현재가 ----------
 // 현재가는 ① 직접 입력한 값 ② GitHub 자동 수집(prices.json, 국내 종목 종가) 순서로 씀
 const PRICE_KEY = "portfit-prices-v1";
+const LEV_KEY = "portfit-lev-v1";            // 레버리지 탭에 넣은 ETF 목록
 let priceFeed = { asof: null, prices: {} };
 (async () => {
   try {
@@ -2267,7 +2330,7 @@ const SB_KEY = "sb_publishable_LwX5Sxi2L32sFcFPHZ4nUg_RNnqtENW";
 const SB_LIB = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js";
 const SYNC_META = "portfit-sync-meta-v1";
 var sb = null, sbUser = null, sbReady = false, syncTimer = null, syncApplying = false;
-function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY, PRICE_KEY, COST_KEY]; }
+function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY, PRICE_KEY, COST_KEY, LEV_KEY]; }
 function syncDirty(key) {
   if (syncApplying || !sbUser || key === SYNC_META) return;
   const m = loadJSON(SYNC_META, {}); m.dirty = true; m.uid = sbUser.id;
@@ -2593,6 +2656,7 @@ function renderHome() {
       <div class="how">
         <div><b>📊 ETF 검진</b>ETF 안의 종목까지 풀어서, 한 종목이나 반도체에 얼마나 쏠렸는지 봐요.</div>
         <div><b>🧾 습관 진단</b>거래내역으로 손실을 오래 버티는지, 물타기와 잦은 거래가 있는지 보고 고치는 방법을 알려줘요.</div>
+        <div><b>📉 레버리지 분석</b>레버리지 ETF가 1배보다 얼마를 더 벌거나 잃게 했는지, 음의 복리로 얼마가 녹았는지 실시간으로 보여줘요.</div>
         <div><b>🎯 목표 계산</b>목표 금액까지 1년에 몇 %씩 불려야 하는지, 계획대로 가고 있는지 보여줘요.</div>
       </div>
       <div class="btns"><button type="button" id="fbHome">💬 의견 보내기</button><button type="button" id="welAgain">처음 안내 다시 보기</button></div>
@@ -2797,15 +2861,382 @@ document.getElementById("welNext").addEventListener("click", () => {
 document.getElementById("welSkip").addEventListener("click", () => closeWelcome("skip"));
 document.getElementById("welcomeDlg").addEventListener("cancel", () => closeWelcome("skip"));
 
+// ---------- 레버리지 분석: 산 가격 × 기초자산 실시간 시세 ----------
+// 계산 (모두 '산 날 환율'로 원화 환산한 뒤, 환율 영향은 따로 떼어 봄)
+//   지금 손익      = 수량 × ETF 지금 가격 × 지금 환율 − 산 금액
+//   1배 몫         = 산 금액 × 기초자산 수익률          (같은 돈으로 기초자산을 1배로 샀다면)
+//   정확히 L배 몫   = 산 금액 × L × 기초자산 수익률     (매일 리셋 없이 딱 L배였다면)
+//   레버리지 효과   = ETF 실제 손익(환율 제외) − 1배 몫  = (L배 몫 − 1배 몫) + 녹은 돈
+//   녹은 돈        = ETF 실제 손익(환율 제외) − L배 몫   (음의 복리 + 보수 + 선물 교체 비용 + 추종 오차)
+const LEV_U = {
+  BTC: { ko: "비트코인", crypto: "BTC" }, ETH: { ko: "이더리움", crypto: "ETH" }, SOL: { ko: "솔라나", crypto: "SOL" }, XRP: { ko: "리플(XRP)", crypto: "XRP" },
+  QQQ: { ko: "나스닥100(QQQ)" }, SPY: { ko: "S&P500(SPY)" }, SOXX: { ko: "미국 반도체(SOXX)" }, XLK: { ko: "미국 기술주(XLK)" },
+  IWM: { ko: "러셀2000(IWM)" }, XBI: { ko: "미국 바이오(XBI)" }, TLT: { ko: "미국 장기국채(TLT)" }, TSLA: { ko: "테슬라" },
+  NVDA: { ko: "엔비디아" }, COIN: { ko: "코인베이스" }, MSTR: { ko: "스트래티지(MSTR)" }, AAPL: { ko: "애플" }, AMZN: { ko: "아마존" }, GOOGL: { ko: "알파벳" },
+};
+// [티커, 기초자산, 배율, 토스증권 이름에서 찾을 말]
+const LEV_ETFS = [
+  ["BITX", "BTC", 2, /BITX|2\s*X\s*비트코인|비트코인\s*스트래티지/i], ["BITU", "BTC", 2, /BITU|울트라\s*비트코인/i], ["SBIT", "BTC", -2, /SBIT|울트라\s*숏\s*비트코인/i],
+  ["ETHU", "ETH", 2, /ETHU|2\s*X\s*이더/i], ["ETHT", "ETH", 2, /ETHT|울트라\s*이더/i], ["SOLT", "SOL", 2, /SOLT|2\s*X\s*솔라나/i], ["XXRP", "XRP", 2, /XXRP|2\s*X\s*XRP|2\s*X\s*리플/i],
+  ["TQQQ", "QQQ", 3, /TQQQ|울트라\s*프로\s*QQQ/i], ["SQQQ", "QQQ", -3, /SQQQ|울트라\s*프로\s*숏\s*QQQ/i], ["QLD", "QQQ", 2, /QLD|^(?!.*(프로|숏)).*울트라\s*QQQ/i],
+  ["UPRO", "SPY", 3, /UPRO|울트라\s*프로\s*S&?P/i], ["SPXL", "SPY", 3, /SPXL|S&?P\s*500\s*불\s*3/i], ["SSO", "SPY", 2, /\bSSO\b|^(?!.*(프로|숏)).*울트라\s*S&?P/i], ["SPXU", "SPY", -3, /SPXU|울트라\s*프로\s*숏\s*S&?P/i],
+  ["SOXL", "SOXX", 3, /SOXL|반도체\s*불\s*3/i], ["SOXS", "SOXX", -3, /SOXS|반도체\s*베어\s*3/i], ["TECL", "XLK", 3, /TECL|기술주\s*불\s*3|테크놀로지\s*불\s*3/i],
+  ["TNA", "IWM", 3, /\bTNA\b|스몰캡\s*불\s*3/i], ["LABU", "XBI", 3, /LABU|바이오.*불\s*3/i], ["TMF", "TLT", 3, /\bTMF\b|20년.*국채.*불\s*3/i],
+  ["TSLL", "TSLA", 2, /TSLL|테슬라.*(불|2\s*X|레버리지)/i], ["NVDL", "NVDA", 2, /NVDL|엔비디아.*(2\s*X|레버리지)/i], ["NVDU", "NVDA", 2, /NVDU|엔비디아.*불\s*2/i],
+  ["CONL", "COIN", 2, /CONL|코인베이스.*2\s*X/i], ["MSTU", "MSTR", 2, /MSTU/i], ["MSTX", "MSTR", 2, /MSTX|(마이크로)?스트래티지.*2\s*X/i],
+  ["AAPU", "AAPL", 2, /AAPU|애플.*불\s*2/i], ["AMZU", "AMZN", 2, /AMZU|아마존.*불\s*2/i], ["GGLL", "GOOGL", 2, /GGLL|구글.*불\s*2|알파벳.*불\s*2/i],
+];
+// 받침에 맞춰 조사 붙이기: josa("비트코인", "이가") → "비트코인이", josa("BITX", "은는") → "BITX는"
+function josa(w, pair) {
+  const base = String(w).replace(/\s*\([^)]*\)\s*$/, ""), ch = base.slice(-1), c = ch.charCodeAt(0);
+  let jong;
+  if (c >= 0xAC00 && c <= 0xD7A3) jong = (c - 0xAC00) % 28 > 0;
+  else if (/[0-9]/.test(ch)) jong = "013678".includes(ch);
+  else if (/[A-Za-z]/.test(ch)) jong = /[LMNR]/i.test(ch);
+  else jong = false;
+  return w + (jong ? pair[0] : pair[1]);
+}
+const LEV_MAP = Object.fromEntries(LEV_ETFS.map(([s, u, L, re]) => [s, { u, L, re }]));
+const levGuess = name => (LEV_ETFS.find(([, , , re]) => re.test(name)) || [])[0] || "";
+const usd = (v, d) => "$" + (d != null ? v.toFixed(d) : v >= 1000 ? Math.round(v).toLocaleString("en-US") : v >= 1 ? v.toFixed(2) : v.toPrecision(4));
+const pctS = v => `${v >= 0 ? "+" : ""}${fmt(v * 100)}%`;
+const wonS = v => `${v >= 0 ? "+" : ""}${won(v)}`;
+
+let levState = loadJSON(LEV_KEY, null);          // { pos: [{id, sym, date, qty, price, cur, src}], map: {토스이름: 티커} }
+let levSample = !levState || !Array.isArray(levState.pos);
+if (levSample) levState = { pos: [], map: {} };
+let levHist = null, levHistErr = null;
+const levLive = { crypto: {}, quotes: {}, kline: {}, edgeOff: 0, edgeAt: 0, cryptoAt: 0, err: "" };
+
+// 산 날이 언제든 쓸 수 있게: 그날(미국 장 기준) 위치 찾기
+function levIdx(H, date) {
+  let lo = 0, hi = H.dates.length - 1, ans = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (H.dates[m] <= date) { ans = m; lo = m + 1; } else hi = m - 1; }
+  return ans;
+}
+// 지금 가격: ETF, 기초자산(기록과 같은 기준으로 이어 붙임), 환율
+function levNow(sym, H, live, nowSec) {
+  const m = LEV_MAP[sym], e = H.etf[sym], U = H.under[m.u], uc = LEV_U[m.u].crypto;
+  let T = e.c.length - 1; while (T > 0 && !(e.c[T] && U[T])) T--;
+  const tsT = H.closeTs[T], E_T = e.c[T], U_T = U[T], FX_T = H.fx[T];
+  const fxq = live.quotes["KRW=X"], FXnow = fxq && fxq.p > 0 ? fxq.p : FX_T;
+  const q = live.quotes[sym];
+  let Enow = E_T, Unow = U_T, mode = "close", at = tsT, uLive = false;
+  if (uc) {
+    const B = live.crypto[uc], BT = live.kline[`${uc}:${tsT}`];
+    if (B && BT) { Unow = U_T * B.p / BT; uLive = true; }
+    let Ea = E_T, ta = tsT;
+    if (q && q.p > 0 && q.t > tsT + 60) { Ea = q.p; ta = q.t; }
+    const Ba = ta === tsT ? BT : live.kline[`${uc}:${ta}`];
+    if (nowSec - ta > 120 && B && Ba) { Enow = Ea * Math.max(0, 1 + m.L * (B.p / Ba - 1)); mode = "est"; at = B.t; }
+    else { Enow = Ea; mode = ta === tsT ? "close" : "live"; at = ta; }
+  } else {
+    const qu = live.quotes[m.u];
+    if (q && q.p > 0 && qu && qu.p > 0 && q.t > tsT + 60) {
+      Enow = q.p; Unow = qu.p; at = q.t; uLive = true;
+      mode = /REGULAR|PRE|POST/.test(q.state) && nowSec - q.t < 900 ? "live" : "close";
+    }
+  }
+  return { Enow, Unow, FXnow, fxLive: !!(fxq && fxq.p > 0), mode, at, T, uLive, state: q ? q.state : null };
+}
+// 산 묶음 하나 계산
+function levLot(p, H, now) {
+  const m = LEV_MAP[p.sym], e = H.etf[p.sym], U = H.under[m.u];
+  const i1 = levIdx(H, p.date);
+  if (i1 < 0) return { p, err: `${H.dates[0]} 이전에 산 건 계산할 수 없어요(시세 기록이 최근 2년치예요).` };
+  // 액면병합·분할: 산 날 뒤에 있었다면 수량·가격을 지금 기준으로 바꿈
+  const ratio = (H.splits && H.splits[p.sym] || []).filter(([d]) => d > p.date).reduce((r, [, x]) => r * x, 1);
+  const qty = p.qty * ratio, price = p.price / ratio;
+  let best = null;
+  for (const i of [i1, i1 - 1]) {                  // 한국 날짜 새벽에 산 건 전날 미국 장이에요
+    if (i < 0 || !(e.c[i] && U[i] && H.fx[i])) continue;
+    const pUsd = p.cur === "USD" ? price : price / H.fx[i], dev = Math.abs(Math.log(pUsd / e.c[i]));
+    if (!best || dev < best.dev) best = { i, pUsd, dev };
+  }
+  if (!best) return { p, err: "산 날의 시세가 없어요. 날짜를 확인해 주세요." };
+  const { i, pUsd } = best, E0 = e.c[i], FX0 = H.fx[i], L = m.L, s = Math.sign(L);
+  const Ub = U[i] * Math.max(0.05, 1 + (pUsd / E0 - 1) / L);   // 산 순간의 기초자산 가격(그날 종가에서 거꾸로 추정)
+  const cost = p.cur === "USD" ? p.qty * p.price * FX0 : p.qty * p.price;
+  const ru = now.Unow / Ub - 1, re = now.Enow / pUsd - 1;
+  const actual0 = cost * re, one = cost * s * ru, exact = cost * Math.max(-1, L * ru);
+  const fx = qty * now.Enow * (now.FXnow - FX0);
+  const path = [];
+  for (let j = i; j <= now.T; j++) if (e.c[j] && U[j]) path.push({ d: H.dates[j], re: e.c[j] / pUsd - 1, ru: U[j] / Ub - 1 });
+  return { p, qty, pUsd, Ub, FX0, cost, ru, re, actual0, one, exact, amp: exact - one, decay: actual0 - exact, fx,
+    total: actual0 + fx, val: qty * now.Enow * now.FXnow, warn: best.dev > Math.log(1.35), path, d0: H.dates[i] };
+}
+// 같은 ETF 여러 번 산 것 합치기
+function levGroup(sym, lots, H, now) {
+  const ok = lots.filter(r => !r.err), sum = k => ok.reduce((a, r) => a + r[k], 0);
+  const cost = sum("cost"), qty = sum("qty");
+  const g = { sym, lots, ok, cost, qty, now, m: LEV_MAP[sym] };
+  ["actual0", "one", "exact", "amp", "decay", "fx", "total", "val"].forEach(k => { g[k] = sum(k); });
+  g.lev = g.actual0 - g.one;
+  if (cost > 0) {
+    g.avgUsd = ok.reduce((a, r) => a + r.pUsd * r.qty, 0) / qty;
+    g.ru = g.one / cost * Math.sign(g.m.L); g.re = g.actual0 / cost;
+    // 기초자산이 지금부터 곧장 움직인다고 할 때: 본전이 되는 기초자산 가격, 산 가격으로 돌아왔을 때 손익
+    const L = g.m.L, Ub = ok.reduce((a, r) => a + r.Ub * r.cost, 0) / cost;
+    g.UbAvg = Ub;
+    g.beU = now.Unow * (1 + (g.avgUsd / now.Enow - 1) / L);
+    g.backRe = now.Enow * Math.max(0, 1 + L * (Ub / now.Unow - 1)) / g.avgUsd - 1;
+  }
+  return g;
+}
+
+async function levLoadHist() {
+  if (levHist || levHistErr === "loading") return;
+  levHistErr = "loading";
+  try {
+    const r = await fetch("lev_hist.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(String(r.status));
+    const j = await r.json();
+    if (!j || !j.dates || !j.etf) throw new Error("형식");
+    levHist = j; levHistErr = null;
+    setTimeout(() => levRefresh(true), 0);
+  } catch (e) { levHistErr = "시세 기록(lev_hist.json)을 아직 못 받았어요. GitHub 자동 수집이 한 번 돌고 나면 나와요."; }
+  renderLev();
+}
+
+// ----- 실시간 시세 받기 -----
+const withTimeout = (p, ms = 6000) => Promise.race([p, new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms))]);
+async function getJSON(url) { const r = await withTimeout(fetch(url, { cache: "no-store" })); if (!r.ok) throw new Error(String(r.status)); return r.json(); }
+const BINANCE = ["https://data-api.binance.vision", "https://api.binance.com"];
+async function cryptoPrice(c) {
+  for (const h of BINANCE) { try { const j = await getJSON(`${h}/api/v3/ticker/price?symbol=${c}USDT`); if (+j.price > 0) return { p: +j.price, t: Date.now() / 1000, src: "바이낸스" }; } catch (_) {} }
+  try { const j = await getJSON(`https://api.exchange.coinbase.com/products/${c}-USD/ticker`); if (+j.price > 0) return { p: +j.price, t: Date.now() / 1000, src: "코인베이스" }; } catch (_) {}
+  return null;
+}
+async function cryptoAt(c, ts) {                  // ts(초) 시각의 가격: 그 직전 1분 봉 종가
+  const t0 = (Math.floor(ts / 60) - 1) * 60;
+  for (const h of BINANCE) { try { const j = await getJSON(`${h}/api/v3/klines?symbol=${c}USDT&interval=1m&startTime=${t0 * 1000}&limit=1`); if (j[0] && +j[0][4] > 0) return +j[0][4]; } catch (_) {} }
+  try {
+    const j = await getJSON(`https://api.exchange.coinbase.com/products/${c}-USD/candles?granularity=60&start=${new Date((t0 - 120) * 1000).toISOString()}&end=${new Date((t0 + 60) * 1000).toISOString()}`);
+    const k = (j || []).find(x => x[0] <= t0) || (j || [])[0]; if (k && +k[4] > 0) return +k[4];
+  } catch (_) {}
+  return null;
+}
+async function levRefresh(force) {
+  if (!levHist) return;
+  const syms = [...new Set(levPositions().map(p => p.sym))].filter(s => levHist.etf[s]);
+  if (!syms.length) return;
+  const nowS = Date.now() / 1000, cryptos = [...new Set(syms.map(s => LEV_U[LEV_MAP[s].u].crypto).filter(Boolean))];
+  const jobs = [];
+  if (cryptos.length && (force || nowS - levLive.cryptoAt > 4)) {
+    levLive.cryptoAt = nowS;
+    cryptos.forEach(c => jobs.push(cryptoPrice(c).then(v => { if (v) levLive.crypto[c] = v; })));
+  }
+  if (nowS > levLive.edgeOff && (force || nowS - levLive.edgeAt > 25)) {
+    levLive.edgeAt = nowS;
+    const list = [...new Set([...syms, ...syms.map(s => LEV_MAP[s].u).filter(u => !LEV_U[u].crypto), "KRW=X"])];
+    jobs.push(getJSON(`${SB_URL}/functions/v1/market?s=${encodeURIComponent(list.join(","))}`)
+      .then(j => { if (j && j.q) Object.entries(j.q).forEach(([k, v]) => { if (v && v.p > 0) levLive.quotes[k] = v; }); levLive.err = ""; })
+      .catch(() => { levLive.edgeOff = nowS + 600; levLive.err = "edge"; }));     // 서버 함수가 아직 없으면 10분 동안 다시 묻지 않음
+  }
+  await Promise.all(jobs);
+  // 코인: 기록 마지막 날 장 마감 시각, ETF 최근 가격 시각의 코인 가격(한 번만 받음)
+  const kj = [];
+  syms.forEach(s => {
+    const c = LEV_U[LEV_MAP[s].u].crypto; if (!c) return;
+    const e = levHist.etf[s]; let T = e.c.length - 1; while (T > 0 && !e.c[T]) T--;
+    const ts = [levHist.closeTs[T]], q = levLive.quotes[s];
+    if (q && q.t > levHist.closeTs[T] + 60) ts.push(q.t);
+    ts.forEach(t => { const k = `${c}:${t}`; if (!(k in levLive.kline)) { levLive.kline[k] = null; kj.push(cryptoAt(c, t).then(v => { if (v) levLive.kline[k] = v; else delete levLive.kline[k]; })); } });
+  });
+  await Promise.all(kj);
+  renderLevResults();
+}
+let levTimer = null;
+function levLoop(on) {
+  clearInterval(levTimer); levTimer = null;
+  if (!on) return;
+  levRefresh(true);
+  levTimer = setInterval(() => { if (!document.hidden) levRefresh(false); }, 5000);
+}
+
+// ----- 화면 -----
+function levPositions() { return levSample ? levSampleList() : levState.pos; }
+function levSampleList() {
+  if (!levHist || !levHist.etf.BITX) return [];
+  const H = levHist, i = Math.max(0, H.dates.length - 61), e = H.etf.BITX.c[i];
+  return e ? [{ id: "s1", sym: "BITX", date: H.dates[i], qty: 10, price: Math.round(e * H.fx[i]), cur: "KRW" }] : [];
+}
+function levSave() { levSample = false; saveJSON(LEV_KEY, levState); }
+function levImportHTML() {
+  const a = lastTrade && !lastTrade.isSample ? lastTrade.a : null;
+  if (!a || !a.openPos.length) return `<p class="fine" style="margin:0 0 12px">습관 탭에 토스증권 거래내역을 넣으면, 들고 있는 레버리지 ETF를 여기로 바로 불러올 수 있어요.</p>`;
+  const opts = sel => `<option value="">레버리지 아님</option>${LEV_ETFS.map(([s, u, L]) => `<option value="${s}"${s === sel ? " selected" : ""}>${s} · ${LEV_U[u].ko} ${L}배</option>`).join("")}`;
+  const rows = a.openPos.map(p => ({ p, sel: levState.map[p.name] ?? levGuess(p.name) }));
+  const found = rows.filter(r => r.sel).length;
+  return `<details class="lev-imp"${found ? " open" : ""}><summary>습관 탭 보유 종목에서 불러오기 ${found ? `<span class="pill good">${found}개 찾음</span>` : ""}</summary>
+    <p class="fine">이름으로 자동으로 찾았어요. 틀렸거나 못 찾은 종목은 직접 골라 주세요. 산 날짜별로 따로 계산해요.</p>
+    <ul class="lev-imp-list">${rows.map((r, k) => `<li><span>${esc(r.p.name)}<small>${r.p.qty.toLocaleString("ko-KR")}주</small></span><select data-k="${k}" aria-label="${esc(r.p.name)}은 어떤 레버리지 ETF인가요">${opts(r.sel)}</select></li>`).join("")}</ul>
+    <button type="button" class="primary" id="levImpBtn">불러오기</button></details>`;
+}
+function levImport() {
+  const a = lastTrade.a, box = document.getElementById("levImport");
+  const picks = [...box.querySelectorAll("select[data-k]")].map(s => ({ p: a.openPos[+s.dataset.k], sym: s.value }));
+  picks.forEach(({ p, sym }) => { levState.map[p.name] = sym; });
+  const names = new Set(picks.map(x => x.p.name));
+  if (levSample) levState.pos = [];
+  levState.pos = levState.pos.filter(x => !names.has(x.src));
+  let n = 0;
+  picks.filter(x => x.sym).forEach(({ p, sym }) => {
+    (a.openLots[p.name] || []).forEach(l => { levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym, date: l.date, qty: l.qty, price: l.price, cur: "KRW", src: p.name }); n++; });
+  });
+  levSave(); renderLev(); track("lev_import", { n });
+}
+function renderLev() {
+  const list = document.getElementById("levList"); if (!list) return;
+  document.getElementById("levImport").innerHTML = levImportHTML();
+  const ib = document.getElementById("levImpBtn"); if (ib) ib.addEventListener("click", levImport);
+  const pos = levPositions();
+  const minD = levHist ? levHist.dates[0] : "", maxD = today();
+  list.innerHTML = pos.map((p, k) => `<li class="lev-item" data-k="${k}">
+      <div class="lev-row1"><select data-f="sym" aria-label="ETF">${LEV_ETFS.map(([s, u, L]) => `<option value="${s}"${s === p.sym ? " selected" : ""}>${s} · ${LEV_U[u].ko} ${L > 0 ? L + "배" : "인버스 " + -L + "배"}</option>`).join("")}</select>
+        <button type="button" class="x" data-del="${k}" aria-label="삭제">×</button></div>
+      <div class="lev-row2">
+        <label>산 날<input data-f="date" type="date" value="${p.date}" min="${minD}" max="${maxD}"></label>
+        <label>수량<input data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="${p.qty}"></label>
+        <label>평균단가<span class="g-in"><input data-f="price" type="number" inputmode="decimal" min="0" step="any" value="${p.price}"><select data-f="cur" aria-label="통화"><option value="KRW"${p.cur === "KRW" ? " selected" : ""}>원</option><option value="USD"${p.cur === "USD" ? " selected" : ""}>달러</option></select></span></label>
+      </div>${p.src ? `<small class="src">습관 탭 '${esc(p.src)}'에서 불러옴</small>` : ""}</li>`).join("") || `<li class="fine" style="list-style:none">아직 넣은 ETF가 없어요. '직접 추가'를 누르거나 습관 탭에서 불러오세요.</li>`;
+  list.querySelectorAll(".lev-item").forEach(li => {
+    const k = +li.dataset.k;
+    li.querySelectorAll("[data-f]").forEach(inp => inp.addEventListener("change", () => {
+      if (levSample) { levState.pos = levSampleList().map(x => ({ ...x })); }
+      const p = levState.pos[k], f = inp.dataset.f;
+      if (f === "qty" || f === "price") { const v = Number(inp.value); if (!(v > 0)) { inp.value = p[f]; return; } p[f] = v; }
+      else if (f === "date") { const d = toDate(inp.value); if (!d) { inp.value = p.date; return; } p.date = d; }
+      else p[f] = inp.value;
+      delete p.src; levSave(); renderLev(); levRefresh(true);
+    }));
+  });
+  list.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => {
+    if (levSample) levState.pos = levSampleList().map(x => ({ ...x }));
+    levState.pos.splice(+b.dataset.del, 1); levSave(); renderLev();
+  }));
+  document.getElementById("levExampleNote").hidden = !levSample;
+  renderLevResults();
+}
+function levAdd() {
+  if (levSample) levState.pos = [];
+  const H = levHist, d = H ? H.dates[Math.max(0, H.dates.length - 21)] : today();
+  const e = H && H.etf.BITX ? H.etf.BITX.c[levIdx(H, d)] : null;
+  levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym: "BITX", date: d, qty: 1, price: e ? Math.round(e * H.fx[levIdx(H, d)]) : 10000, cur: "KRW" });
+  levSave(); renderLev(); levRefresh(true); track("lev_add");
+}
+
+function levChart(g) {
+  const lot = g.ok.length === 1 ? g.ok[0] : null;
+  // 여러 번 샀으면 첫 매수일부터 날짜별로 합침(그날까지 산 것만)
+  const days = [...new Set(g.ok.flatMap(r => r.path.map(x => x.d)))].sort();
+  if (days.length < 2) return "";
+  const pts = days.map(d => {
+    let c = 0, a = 0, o = 0, x = 0;
+    g.ok.forEach(r => { const q = r.path.find(y => y.d === d); if (!q) return; c += r.cost; a += r.cost * q.re; o += r.cost * Math.sign(g.m.L) * q.ru; x += r.cost * Math.max(-1, g.m.L * q.ru); });
+    return c ? { d, a: a / c, o: o / c, x: x / c } : null;
+  }).filter(Boolean);
+  pts.push({ d: "지금", a: g.re, o: g.one / g.cost, x: g.exact / g.cost });
+  const boxW = document.getElementById("levResults").clientWidth || 640;
+  const Wd = Math.round(Math.max(300, Math.min(680, boxW - 44))), Ht = 200, Lm = 46, R = 12, T = 14, B = 26;
+  const vals = pts.flatMap(p => [p.a, p.o, p.x]), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), pad = (hi - lo) * 0.08 || 0.01;
+  const y0 = lo - pad, y1 = hi + pad;
+  const X = i => Lm + i / (pts.length - 1) * (Wd - Lm - R), Y = v => T + (1 - (v - y0) / (y1 - y0)) * (Ht - T - B);
+  const line = f => pts.map((p, i) => `${X(i).toFixed(1)},${Y(f(p)).toFixed(1)}`).join(" ");
+  const ticks = [y0 + pad, 0, y1 - pad].filter((v, i, a) => a.findIndex(w => Math.abs(w - v) < (y1 - y0) * 0.12) === i);
+  return `<svg class="g-chart" viewBox="0 0 ${Wd} ${Ht}" role="img" aria-label="산 날부터 지금까지 수익률 비교">
+    ${ticks.map(v => `<line x1="${Lm}" x2="${Wd - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)"${Math.abs(v) < 1e-9 ? ' stroke-width="1.5"' : ""}/><text x="${Lm - 6}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmt(v * 100, 0)}%</text>`).join("")}
+    <polyline points="${line(p => p.o)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 3"/>
+    <polyline points="${line(p => p.x)}" fill="none" stroke="var(--c2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <polyline points="${line(p => p.a)}" fill="none" stroke="var(--accent)" stroke-width="2.25"/>
+    <circle cx="${X(pts.length - 1)}" cy="${Y(g.re)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>
+    <text x="${Lm}" y="${Ht - 7}" font-size="11" fill="var(--muted)">${pts[0].d.slice(2).replace(/-/g, ".")}${lot ? " 산 날" : " 첫 매수"}</text>
+    <text x="${Wd - R}" y="${Ht - 7}" text-anchor="end" font-size="11" fill="var(--muted)">지금</text>
+  </svg>
+  <p class="fine" style="margin-top:6px"><span style="color:var(--accent)">━</span> 내 ${g.sym} 실제 · <span style="color:var(--c2)">╍</span> 정확히 ${g.m.L}배였다면 · <span style="color:var(--muted)">┅</span> ${LEV_U[g.m.u].ko} 1배 (환율 영향 뺀 수익률)</p>`;
+}
+function levBar(label, v, max, cls, sub) {
+  const w = max > 0 ? Math.min(100, Math.abs(v) / max * 100) : 0;
+  return `<div class="lev-bar ${cls || ""}"><div class="lev-bar-t"><span>${label}${sub ? `<small>${sub}</small>` : ""}</span><b class="num ${v >= 0 ? "pos" : "neg"}">${wonS(v)}</b></div>
+    <div class="lev-track"><i class="${v >= 0 ? "up" : "down"}" style="width:${w.toFixed(1)}%"></i></div></div>`;
+}
+function levCardHTML(g) {
+  const { m, now } = g, uName = LEV_U[m.u].ko, L = m.L, inv = L < 0;
+  const errs = g.lots.filter(r => r.err);
+  if (!g.ok.length) return `<section class="panel"><h2>${g.sym}</h2><p class="note">${esc(errs[0] ? errs[0].err : "계산할 수 없어요.")}</p></section>`;
+  const tag = now.mode === "live" ? `<span class="pill good">● 실시간</span>` : now.mode === "est" ? `<span class="pill warn" title="ETF 마지막 거래 가격 × 그 뒤 코인 움직임 × 배율">추정가</span>` : `<span class="pill info">${levHist.dates[now.T].slice(5).replace("-", "/")} 종가 기준</span>`;
+  const up = g.ru >= 0, levTxt = g.lev >= 0 ? "레버리지 덕분에 더 번 돈" : "레버리지 때문에 더 잃은 돈";
+  const max = Math.max(...[g.one, g.lev, g.amp, g.decay, g.fx].map(Math.abs));
+  const decayTxt = g.decay <= 0 ? "음의 복리·비용으로 녹은 돈" : "출렁임 덕분에 오히려 더 생긴 돈";
+  const story = `${josa(uName, "이가")} 산 뒤로 <b>${pctS(g.ru)}</b> 움직이는 동안 ${josa(g.sym, "은는")} <b>${pctS(g.re)}</b> 움직였어요(환율 영향 뺀 값). `
+    + (inv ? `${josa(g.sym, "은는")} ${josa(uName, "과와")} 반대로 ${-L}배 움직이는 인버스예요. ` : "")
+    + `같은 돈으로 ${josa(uName, "을를")} ${inv ? "1배로 공매도했다면" : "그냥 1배로 샀다면"} ${wonS(g.one)}이었을 텐데, 레버리지 때문에 <b class="${g.lev >= 0 ? "pos" : "neg"}">${won(Math.abs(g.lev))} ${g.lev >= 0 ? "더 벌었어요" : "더 잃었어요"}</b>. `
+    + (Math.abs(g.decay) >= 1 ? (g.decay < 0 ? `정확히 ${Math.abs(L)}배였다면 ${wonS(g.exact)}이었을 텐데, 매일 다시 맞추는 구조(음의 복리)와 보수·비용 때문에 <b class="neg">${won(-g.decay)}</b>이 녹았어요.` : `한 방향으로 꾸준히 움직여서 정확히 ${Math.abs(L)}배(${wonS(g.exact)})보다 <b class="pos">${won(g.decay)}</b> 더 나왔어요. 추세가 꺾이고 오르내리면 반대로 녹기 시작해요.`) : "");
+  const beTxt = `<b>${usd(g.beU)}</b>(지금보다 ${pctS(g.beU / now.Unow - 1)})`;
+  const be = !(g.beU > 0) ? "" : g.actual0 >= 0 ? `${josa(uName, "이가")} ${beTxt}${g.beU >= now.Unow ? "보다 오르면" : "보다 내려가면"} 손실로 바뀌어요.`
+    : `본전이 되려면 ${josa(uName, "이가")} ${beTxt}까지 ${g.beU >= now.Unow ? "올라야" : "내려야"} 해요.`;
+  const back = Math.abs(g.UbAvg / now.Unow - 1) > 0.002 ? `${josa(uName, "이가")} 샀을 때 가격(${usd(g.UbAvg)})으로 돌아오면 ${josa(g.sym, "은는")} 약 <b class="${g.backRe >= 0 ? "pos" : "neg"}">${pctS(g.backRe)}</b>예요.` : "";
+  return `<section class="panel lev-card" aria-label="${g.sym} 레버리지 분석">
+    <div class="lev-head"><h2>${g.sym} <small>${uName} ${inv ? "인버스 " + -L : L}배</small></h2>${tag}</div>
+    <p class="lev-px">${uName} <b class="num">${usd(now.Unow)}</b>${now.uLive ? "" : " (기록)"} · ${g.sym} <b class="num">${usd(now.Enow)}</b>${now.mode === "est" ? " (추정)" : ""} · 환율 <b class="num">${Math.round(now.FXnow).toLocaleString("ko-KR")}원</b>${now.fxLive ? "" : " (기록)"}</p>
+    <div class="kpis">
+      <div class="kpi"><span>지금 손익</span><b class="${g.total >= 0 ? "pos" : "neg"} lev-big">${wonS(g.total)}</b><small class="num">${pctS(g.total / g.cost)} · 산 금액 ${won(g.cost)}</small></div>
+      <div class="kpi"><span>${levTxt}</span><b class="${g.lev >= 0 ? "pos" : "neg"} lev-big">${wonS(g.lev)}</b><small>${uName} 1배와 비교</small></div>
+    </div>
+    <h3 class="lev-h3">왜 이만큼일까?</h3>
+    ${levBar(`${uName} 1배 몫`, g.one, max, "", `${uName} ${pctS(g.ru)}${inv ? " (반대로)" : ""}`)}
+    ${levBar(levTxt, g.lev, max, "strong")}
+    <div class="lev-sub">
+      ${levBar(`정확히 ${Math.abs(L)}배였다면 ${g.amp >= 0 ? "더 생겼을" : "더 잃었을"} 몫`, g.amp, max)}
+      ${levBar(decayTxt, g.decay, max, "", "매일 리셋·보수·선물 비용 포함")}
+    </div>
+    ${levBar("환율로 생긴 손익", g.fx, max, "", `산 날 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원`)}
+    <div class="lev-sum"><span>합계 = 지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></div>
+    <p class="lev-story">${story}</p>
+    ${be || back ? `<p class="note">${be} ${back} <small>(${josa(uName, "이가")} 지금부터 곧장 그 가격으로 간다고 가정, 환율 변화 제외. 오르내리며 가면 더 녹아요.)</small></p>` : ""}
+    ${levChart(g)}
+    ${g.ok.length > 1 || errs.length ? `<details class="lev-lots" data-sym="${g.sym}"><summary>산 날짜별로 보기 (${g.lots.length}번)</summary><div class="table-scroll"><table class="trades"><thead><tr><th>산 날</th><th class="r">수량</th><th class="r">산 금액</th><th class="r">${uName}</th><th class="r">지금 손익</th><th class="r">녹은 돈</th></tr></thead><tbody>
+      ${g.lots.map(r => r.err ? `<tr><td>${esc(r.p.date)}</td><td colspan="5" class="neg">${esc(r.err)}</td></tr>` : `<tr><td>${r.p.date}</td><td class="r num">${r.qty.toLocaleString("ko-KR")}</td><td class="r num">${won(r.cost)}</td><td class="r num">${pctS(r.ru)}</td><td class="r num ${r.total >= 0 ? "pos" : "neg"}">${wonS(r.total)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${wonS(r.decay)}</td></tr>`).join("")}
+      </tbody></table></div></details>` : ""}
+    ${g.ok.some(r => r.warn) ? `<p class="note">산 가격이 그날 시세와 30% 넘게 달라요. 날짜·단가·통화(원/달러)를 확인해 주세요.</p>` : ""}
+  </section>`;
+}
+function renderLevResults() {
+  const box = document.getElementById("levResults"); if (!box || document.getElementById("view-lev").hidden) return;
+  if (!levHist) { box.innerHTML = `<section class="panel"><p class="sub" style="margin:0">${levHistErr && levHistErr !== "loading" ? esc(levHistErr) : "시세 기록을 불러오는 중이에요…"}</p></section>`; return; }
+  const H = levHist, nowS = Date.now() / 1000, pos = levPositions().filter(p => H.etf[p.sym]);
+  const missing = levPositions().filter(p => !H.etf[p.sym]).map(p => p.sym);
+  if (!pos.length) { box.innerHTML = `<section class="panel"><h2>레버리지 분석</h2><p class="sub" style="margin:0">왼쪽에서 레버리지 ETF를 추가하면, 산 가격과 기초자산 시세를 이어서 레버리지가 만든 이익·손실을 계산해요.</p>${missing.length ? `<p class="note">${esc([...new Set(missing)].join(", "))}는 아직 시세 기록이 없어요.</p>` : ""}</section>`; return; }
+  const bySym = {};
+  pos.forEach(p => { (bySym[p.sym] = bySym[p.sym] || []).push(p); });
+  const groups = Object.entries(bySym).map(([s, ps]) => { const now = levNow(s, H, levLive, nowS); return levGroup(s, ps.map(p => levLot(p, H, now)), H, now); });
+  const ok = groups.filter(g => g.ok.length), sum = k => ok.reduce((a, g) => a + g[k], 0);
+  const anyEst = ok.some(g => g.now.mode === "est"), anyLive = ok.some(g => g.now.mode === "live");
+  const t = new Date();
+  const total = ok.length > 1 ? `<section class="panel lev-total"><h2>전체 레버리지 ETF ${ok.length}개</h2><div class="kpis">
+      <div class="kpi"><span>지금 손익</span><b class="${sum("total") >= 0 ? "pos" : "neg"}">${wonS(sum("total"))}</b></div>
+      <div class="kpi"><span>레버리지 효과(1배 대비)</span><b class="${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</b></div>
+      <div class="kpi"><span>음의 복리·비용</span><b class="${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</b></div>
+      <div class="kpi"><span>환율</span><b class="${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</b></div></div></section>` : "";
+  const openSet = new Set([...box.querySelectorAll("details.lev-lots[open]")].map(d => d.dataset.sym));
+  box.innerHTML = `${levSample ? `<p class="example-note" style="margin:0 0 10px">예시: ${H.dates[Math.max(0, H.dates.length - 61)]}에 BITX 10주를 그날 종가로 샀다고 가정했어요.</p>` : ""}
+    ${total}${groups.map(levCardHTML).join("")}
+    <p class="fine">${t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} 기준 · ${anyLive ? "미국 장이 열려 있는 동안은 ETF 가격을 실시간(야후 파이낸스)으로 받아요. " : ""}${anyEst ? "미국 장이 닫힌 동안 코인 레버리지 ETF는 마지막 거래 가격에 코인이 그 뒤 움직인 만큼 × 배율을 곱해 <b>추정</b>했어요. 토스증권 주간거래 가격과는 다를 수 있어요. " : ""}${levLive.err === "edge" ? "실시간 ETF 시세 서버에 연결하지 못해 마지막 종가를 썼어요. " : ""}코인 시세는 ${Object.values(levLive.crypto)[0] ? esc(Object.values(levLive.crypto)[0].src) : "거래소"}, 지난 시세는 야후 파이낸스(${H.asof}까지)예요.
+    산 순간의 기초자산 가격은 산 날 종가와 산 가격 차이로 거꾸로 추정했어요. 토스증권이 실제로 쓴 환율과 수수료·세금은 반영하지 않아서 앱 숫자와 조금 다를 수 있어요. 계산만 보여드리고, 사고팔라는 권유가 아니에요.</p>`;
+  box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
+}
+
 // ---------- 탭 ----------
 function showTab(name) {
-  const t = ["etf", "trades", "goal"].includes(name) ? name : "home";
-  ["home", "etf", "trades", "goal"].forEach(k => {
+  const t = ["etf", "trades", "goal", "lev"].includes(name) ? name : "home";
+  ["home", "etf", "trades", "lev", "goal"].forEach(k => {
     document.getElementById(`view-${k}`).hidden = t !== k;
     document.getElementById(`tab-${k}`).setAttribute("aria-selected", String(t === k));
   });
   if (t === "goal") renderGoal();
   if (t === "home") renderHome();
+  if (t === "lev") { renderLev(); levLoadHist(); }
+  levLoop(t === "lev");
   track("tab_" + t);
 }
 function goTab(name) { showTab(name); try { history.replaceState(null, "", "#" + name); } catch (_) {} window.scrollTo({ top: 0 }); }
@@ -2813,6 +3244,10 @@ document.getElementById("tab-home").addEventListener("click", () => goTab("home"
 document.getElementById("tab-goal").addEventListener("click", () => { showTab("goal"); try { history.replaceState(null, "", "#goal"); } catch (_) {} });
 document.getElementById("tab-etf").addEventListener("click", () => { showTab("etf"); try { history.replaceState(null, "", "#etf"); } catch (_) {} });
 document.getElementById("tab-trades").addEventListener("click", () => { showTab("trades"); try { history.replaceState(null, "", "#trades"); } catch (_) {} });
+document.getElementById("tab-lev").addEventListener("click", () => { showTab("lev"); try { history.replaceState(null, "", "#lev"); } catch (_) {} });
+document.getElementById("levAdd").addEventListener("click", levAdd);
+document.getElementById("levClear").addEventListener("click", () => { levState.pos = []; levSave(); renderLev(); });
+document.addEventListener("visibilitychange", () => { if (!document.hidden && !document.getElementById("view-lev").hidden) levRefresh(true); });
 
 tradeText.value = SAMPLE_TRADES;
 runTrades();

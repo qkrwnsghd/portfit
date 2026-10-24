@@ -50,6 +50,12 @@ jobs:
           pip install yfinance lxml
           python us_holdings.py
 
+      - name: 레버리지 ETF 시세 기록 (레버리지 탭용)
+        continue-on-error: true   # 실패하면 이전 기록을 그대로 씀
+        run: |
+          pip install yfinance
+          python lev_hist.py
+
       - name: 바뀐 데이터가 있으면 저장
         run: |
           git config user.name "portfit-bot"
@@ -57,6 +63,7 @@ jobs:
           git add holdings.json
           [ -f prices.json ] && git add prices.json
           [ -f us_symbols.json ] && git add us_symbols.json
+          [ -f lev_hist.json ] && git add lev_hist.json
           if git diff --cached --quiet; then
             echo "바뀐 내용이 없어요."
           else
