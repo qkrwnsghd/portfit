@@ -1892,7 +1892,7 @@ function syncGoalInputs() {
   document.getElementById("gCustom").hidden = key !== "custom";
   document.getElementById("gMu").value = goalDraft.mu ?? 6; document.getElementById("gSig").value = goalDraft.sig ?? 15;
   const r = RISK[key];
-  document.getElementById("gRiskNote").textContent = r ? r.note + (key !== "custom" ? ` (가정: 연 ${fmt(r.mu * 100)}% ± ${fmt(r.sig * 100, 0)}%)` : "") : "";
+  document.getElementById("gRiskNote").textContent = r ? r.note + (key !== "custom" ? ` (가정: 평균 연 ${fmt(r.mu * 100)}%, 보통 연 ${fmt(medianGrowth(r.mu, r.sig) * 100)}%, 출렁임 연 ${fmt(r.sig * 100, 0)}%)` : "") : "";
 }
 Object.entries(gIds).forEach(([k, id]) => document.getElementById(id).addEventListener("input", e => {
   goalDraft[k] = Math.max(0, Number(e.target.value) || 0);
@@ -1945,22 +1945,26 @@ function blend(w) {                       // 주식 비중 w, 나머지 채권
   const s = ASSUME.stock, b = ASSUME.bond;
   return { mu: w * s.mu + (1 - w) * b.mu, sig: Math.sqrt((w * s.sig) ** 2 + ((1 - w) * b.sig) ** 2 + 2 * w * (1 - w) * ASSUME.corr * s.sig * b.sig) };
 }
-function lever(L, fee = 0.01) {           // 매일 L배를 따라가는 상품: 변동성 끌림(음의 복리)만큼 기대 수익률이 깎임
+// 매일 L배를 따라가는 상품. 평균(기대값)은 (1+μ)^L 근처지만, 변동성이 L배라 '보통의 결과(중간값)'가 크게 깎임(음의 복리).
+// 매일 2배 추종을 직접 모의실험해서 이 공식과 맞는지 확인했어요.
+function lever(L, fee = 0.01) {
   const s = ASSUME.stock;
-  return { mu: L * s.mu - (L * L - L) * s.sig * s.sig / 2 - fee, sig: L * s.sig };
+  return { mu: Math.pow(1 + s.mu, L) * Math.exp(-fee) - 1, sig: L * s.sig };
 }
+// 보통의 경우(중간값) 연 성장률: 평균보다 변동성만큼 낮아요
+const medianGrowth = (mu, sig) => Math.exp(Math.log(1 + mu) - sig * sig / 2) - 1;
 const RISK = {
   deposit: { name: "예금·채권", ...{ mu: 0.03, sig: 0.005 }, note: "예금이나 만기까지 들고 가는 채권처럼 원금 손실 가능성이 매우 낮은 경우예요. 대신 수익률이 낮아요." },
   stable: { name: "안정형", ...blend(0.3), note: "채권 70% + 주식 30%. 출렁임이 작아요." },
   mid: { name: "중립형", ...blend(0.5), note: "채권 50% + 주식 50%." },
   growth: { name: "주식형", ...blend(1), note: "주식(ETF) 100%. 오래 두면 기대 수익이 크지만, 한 해에 -30% 넘게 빠질 수도 있어요." },
-  lev2: { name: "레버리지 2배", ...lever(2), note: "주식 지수를 하루 2배로 따라가는 상품. 출렁임이 2배라 '음의 복리'로 녹는 만큼 기대 수익이 2배보다 작아요." },
+  lev2: { name: "레버리지 2배", ...lever(2), note: "주식 지수를 하루 2배로 따라가는 상품. 평균은 2배 가까이 되지만, 출렁임도 2배라 '음의 복리' 때문에 보통의 결과는 2배에 한참 못 미치고 손실 확률이 커요." },
   custom: { name: "직접 입력", mu: 0.06, sig: 0.15, note: "기대 수익률과 변동성을 직접 넣어요." },
 };
 function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 // 매달: 금액 × 무작위 수익 + 적립금 (적립은 달 끝). 연 기대 수익률 mu는 산술 평균, sig는 연 변동성
 const simCache = new Map();
-function simulate(pv, pmt, n, mu, sig, paths = 2000, seed = 7) {
+function simulate(pv, pmt, n, mu, sig, paths = n <= 120 ? 4000 : 2000, seed = 7) {
   const ck = [pv, pmt, n, mu, sig, paths, seed].join("|"); if (simCache.has(ck)) return simCache.get(ck);
   if (simCache.size > 40) simCache.clear();
   const R = rng(seed), drift = (Math.log(1 + mu) - sig * sig / 2) / 12, vol = sig / Math.sqrt(12);
@@ -2014,17 +2018,18 @@ function riskHTML(pv, pmt, n, fv, reqPct) {
   const key = goalDraft.risk || "mid", rk = key === "custom" ? { ...RISK.custom, mu: (goalDraft.mu ?? 6) / 100, sig: (goalDraft.sig ?? 15) / 100 } : RISK[key];
   const sim = simulate(pv, pmt, n, rk.mu, rk.sig), principal = pv + pmt * n, hit = sim.hit(fv);
   const crash = crashTest(pv, pmt, n, rk.mu);
+  const mg = medianGrowth(rk.mu, rk.sig);
   const msg = reqPct <= 0 ? "수익 없이도 도달하는 목표라, 원금을 지키는 방식으로도 충분해요."
-    : reqPct / 100 > rk.mu ? `필요한 수익률(연 ${fmt(reqPct)}%)이 ${rk.name}의 기대 수익률(연 ${fmt(rk.mu * 100)}%)보다 높아요. 목표를 맞추려고 더 위험한 방식을 고르면 도달 확률은 오르지만 <b>손실 확률도 같이 커져요.</b> 기간이나 매달 넣는 돈을 늘리는 게 더 안전한 방법이에요.`
-    : `${rk.name}의 기대 수익률(연 ${fmt(rk.mu * 100)}%)이 필요한 수익률(연 ${fmt(reqPct)}%)보다 높아서 도달 가능성이 꽤 있어요. 그래도 시장이 나쁘면 못 미칠 수 있어요.`;
+    : reqPct / 100 > mg ? `필요한 수익률(연 ${fmt(reqPct)}%)이 ${rk.name}의 보통 성장률(중간값, 연 ${fmt(mg * 100)}%)보다 높아요. 목표를 맞추려고 더 위험한 방식을 고르면 도달 확률은 오르지만 <b>손실 확률도 같이 커져요.</b> 기간이나 매달 넣는 돈을 늘리는 게 더 안전한 방법이에요.`
+    : `${rk.name}의 보통 성장률(중간값, 연 ${fmt(mg * 100)}%)이 필요한 수익률(연 ${fmt(reqPct)}%)보다 높아서 도달 가능성이 꽤 있어요. 그래도 시장이 나쁘면 못 미칠 수 있어요.`;
   const rows = ["deposit", "stable", "mid", "growth", "lev2"].map(k => {
     const r = RISK[k], sm = simulate(pv, pmt, n, r.mu, r.sig);
-    return `<tr class="${k === key ? "cur" : ""}"><td>${r.name}</td><td class="r num">${fmt(r.mu * 100)}% ± ${fmt(r.sig * 100, 0)}%</td><td class="r num">${fmt(sm.hit(fv) * 100, 0)}%</td><td class="r num ${sm.loss > .05 ? "neg" : ""}">${fmt(sm.loss * 100, 0)}%</td><td class="r num">${manwon(sm.p10)}</td></tr>`;
+    return `<tr class="${k === key ? "cur" : ""}"><td>${r.name}</td><td class="r num">${fmt(r.mu * 100)}% / ${fmt(medianGrowth(r.mu, r.sig) * 100)}% / ${fmt(r.sig * 100, 0)}%</td><td class="r num">${fmt(sm.hit(fv) * 100, 0)}%</td><td class="r num ${sm.loss > .05 ? "neg" : ""}">${fmt(sm.loss * 100, 0)}%</td><td class="r num">${manwon(sm.p10)}</td></tr>`;
   }).join("");
   return `
     <section class="panel" aria-labelledby="g-risk-title">
       <h2 id="g-risk-title">현실적으로 따져보면 · ${rk.name}</h2>
-      <p class="sub">시장은 해마다 오르기도 내리기도 해요. 매달 무작위로 오르내린다고 놓고 2,000번 모의실험했어요. (가정: 연 ${fmt(rk.mu * 100)}% ± ${fmt(rk.sig * 100, 0)}%)</p>
+      <p class="sub">시장은 해마다 오르기도 내리기도 해요. 매달 무작위로 오르내린다고 놓고 ${n <= 120 ? "4,000" : "2,000"}번 모의실험했어요. (가정: 평균 연 ${fmt(rk.mu * 100)}%, 보통 연 ${fmt(mg * 100)}%, 출렁임 연 ${fmt(rk.sig * 100, 0)}%)</p>
       <div class="g-odds">
         <div class="kpi"><span>목표 도달 확률</span><b class="big">${fmt(hit * 100, 0)}%</b></div>
         <div class="kpi"><span>보통이면 (중간값)</span><b>${manwon(sim.p50)}</b></div>
@@ -2033,15 +2038,15 @@ function riskHTML(pv, pmt, n, fv, reqPct) {
       </div>
       ${fanChart(sim, n, fv, k => pv + pmt * k)}
       <p class="g-sentence" style="font-size:14.5px;font-weight:500">${msg}</p>
-      <p class="note" style="margin-top:0">📉 <b>폭락 시험:</b> 첫해에 -30% 빠지면(2008년, 2022년 같은 해) 그 뒤로 평균대로 회복해도 ${period(n)} 뒤 <b>${manwon(crash)}</b>이에요. 넣은 돈 ${manwon(principal)}${crash < principal ? `보다 ${manwon(principal - crash)} 적어요.` : "보다는 많아요."}</p>
+      <p class="note" style="margin-top:0">📉 <b>폭락 시험:</b> ${n >= 12 ? "첫해에 -30% 빠지면(2008년, 2022년 같은 해) 그 뒤로 평균대로 회복해도" : "기간 내내 1년에 -30% 빠지는 속도로 떨어지면"} ${period(n)} 뒤 <b>${manwon(crash)}</b>이에요. 넣은 돈 ${manwon(principal)}${crash < principal ? `보다 ${manwon(principal - crash)} 적어요.` : "보다는 많아요."}</p>
       <h3 style="font-size:14px;margin:16px 0 6px">투자 방식별로 비교하면</h3>
       <div class="table-scroll">
         <table class="trades cmp-risk">
-          <thead><tr><th>방식</th><th class="r">가정 (연)</th><th class="r">도달 확률</th><th class="r">원금 손실 확률</th><th class="r">나쁜 경우</th></tr></thead>
+          <thead><tr><th>방식</th><th class="r">평균 / 보통 / 출렁임 (연)</th><th class="r">도달 확률</th><th class="r">원금 손실 확률</th><th class="r">나쁜 경우</th></tr></thead>
           <tbody>${rows}</tbody>
         </table>
       </div>
-      <p class="fine">가정(주식 연 ${fmt(ASSUME.stock.mu * 100)}% ± ${fmt(ASSUME.stock.sig * 100, 0)}%, 채권 연 ${fmt(ASSUME.bond.mu * 100, 1)}% ± ${fmt(ASSUME.bond.sig * 100, 0)}%)은 과거 장기 흐름을 참고한 예시 값이고, 미래 수익을 보장하지 않아요. 레버리지는 변동성 끌림과 연 1% 보수를 뺐어요. 세금·수수료와 환율은 반영하지 않았어요. 예금은 예금자보호 한도 안에서 원금이 보호돼요.</p>
+      <p class="fine">가정(주식 연 ${fmt(ASSUME.stock.mu * 100)}% ± ${fmt(ASSUME.stock.sig * 100, 0)}%, 채권 연 ${fmt(ASSUME.bond.mu * 100, 1)}% ± ${fmt(ASSUME.bond.sig * 100, 0)}%)은 과거 장기 흐름을 참고한 예시 값이고, 미래 수익을 보장하지 않아요. '평균'은 모든 경우의 평균, '보통'은 가운데(중간값) 사람이 얻는 연 성장률이에요. 출렁임이 클수록 둘의 차이가 커져요. 레버리지는 연 1% 보수를 뺐어요. 세금·수수료와 환율은 반영하지 않았어요. 예금은 예금자보호 한도 안에서 원금이 보호돼요.</p>
     </section>`;
 }
 
