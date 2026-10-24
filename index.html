@@ -858,9 +858,13 @@ async function readScreens(files) {
   say(`<p class="note">글자 인식을 준비하고 있어요. 처음 한 번은 인식 모델을 받느라 30초쯤 걸려요.</p>`);
   try {
     await loadScript(TESS_URL);
-    worker = await Tesseract.createWorker("kor+eng", 1, {
-      logger: m => { if (m.status === "recognizing text") say(`<p class="note">캡처 ${cur}/${files.length}장 읽는 중… ${Math.round(m.progress * 100)}%</p>`); },
-    });
+    const timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), ms));
+    worker = await Promise.race([timeout(120000), Tesseract.createWorker("kor+eng", 1, {
+      logger: m => {
+        if (m.status === "recognizing text") say(`<p class="note">캡처 ${cur}/${files.length}장 읽는 중… ${Math.round(m.progress * 100)}%</p>`);
+        else if (/loading|initializ/.test(m.status || "")) say(`<p class="note">인식 모델 받는 중… ${Math.round((m.progress || 0) * 100)}% (처음 한 번만 받아요)</p>`);
+      },
+    })]);
     await worker.setParameters({ tessedit_pageseg_mode: "6" });   // 화면 전체를 한 줄씩 읽기
     const pages = [];
     for (let i = 0; i < files.length; i++) {
