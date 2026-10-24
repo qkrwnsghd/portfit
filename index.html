@@ -6,20 +6,23 @@
 <style>:root{color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
-<title>포트핏 ETF 건강검진</title>
+<title>포트핏 투자 건강검진</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+KR:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&display=swap">
 <style>
 /* Layout: 검진 대상(ETF 추가·금액) 왼쪽 + 결과지(판정·노출·중복) 오른쪽, 좁으면 위아래로 쌓임. 병원 검진 결과지처럼 '결과 · 참고 기준 · 판정' 칸을 쓴다. */
 :root {
-  --bg: #F3F6F7;
+  --bg: #F2F4F6;
   --surface: #FFFFFF;
-  --ink: #14212B;
-  --muted: #586976;
-  --line: #D7DFE4;
-  --soft: #E9EEF1;
+  --ink: #18222B;
+  --muted: #5D6B77;
+  --line: #E1E6EA;
+  --soft: #F2F5F7;
+  --panel-line: transparent;
+  --shadow: 0 1px 2px rgba(24, 34, 43, 0.04), 0 6px 20px rgba(24, 34, 43, 0.05);
+  --hero-a: #0E7A6A; --hero-b: #1F9C8A;
   --accent: #0E7A6A;
   --accent-soft: #DDF1EC;
   --good: #23784A;  --good-bg: #E1F2E8;
@@ -29,7 +32,7 @@
   --c5: #C24157; --c6: #5E8A1F; --c7: #9C6B2B; --c8: #3E8BA3;
   --rest: #B9C4CB;
   --font-body: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
-  --font-num: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-num: "IBM Plex Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
@@ -38,6 +41,7 @@
     --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
     --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
     --rest: #4A5862;
+    --panel-line: #26323A; --shadow: none; --hero-a: #145E53; --hero-b: #1C7A6C;
     color-scheme: dark;
   }
 }
@@ -47,6 +51,7 @@
   --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
   --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
   --rest: #4A5862;
+  --panel-line: #26323A; --shadow: none; --hero-a: #145E53; --hero-b: #1C7A6C;
   color-scheme: dark;
 }
 
@@ -56,22 +61,25 @@ body {
   font-family: var(--font-body); font-size: 15px; line-height: 1.6;
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
-  padding-block: 28px 56px;
+  padding-block: 18px 56px;
 }
-.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 24px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
 .num { font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 
-header { display: grid; gap: 6px; }
-.brand { font-size: 12px; letter-spacing: 0.12em; color: var(--accent); font-weight: 700; }
-.brand span { color: var(--muted); font-weight: 500; letter-spacing: 0.04em; }
-h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 0; text-wrap: balance; font-weight: 700; }
-.lead { margin: 0; color: var(--muted); max-width: 62ch; }
+header.appbar { display: flex; align-items: center; gap: 12px; }
+.logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 19px; flex: none; }
+.brand { font-size: 17px; font-weight: 700; line-height: 1.2; }
+.tagline { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
+.beta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
+.view-intro { display: grid; gap: 6px; margin: 4px 0 18px; }
+h1 { font-size: clamp(22px, 3.4vw, 28px); line-height: 1.3; margin: 0; text-wrap: balance; font-weight: 700; }
+.lead { margin: 0; color: var(--muted); max-width: 62ch; font-size: 14.5px; }
 
 .layout { display: grid; grid-template-columns: minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
 @media (max-width: 860px) { .layout { grid-template-columns: minmax(0, 1fr); } }
 
-.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 20px; min-width: 0; }
-.panel h2 { font-size: 16px; margin: 0 0 4px; font-weight: 700; }
+.panel { background: var(--surface); border: 1px solid var(--panel-line); border-radius: 20px; padding: 22px; min-width: 0; box-shadow: var(--shadow); }
+.panel h2 { font-size: 17px; margin: 0 0 4px; font-weight: 700; }
 .panel .sub { margin: 0 0 14px; color: var(--muted); font-size: 13px; }
 .label { font-size: 11.5px; letter-spacing: 0.08em; color: var(--muted); font-weight: 500; }
 
@@ -82,7 +90,7 @@ h1 { font-size: clamp(24px, 4vw, 32px); line-height: 1.3; margin: 0; text-wrap: 
 .add label { font-size: 12.5px; font-weight: 500; }
 select {
   width: 100%; font: inherit; font-size: 14px; color: var(--ink); background: var(--bg);
-  border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px;
+  border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
 }
 select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .etf-list { display: grid; margin: 0; padding: 0; list-style: none; }
@@ -105,13 +113,14 @@ select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .total strong { font-size: 17px; }
 .btns { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 14px; }
 button {
-  font: inherit; font-size: 13px; padding: 7px 12px; border-radius: 6px; cursor: pointer;
-  border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+  font: inherit; font-size: 13.5px; padding: 9px 14px; border-radius: 12px; cursor: pointer;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink); font-weight: 500;
 }
 button:hover { border-color: var(--muted); }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 500; }
-.example-note { margin: 12px 0 0; font-size: 12px; color: var(--muted); background: var(--soft); border-radius: 6px; padding: 8px 10px; }
+button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+button.primary:hover { filter: brightness(1.06); }
+.example-note { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); background: var(--soft); border-radius: 12px; padding: 10px 12px; }
 
 .results { display: grid; gap: 20px; min-width: 0; }
 
@@ -143,7 +152,7 @@ table.report { width: 100%; border-collapse: collapse; font-size: 14px; }
 .bar-name { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; white-space: nowrap; }
 .bar-name .nm { overflow: hidden; text-overflow: ellipsis; }
 .av { flex: none; width: 24px; height: 24px; border-radius: 50%; background: var(--soft); border: 1px solid var(--line); color: var(--ink); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; letter-spacing: -0.03em; }
-.bar-track { height: 16px; background: var(--soft); border-radius: 4px; display: flex; overflow: hidden; }
+.bar-track { height: 16px; background: var(--soft); border-radius: 999px; display: flex; overflow: hidden; }
 .bar-track > span { height: 100%; }
 .bar-track > span + span { box-shadow: inset 1px 0 0 var(--surface); }
 .bar-val { text-align: right; font-size: 13.5px; }
@@ -160,14 +169,14 @@ table.matrix { border-collapse: separate; border-spacing: 3px; font-size: 12.5px
 .matrix td { width: 64px; height: 40px; text-align: center; border-radius: 5px; font-family: var(--font-num); font-variant-numeric: tabular-nums; }
 .matrix td.self { background: transparent; color: var(--line); }
 .pairs { display: grid; gap: 8px; margin-top: 14px; }
-.pair { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 13.5px; padding: 8px 10px; background: var(--soft); border-radius: 6px; }
+.pair { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; font-size: 13.5px; padding: 10px 12px; background: var(--soft); border-radius: 12px; }
 .pair b { font-weight: 700; }
 .tag { font-size: 11px; font-weight: 700; color: var(--bad); background: var(--bad-bg); padding: 1px 7px; border-radius: 999px; margin-left: 6px; white-space: nowrap; }
 
 /* 점수 · 기준선 · 기록 */
 .score-row { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; margin-bottom: 14px; }
 .score { display: flex; align-items: baseline; gap: 4px; }
-.score b { font-family: var(--font-num); font-size: 42px; line-height: 1; color: var(--accent); font-weight: 500; }
+.score b { font-family: var(--font-num); font-size: 44px; line-height: 1; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
 .score span { color: var(--muted); font-size: 13px; }
 .score-row .verdict { flex: 1 1 240px; }
 .delta { font-size: 13px; color: var(--muted); margin: -6px 0 12px; }
@@ -188,20 +197,53 @@ svg.trend { width: 100%; height: auto; display: block; margin-top: 8px; }
 @media (max-width: 520px) { .hist-list li { grid-template-columns: 80px 56px; } .hist-list li span:last-child { grid-column: 1 / -1; } }
 
 /* 탭 */
-.tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--line); overflow-x: auto; scrollbar-width: none; }
+.tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
 .tabs::-webkit-scrollbar { display: none; }
-@media (max-width: 480px) { .tab { padding: 10px 10px; font-size: 14px; } }
-.tab { border: 0; border-bottom: 2px solid transparent; border-radius: 0; background: none; padding: 10px 14px; font-size: 14.5px; font-weight: 500; color: var(--muted); margin-bottom: -1px; white-space: nowrap; flex-shrink: 0; }
-.tab:hover { color: var(--ink); border-color: transparent; }
-.tab[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 700; }
+.tab { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); padding: 9px 16px; font-size: 14.5px; font-weight: 600; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
+.tab svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: #fff; background: var(--accent); }
+@media (max-width: 720px) {
+  body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; gap: 0; justify-content: space-around; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)); }
+  .tab { flex: 1; flex-direction: column; gap: 3px; padding: 6px 0; font-size: 11.5px; background: none; box-shadow: none; border-radius: 12px; }
+  .tab svg { width: 23px; height: 23px; }
+  .tab[aria-selected="true"] { color: var(--accent); background: none; }
+}
+
+/* 홈 */
+.home { display: grid; gap: 16px; }
+.hero { border-radius: 24px; padding: 24px; color: #fff; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); display: grid; gap: 8px; }
+.hero small { font-size: 13px; opacity: .85; }
+.hero h1 { color: #fff; }
+.hero p { margin: 0; font-size: 14.5px; opacity: .95; max-width: 60ch; }
+.hero button { justify-self: start; margin-top: 6px; background: #fff; color: var(--hero-a); border: 0; font-weight: 700; }
+.home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
+.h-card { text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 20px; border-radius: 20px; background: var(--surface); border: 1px solid var(--panel-line); box-shadow: var(--shadow); color: var(--ink); font-weight: 400; }
+.h-card > * { grid-column: 1; }
+.h-card:hover { border-color: var(--accent); }
+.h-card .h-k { font-size: 13px; color: var(--muted); font-weight: 600; }
+.h-card .h-v { font-size: 30px; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.h-card .h-v small { font-size: 14px; color: var(--muted); font-weight: 500; margin-left: 2px; }
+.h-card > .h-d { grid-column: 1 / -1; font-size: 13px; color: var(--muted); line-height: 1.5; }
+.h-card > .h-go { grid-column: 1 / -1; font-size: 13px; color: var(--accent); font-weight: 600; margin-top: 4px; }
+.h-card > svg.ring { grid-row: 1 / 3; grid-column: 2; width: 64px; height: 64px; }
+.todo { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.todo li button { width: 100%; display: flex; align-items: center; gap: 12px; text-align: left; padding: 13px 14px; border-radius: 14px; background: var(--soft); border: 0; font-size: 14px; font-weight: 500; }
+.todo li button:hover { background: var(--accent-soft); }
+.todo .t-ic { width: 32px; height: 32px; border-radius: 10px; background: var(--surface); display: grid; place-items: center; font-size: 16px; flex: none; }
+.todo .t-arrow { margin-left: auto; color: var(--muted); }
+.how { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 4px; }
+.how div { background: var(--soft); border-radius: 14px; padding: 14px; font-size: 13px; color: var(--muted); }
+.how b { display: block; color: var(--ink); font-size: 14px; margin-bottom: 2px; }
 
 /* 매매 습관 진단 */
 textarea {
   width: 100%; min-height: 220px; resize: vertical; font-family: var(--font-num); font-size: 12.5px; line-height: 1.5;
-  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 10px;
+  color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 12px;
 }
 textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-.file-btn { display: inline-flex; align-items: center; font-size: 13px; padding: 7px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
+.file-btn { display: inline-flex; align-items: center; font-size: 13.5px; font-weight: 500; padding: 9px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface); cursor: pointer; }
 .file-btn:hover { border-color: var(--muted); }
 .file-btn input { position: absolute; width: 1px; height: 1px; opacity: 0; }
 .file-btn:focus-within { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -215,9 +257,9 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .note { font-size: 12.5px; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
 .hold-compare { display: grid; gap: 10px; margin-top: 4px; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
-.kpi { background: var(--soft); border-radius: 8px; padding: 10px 12px; }
+.kpi { background: var(--soft); border-radius: 14px; padding: 12px 14px; }
 .kpi span { display: block; font-size: 12px; color: var(--muted); }
-.kpi b { font-family: var(--font-num); font-size: 18px; font-weight: 500; }
+.kpi b { font-family: var(--font-num); font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .pos { color: var(--good); } .neg { color: var(--bad); }
 table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -228,7 +270,7 @@ table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 /* 습관 교정 */
 button:disabled { opacity: .55; cursor: default; }
 .coach { display: grid; gap: 12px; }
-.coach-card { border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; padding: 14px 16px; background: var(--surface); }
+.coach-card { border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 14px; padding: 14px 16px; background: var(--surface); }
 .coach-card.bad { border-left-color: var(--bad); }
 .coach-card h3 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .coach-card p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
@@ -254,14 +296,14 @@ button:disabled { opacity: .55; cursor: default; }
 .g-form { display: grid; gap: 12px; }
 .g-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
 .g-in { display: flex; align-items: center; gap: 6px; }
-.g-in input { flex: 1; min-width: 0; padding: 8px 10px; text-align: right; font-family: var(--font-num); font-size: 15px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.g-in input { flex: 1; min-width: 0; padding: 8px 10px; text-align: right; font-family: var(--font-num); font-size: 15px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; }
 .g-in input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 .g-in span { font-size: 12px; color: var(--muted); white-space: nowrap; font-weight: 400; }
 .g-link { justify-self: start; border: 0; padding: 0; background: none; color: var(--accent); font-size: 12.5px; text-decoration: underline; margin-top: -6px; }
 .g-quick { display: flex; gap: 6px; flex-wrap: wrap; margin-top: -4px; }
 .g-quick button { padding: 4px 10px; font-size: 12px; border-radius: 999px; }
 .g-big { display: flex; align-items: baseline; gap: 6px; flex-wrap: wrap; }
-.g-big b { font-family: var(--font-num); font-size: 44px; line-height: 1; color: var(--accent); font-weight: 500; }
+.g-big b { font-family: var(--font-num); font-size: 44px; line-height: 1; color: var(--accent); font-weight: 700; font-variant-numeric: tabular-nums; }
 .g-big span { color: var(--muted); font-size: 14px; }
 .g-sentence { font-size: 16px; font-weight: 700; margin: 10px 0 14px; text-wrap: balance; }
 .g-progress { height: 12px; background: var(--soft); border-radius: 999px; overflow: hidden; margin: 6px 0 4px; }
@@ -291,19 +333,28 @@ footer a { color: var(--accent); }
 </style>
 
 <div class="wrap">
-  <header>
-    <div class="brand">PORTFIT <span>· 투자 건강검진 베타</span></div>
-    <h1>ETF 여러 개 샀다고 분산된 걸까?</h1>
-    <p class="lead">가진 ETF와 금액을 넣으면, 각 ETF 안에 든 종목까지 풀어서 실제로 어디에 얼마가 들어가 있는지 보여드려요. 종목을 추천하지 않고, 지금 상태만 진단합니다.</p>
+  <header class="appbar">
+    <div class="logo" aria-hidden="true">P</div>
+    <div><div class="brand">포트핏</div><div class="tagline">내 투자 건강검진 · 쏠림, 습관, 목표를 한 번에</div></div>
+    <span class="beta">베타</span>
   </header>
 
-  <nav class="tabs" role="tablist" aria-label="진단 종류">
-    <button type="button" class="tab" role="tab" id="tab-etf" aria-controls="view-etf" aria-selected="true">ETF 건강검진</button>
-    <button type="button" class="tab" role="tab" id="tab-trades" aria-controls="view-trades" aria-selected="false">매매 습관 진단</button>
-    <button type="button" class="tab" role="tab" id="tab-goal" aria-controls="view-goal" aria-selected="false">목표 계산기</button>
+  <nav class="tabs" role="tablist" aria-label="메뉴">
+    <button type="button" class="tab" role="tab" id="tab-home" aria-controls="view-home" aria-selected="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>홈</span></button>
+    <button type="button" class="tab" role="tab" id="tab-etf" aria-controls="view-etf" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 3v9h9"/></svg><span>ETF 검진</span></button>
+    <button type="button" class="tab" role="tab" id="tab-trades" aria-controls="view-trades" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12h4l2-6 4 12 2-6h6"/></svg><span>습관</span></button>
+    <button type="button" class="tab" role="tab" id="tab-goal" aria-controls="view-goal" aria-selected="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 21V4"/><path d="M5 4h12l-2.5 4L17 12H5"/></svg><span>목표</span></button>
   </nav>
 
-  <div id="view-etf" role="tabpanel" aria-labelledby="tab-etf">
+  <div id="view-home" role="tabpanel" aria-labelledby="tab-home">
+    <div class="home" id="homeView"></div>
+  </div>
+
+  <div id="view-etf" role="tabpanel" aria-labelledby="tab-etf" hidden>
+  <div class="view-intro">
+    <h1>ETF 여러 개 샀다고 분산된 걸까?</h1>
+    <p class="lead">가진 ETF와 금액을 넣으면, 각 ETF 안에 든 종목까지 풀어서 실제로 어디에 얼마가 들어가 있는지 보여드려요. 종목을 추천하지 않고, 지금 상태만 진단해요.</p>
+  </div>
   <div class="layout">
     <section class="panel inputs" aria-labelledby="in-title">
       <h2 id="in-title">검진 대상</h2>
@@ -326,6 +377,10 @@ footer a { color: var(--accent); }
   </div>
 
   <div id="view-trades" role="tabpanel" aria-labelledby="tab-trades" hidden>
+  <div class="view-intro">
+    <h1>나는 어떤 투자 습관을 가졌을까?</h1>
+    <p class="lead">토스증권 주문내역 캡처나 거래내역을 넣으면, 손실을 오래 버티는지, 물타기를 자주 하는지 진단하고 고치는 방법까지 알려드려요.</p>
+  </div>
   <div class="layout">
     <section class="panel inputs" aria-labelledby="tr-in-title">
       <h2 id="tr-in-title">매매내역</h2>
@@ -353,6 +408,10 @@ footer a { color: var(--accent); }
   </div>
 
   <div id="view-goal" role="tabpanel" aria-labelledby="tab-goal" hidden>
+  <div class="view-intro">
+    <h1>목표까지 1년에 몇 %씩 불려야 할까?</h1>
+    <p class="lead">목표 금액과 기간, 매달 넣을 돈을 넣으면 필요한 수익률을 계산하고, 매달 계획대로 가고 있는지 확인해 드려요.</p>
+  </div>
   <div class="layout">
     <section class="panel inputs" aria-labelledby="g-in-title">
       <h2 id="g-in-title">내 목표</h2>
@@ -530,7 +589,7 @@ function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); 
 let TH = { ...TH_DEFAULT, ...(loadJSON(TH_KEY, {}) || {}) };
 let records = Array.isArray(loadJSON(HIST_KEY, [])) ? loadJSON(HIST_KEY, []) : [];
 let thOpen = false;
-let lastResult = null;
+let lastResult = null, etfHome = null;
 const today = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`; };
 
 // ---------- 계산 엔진 (노트북과 같은 공식) ----------
@@ -700,6 +759,8 @@ function renderResults() {
     top: top.name, topV: +top.total.toFixed(2), top3: +r.top3.toFixed(2), semi: +semi.toFixed(2),
     ov: bigPair ? +bigPair.overlap.toFixed(2) : null,
   };
+  etfHome = { score, verdict, isExample, total: totalMan, top: top.name, topV: top.total, n: r.etfs.length };
+  if (!document.getElementById("view-home").hidden) renderHome();
   const prev = records.filter(h => h.d !== lastResult.d).at(-1);
   const signed = (v, d = 1) => `${v > 0 ? "+" : ""}${v.toFixed(d)}`;
   const deltaHTML = prev ? (() => {
@@ -1676,15 +1737,105 @@ function renderGoal() {
   }
 }
 
+// ---------- 홈: 세 가지 검진 요약 + 오늘 할 일 ----------
+function ring(pct, color) {
+  const r = 26, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct));
+  return `<svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--soft)" stroke-width="8"/>
+    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(c * v / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/></svg>`;
+}
+const scoreColor = v => v >= 80 ? "var(--good)" : v >= 50 ? "var(--warn)" : "var(--bad)";
+const daysSince = d => dayDiff(d, today());
+function renderHome() {
+  const box = document.getElementById("homeView"); if (!box) return;
+  const hist = loadJSON(TRADE_HIST_KEY, []), lastH = hist.at(-1), prevH = hist.at(-2);
+  const habit = lastH ? { score: lastH.score, d: lastH.d } : lastTrade && !lastTrade.isSample ? { score: lastTrade.m.score, d: null } : null;
+  const g = goalSaved, gl = g ? g.log.at(-1) : null;
+  let gProg = null, gTxt = "";
+  if (g) {
+    gProg = Math.min(100, gl.v / g.fv * 100);
+    const rs = requiredMonthlyRate(g.pv0, g.pmt, g.months, g.fv), k = Math.round(dayDiff(g.start, gl.d) / 30.44);
+    const plan = isFinite(rs) ? fvAt(g.pv0, g.pmt, rs, Math.min(k, g.months)) : null;
+    gTxt = k === 0 || plan == null ? `${manwon(g.fv)}까지 ${period(g.months)} 계획을 시작했어요.` : gl.v >= plan ? `계획보다 ${manwon(gl.v - plan)} 앞서 있어요.` : `계획보다 ${manwon(plan - gl.v)} 뒤처져 있어요.`;
+  }
+
+  const todo = [];
+  if (etfHome && etfHome.isExample) todo.push(["📊", "내 ETF와 금액 넣고 쏠림 검진받기", "etf"]);
+  if (!g) todo.push(["🎯", "목표 금액 정하고 필요한 수익률 알아보기", "goal"]);
+  else if (daysSince(gl.d) >= 28) todo.push(["✍️", "이번 달 투자 금액 기록하기", "goal"]);
+  if (!lastH) todo.push(["🧾", "토스 주문내역 캡처로 매매 습관 진단하기", "trades"]);
+  else if (daysSince(lastH.d) >= 21) todo.push(["🔁", "새 거래내역으로 다시 진단해서 지난번과 비교하기", "trades"]);
+  if (!rules.start) todo.push(["📏", "나만의 매매 규칙 정하기 (손절선, 거래 횟수)", "trades"]);
+  if (etfHome && !etfHome.isExample && !records.some(r => r.d === today())) todo.push(["💾", "오늘 ETF 검진 결과 기록해 두기", "etf"]);
+
+  const parts = [];
+  if (etfHome && !etfHome.isExample) parts.push(`분산 건강 점수 ${etfHome.score}점`);
+  if (habit) parts.push(`습관 점수 ${habit.score}점`);
+  if (g) parts.push(`목표 진행률 ${fmt(gProg, 0)}%`);
+  const heroLine = parts.length ? `지금 ${parts.join(", ")}이에요.` : "ETF 쏠림, 매매 습관, 목표까지. 내 투자를 세 가지로 검진해 드려요.";
+  const next = todo[0];
+
+  box.innerHTML = `
+    <section class="hero">
+      <small>${today().replace(/-/g, ".")} · 내 투자 건강검진</small>
+      <h1>${parts.length ? "오늘의 투자 건강 상태" : "처음 오셨나요? 👋"}</h1>
+      <p>${heroLine}${next ? ` 오늘은 '${next[1]}'부터 해볼까요?` : " 오늘 할 일을 다 했어요."}</p>
+      ${next ? `<button type="button" data-go="${next[2]}">${next[1].split(" (")[0]} →</button>` : ""}
+    </section>
+
+    <div class="home-grid">
+      <button type="button" class="h-card" data-go="etf">
+        <span class="h-k">ETF 분산 건강 점수</span>
+        ${etfHome ? `<span class="h-v">${etfHome.score}<small>/ 100점</small></span>${ring(etfHome.score, scoreColor(etfHome.score))}
+        <span class="h-d">${esc(etfHome.verdict)}${etfHome.isExample ? " (예시 포트폴리오 기준)" : ""}</span>` : `<span class="h-v">–</span><span class="h-d">ETF를 넣으면 점수가 나와요.</span>`}
+        <span class="h-go">${etfHome && etfHome.isExample ? "내 ETF로 검진하기 →" : "자세히 보기 →"}</span>
+      </button>
+      <button type="button" class="h-card" data-go="trades">
+        <span class="h-k">매매 습관 점수</span>
+        ${habit ? `<span class="h-v">${habit.score}<small>/ 100점</small></span>${ring(habit.score, scoreColor(habit.score))}
+        <span class="h-d">${habit.d ? `${habit.d}에 저장한 진단이에요.` : "방금 진단한 결과예요."}${prevH ? ` 지난번보다 ${lastH.score - prevH.score >= 0 ? `${lastH.score - prevH.score}점 올랐어요.` : `${prevH.score - lastH.score}점 내려갔어요.`}` : ""}${rules.start ? ` 규칙을 정한 지 ${daysSince(rules.start)}일째예요.` : ""}</span>`
+        : `<span class="h-v" style="font-size:20px">아직 진단 전</span><span class="h-d">토스증권 주문내역을 캡처해서 올리면 손실을 오래 버티는지, 물타기를 하는지 알려드려요.</span>`}
+        <span class="h-go">${habit ? "규칙 지켰는지 보기 →" : "습관 진단하기 →"}</span>
+      </button>
+      <button type="button" class="h-card" data-go="goal">
+        <span class="h-k">목표 진행률</span>
+        ${g ? `<span class="h-v">${fmt(gProg, 0)}<small>%</small></span>${ring(gProg, "var(--accent)")}
+        <span class="h-d">${manwon(gl.v)} / ${manwon(g.fv)} · ${esc(gTxt)}</span>`
+        : `<span class="h-v" style="font-size:20px">목표 없음</span><span class="h-d">목표 금액과 기간을 정하면 1년에 몇 %씩 불려야 하는지 계산해 드려요.</span>`}
+        <span class="h-go">${g ? "이번 달 기록하기 →" : "목표 정하기 →"}</span>
+      </button>
+    </div>
+
+    <section class="panel" aria-labelledby="todo-title">
+      <h2 id="todo-title">오늘 할 일</h2>
+      <p class="sub">하나씩 하면 다음에 왔을 때 지난번과 비교할 수 있어요.</p>
+      ${todo.length ? `<ul class="todo">${todo.map(([ic, t, go]) => `<li><button type="button" data-go="${go}"><span class="t-ic" aria-hidden="true">${ic}</span>${esc(t)}<span class="t-arrow" aria-hidden="true">›</span></button></li>`).join("")}</ul>`
+        : `<p class="g-sentence" style="font-size:15px;margin:0">오늘 할 일을 다 했어요. 🎉 다음 달에 와서 금액을 기록하고 다시 진단해 보세요.</p>`}
+    </section>
+
+    <section class="panel" aria-labelledby="how-title">
+      <h2 id="how-title">포트핏은 이렇게 검진해요</h2>
+      <div class="how">
+        <div><b>📊 ETF 검진</b>ETF 안의 종목까지 풀어서, 한 종목이나 반도체에 얼마나 쏠렸는지 봐요.</div>
+        <div><b>🧾 습관 진단</b>거래내역으로 손실을 오래 버티는지, 물타기와 잦은 거래가 있는지 보고 고치는 방법을 알려줘요.</div>
+        <div><b>🎯 목표 계산</b>목표 금액까지 1년에 몇 %씩 불려야 하는지, 계획대로 가고 있는지 보여줘요.</div>
+      </div>
+      <p class="fine">기록은 이 기기의 브라우저에만 저장돼요. 포트핏은 종목을 추천하지 않고, 지금 상태만 진단해요.</p>
+    </section>`;
+  box.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => goTab(b.dataset.go)));
+}
+
 // ---------- 탭 ----------
 function showTab(name) {
-  const t = ["trades", "goal"].includes(name) ? name : "etf";
-  ["etf", "trades", "goal"].forEach(k => {
+  const t = ["etf", "trades", "goal"].includes(name) ? name : "home";
+  ["home", "etf", "trades", "goal"].forEach(k => {
     document.getElementById(`view-${k}`).hidden = t !== k;
     document.getElementById(`tab-${k}`).setAttribute("aria-selected", String(t === k));
   });
   if (t === "goal") renderGoal();
+  if (t === "home") renderHome();
 }
+function goTab(name) { showTab(name); try { history.replaceState(null, "", "#" + name); } catch (_) {} window.scrollTo({ top: 0 }); }
+document.getElementById("tab-home").addEventListener("click", () => goTab("home"));
 document.getElementById("tab-goal").addEventListener("click", () => { showTab("goal"); try { history.replaceState(null, "", "#goal"); } catch (_) {} });
 document.getElementById("tab-etf").addEventListener("click", () => { showTab("etf"); try { history.replaceState(null, "", "#etf"); } catch (_) {} });
 document.getElementById("tab-trades").addEventListener("click", () => { showTab("trades"); try { history.replaceState(null, "", "#trades"); } catch (_) {} });
