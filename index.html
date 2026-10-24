@@ -22,17 +22,19 @@
 <style>
 /* Layout: 검진 대상(ETF 추가·금액) 왼쪽 + 결과지(판정·노출·중복) 오른쪽, 좁으면 위아래로 쌓임. 병원 검진 결과지처럼 '결과 · 참고 기준 · 판정' 칸을 쓴다. */
 :root {
-  --bg: #F2F4F6;
+  --bg: #F1F3F8;
   --surface: #FFFFFF;
-  --ink: #18222B;
-  --muted: #5D6B77;
-  --line: #E1E6EA;
-  --soft: #F2F5F7;
+  --ink: #141B33;
+  --muted: #5B6584;
+  --line: #E0E4EF;
+  --soft: #F2F4FA;
   --panel-line: transparent;
-  --shadow: 0 1px 2px rgba(24, 34, 43, 0.04), 0 6px 20px rgba(24, 34, 43, 0.05);
-  --hero-a: #0E7A6A; --hero-b: #1F9C8A;
-  --accent: #0E7A6A;
-  --accent-soft: #DDF1EC;
+  --shadow: 0 1px 2px rgba(11, 18, 48, 0.05), 0 8px 24px rgba(11, 18, 48, 0.06);
+  --hero-a: #0B1230; --hero-b: #1C2A72; --hero-c: #0E6A70;
+  --neon: #3CF2D0;
+  --accent: #087F71;
+  --accent-soft: #E1F6F2;
+  --btn-bg: linear-gradient(135deg, #0B1230, #22308A); --btn-ink: #FFFFFF; --btn-glow: rgba(60, 242, 208, .35);
   --good: #23784A;  --good-bg: #E1F2E8;
   --warn: #9A6412;  --warn-bg: #FBEFD9;
   --bad:  #B5401B;  --bad-bg:  #FBE4DB;
@@ -44,22 +46,24 @@
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0E1418; --surface: #161F25; --ink: #E4ECF0; --muted: #94A4AF;
-    --line: #2A3740; --soft: #1D2830; --accent: #3FC4AA; --accent-soft: #163A33;
+    --bg: #060A18; --surface: #0E1530; --ink: #E7ECFF; --muted: #9AA5C8;
+    --line: #222C52; --soft: #151D3C; --accent: #3CF2D0; --accent-soft: #0E2D36;
+    --btn-bg: linear-gradient(135deg, #3CF2D0, #22B5D6); --btn-ink: #061024; --btn-glow: rgba(60, 242, 208, .45);
     --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
     --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
     --rest: #4A5862;
-    --panel-line: #26323A; --shadow: none; --hero-a: #145E53; --hero-b: #1C7A6C;
+    --panel-line: #1E2850; --shadow: none; --hero-a: #070C22; --hero-b: #18246A; --hero-c: #0B5F66;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0E1418; --surface: #161F25; --ink: #E4ECF0; --muted: #94A4AF;
-  --line: #2A3740; --soft: #1D2830; --accent: #3FC4AA; --accent-soft: #163A33;
+  --bg: #060A18; --surface: #0E1530; --ink: #E7ECFF; --muted: #9AA5C8;
+  --line: #222C52; --soft: #151D3C; --accent: #3CF2D0; --accent-soft: #0E2D36;
+  --btn-bg: linear-gradient(135deg, #3CF2D0, #22B5D6); --btn-ink: #061024; --btn-glow: rgba(60, 242, 208, .45);
   --good: #5FCB8C; --good-bg: #183528; --warn: #E3AE52; --warn-bg: #3A2C14; --bad: #F08A66; --bad-bg: #3E2017;
   --c1: #6FA3E0; --c2: #EE9E4F; --c3: #4CC0AC; --c4: #AE88DB; --c5: #E7738A; --c6: #93C052; --c7: #CC9A5A; --c8: #6BB8CF;
   --rest: #4A5862;
-  --panel-line: #26323A; --shadow: none; --hero-a: #145E53; --hero-b: #1C7A6C;
+  --panel-line: #1E2850; --shadow: none; --hero-a: #070C22; --hero-b: #18246A; --hero-c: #0B5F66;
   color-scheme: dark;
 }
 
@@ -126,8 +130,8 @@ button {
 }
 button:hover { border-color: var(--muted); }
 button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-button.primary:hover { filter: brightness(1.06); }
+button.primary { background: var(--btn-bg); border-color: transparent; color: var(--btn-ink); font-weight: 600; }
+button.primary:hover { box-shadow: 0 0 0 3px var(--btn-glow); }
 .example-note { margin: 12px 0 0; font-size: 12.5px; color: var(--muted); background: var(--soft); border-radius: 12px; padding: 10px 12px; }
 
 .results { display: grid; gap: 20px; min-width: 0; }
@@ -212,7 +216,7 @@ svg.trend { width: 100%; height: auto; display: block; margin-top: 8px; }
 .tab { display: inline-flex; align-items: center; gap: 7px; border: 0; border-radius: 999px; background: var(--surface); box-shadow: var(--shadow); padding: 9px 16px; font-size: 14.5px; font-weight: 600; color: var(--muted); white-space: nowrap; flex-shrink: 0; }
 .tab svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
 .tab:hover { color: var(--ink); }
-.tab[aria-selected="true"] { color: #fff; background: var(--accent); }
+.tab[aria-selected="true"] { color: var(--btn-ink); background: var(--btn-bg); }
 @media (max-width: 720px) {
   body { padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
   .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 50; gap: 0; justify-content: space-around; background: var(--surface); border-top: 1px solid var(--line); padding: 6px max(8px, env(safe-area-inset-left, 0px)) calc(6px + env(safe-area-inset-bottom, 0px)); }
@@ -251,11 +255,20 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 
 /* 홈 */
 .home { display: grid; gap: 16px; }
-.hero { border-radius: 24px; padding: 24px; color: #fff; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); display: grid; gap: 8px; }
-.hero small { font-size: 13px; opacity: .85; }
+.hero { position: relative; overflow: hidden; border-radius: 24px; padding: 24px; color: #fff; display: grid; gap: 8px;
+  background:
+    radial-gradient(circle at 92% 110%, rgba(60, 242, 208, .38), transparent 55%),
+    radial-gradient(circle at 10% -10%, rgba(255, 255, 255, .10), transparent 45%),
+    linear-gradient(transparent 23px, rgba(255, 255, 255, .045) 24px) 0 0 / 24px 24px,
+    linear-gradient(90deg, transparent 23px, rgba(255, 255, 255, .045) 24px) 0 0 / 24px 24px,
+    linear-gradient(135deg, var(--hero-a), var(--hero-b) 60%, var(--hero-c)); }
+.hero::after { content: ""; position: absolute; left: 24px; right: 24px; bottom: 0; height: 2px; background: linear-gradient(90deg, transparent, var(--neon), transparent); opacity: .7; }
+.hero small { color: var(--neon); opacity: 1; font-weight: 600; letter-spacing: .02em; }
+.hero small { font-size: 13px; }
 .hero h1 { color: #fff; }
 .hero p { margin: 0; font-size: 14.5px; opacity: .95; max-width: 60ch; }
-.hero button { justify-self: start; margin-top: 6px; background: #fff; color: var(--hero-a); border: 0; font-weight: 700; }
+.hero button { justify-self: start; margin-top: 6px; background: var(--neon); color: #061024; border: 0; font-weight: 700; box-shadow: 0 0 18px rgba(60, 242, 208, .45); }
+.hero button:hover { box-shadow: 0 0 26px rgba(60, 242, 208, .65); }
 .home-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; }
 .h-card { text-align: left; display: grid; grid-template-columns: 1fr auto; gap: 4px 12px; align-items: center; padding: 20px; border-radius: 20px; background: var(--surface); border: 1px solid var(--panel-line); box-shadow: var(--shadow); color: var(--ink); font-weight: 400; }
 .h-card > * { grid-column: 1; }
