@@ -183,6 +183,8 @@ table.matrix { border-collapse: separate; border-spacing: 3px; font-size: 12.5px
 .up-bad { color: var(--bad); font-weight: 500; }
 .up-good { color: var(--good); font-weight: 500; }
 details.th { margin-top: 14px; border-top: 1px solid var(--soft); padding-top: 12px; }
+.why { margin: 10px 0 0; padding-left: 18px; display: grid; gap: 8px; font-size: 13px; color: var(--muted); line-height: 1.65; }
+.why b { color: var(--ink); }
 details.th summary { cursor: pointer; font-size: 13px; color: var(--accent); font-weight: 500; }
 .th-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin-top: 10px; }
 .th-grid label { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
@@ -286,6 +288,9 @@ table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .trades td { padding: 7px 8px; border-bottom: 1px solid var(--soft); white-space: nowrap; }
 .trades td.r, .trades th.r { text-align: right; }
+.open-table input.px { width: 104px; padding: 6px 8px; text-align: right; font: inherit; font-size: 13px; font-variant-numeric: tabular-nums; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; }
+.open-table small.src { display: block; font-size: 10.5px; color: var(--muted); margin-top: 2px; }
+.open-table td { vertical-align: middle; }
 .chip { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); margin-left: 6px; }
 
 /* 습관 교정 */
@@ -684,6 +689,20 @@ function overlap(a, b) {
   return a.holdings.reduce((s, [name, w]) => s + (name !== CASH && name in mb ? Math.min(w, mb[name]) : 0), 0);
 }
 
+// 판정 기준의 근거: 법 규정과, 포트핏이 가진 실제 ETF 구성 데이터로 계산한 '대표 지수 수준'
+function etfWhyHTML() {
+  const k200 = BY_CODE["069500"] ? analyze([["069500", 1]]) : null;
+  const sp = BY_CODE["360750"] ? analyze([["360750", 1]]) : null;
+  const kTop = k200 && k200.ranked[0], kSemi = k200 && (k200.sectors["반도체"] || 0);
+  const spTop3 = sp && sp.top3;
+  return `<ul class="why">
+    <li><b>가장 큰 단일 종목 ${TH_DEFAULT.single}%</b> · 우리나라 공모펀드는 법(자본시장법 시행령)상 한 종목에 펀드 자산의 10%를 넘게 넣지 못하는 게 원칙이에요. 여러 사람 돈을 굴리는 펀드에 거는 분산 기준을 내 계좌에도 똑같이 적용했어요.${kTop ? ` 참고로 코스피200(KODEX 200)에서 가장 큰 ${esc(kTop.name)}는 ${fmt(kTop.total)}%예요. 지수가 원래 이만큼 쏠려 있다는 것도 같이 봐 주세요.` : ""}</li>
+    <li><b>상위 3개 종목 합계 ${TH_DEFAULT.top3}%</b> · 세계에서 가장 넓게 분산된 지수 중 하나인 미국 S&P500도 상위 3종목 합이 ${spTop3 ? `${fmt(spTop3)}%(TIGER 미국S&P500 기준)` : "20% 안팎"}예요. 그보다 조금 넉넉하게 잡은 선이에요.</li>
+    <li><b>반도체 섹터 ${TH_DEFAULT.semi}%</b> · 한 업종에 내 돈의 30% 넘게 걸지 않는다는 분산 기준이에요. 업종 하나가 흔들리면 계좌 전체가 같이 흔들리기 때문이에요.${kSemi ? ` 다만 지금은 코스피200 자체도 삼성전자·SK하이닉스 때문에 반도체가 ${fmt(kSemi)}%라서${kSemi > TH_DEFAULT.semi ? ", 한국 대표 지수만 사도 이 기준을 넘어요. '시장 평균보다 많다'는 뜻이 아니라 '반도체 경기에 계좌가 크게 걸려 있다'는 뜻으로 읽어 주세요." : "요."}` : ""}</li>
+    <li><b>ETF 간 중복률 ${TH_DEFAULT.overlap}%</b> · 두 ETF가 20% 겹치면 그 ETF에 넣은 돈의 다섯 중 하나는 같은 종목을 두 번 산 셈이에요. 같은 지수를 따라가는 ETF는 거의 100% 겹쳐서 바로 '쏠림'으로 봐요.</li>
+    <li><b>판정 방식</b> · 기준 이하는 '양호', 기준의 2배까지는 '주의', 그 이상은 '쏠림'이에요. 포트핏 베타 기준이라 '나만의 기준선 정하기'에서 바꿀 수 있어요.</li>
+  </ul>`;
+}
 function grade(v, good, warn) { return v <= good ? "good" : v <= warn ? "warn" : "bad"; }
 const LABEL = { good: "양호", warn: "주의", bad: "쏠림" };
 const fmt = (v, d = 1) => v.toFixed(d);
@@ -874,6 +893,10 @@ function renderResults() {
           <label for="th-${k}">${TH_LABEL[k]}<input id="th-${k}" type="number" min="1" max="100" step="1" value="${TH[k]}"></label>`).join("")}
         </div>
         <div class="report-actions"><button type="button" id="thReset">기본 기준으로</button></div>
+      </details>
+      <details class="th">
+        <summary>왜 이 기준이에요?</summary>
+        ${etfWhyHTML()}
       </details>
     </section>
 
@@ -1450,6 +1473,16 @@ function runTrades() {
         </table>
       </div>
       <p class="fine">수수료와 세금은 빼고 계산했어요. 같은 종목을 여러 번 샀다면 먼저 산 것부터 판 것으로 봐요(선입선출).</p>
+      <details class="th">
+        <summary>왜 이 기준이에요?</summary>
+        <ul class="why">
+          <li><b>손실 거래를 버틴 기간 1.2배</b> · 행동재무학의 '처분효과'예요. 미국 개인투자자 1만 계좌를 분석한 연구(Odean, 1998)에서 사람들은 오른 주식을 내린 주식보다 약 1.5배 더 쉽게 팔았어요. 손실 보유 기간이 이익 보유 기간과 비슷하면(1.2배 이하) 이 경향이 약하다고 보고, 2배를 넘으면 뚜렷하다고 봐요.</li>
+          <li><b>손익비 1.5</b> · 평균 수익이 평균 손실의 1.5배면 승률이 40%만 돼도 손해를 안 봐요(0.4×1.5 = 0.6×1). 1보다 작으면 이기는 횟수가 많아도 돈이 줄 수 있어요.</li>
+          <li><b>물타기 비율 10%</b> · 미리 계획한 분할 매수가 아니라면, 떨어진 종목을 평균단가보다 싸게 더 사는 건 처분효과와 같은 '본전 생각'에서 나오는 경우가 많아요. 산 거래 열 번 중 한 번 이하를 양호로 봤어요.</li>
+          <li><b>매매 빈도 월 8회</b> · 미국 증권사 6만여 가구를 분석한 연구(Barber &amp; Odean, 2000)에서 가장 자주 거래한 20%는 연 수익률이 11.4%로, 시장(17.9%)보다 크게 낮았어요. 수수료·세금과 충동 매매 때문이에요. 일주일에 두 번 정도를 넘지 않는 선을 양호로 잡았어요.</li>
+          <li class="fine" style="list-style:none;margin-left:-18px">숫자 기준은 연구 결과를 참고한 포트핏 베타 기준이고, 투자 성과를 보장하지 않아요.</li>
+        </ul>
+      </details>
     </section>
 
     ${coachHTML(rows, a)}
@@ -1479,12 +1512,13 @@ function runTrades() {
           </tbody>
         </table>
       </div>
-      ${a.openPos.length ? `<p class="fine">아직 보유 중: ${a.openPos.map(p => `${esc(p.name)} ${p.qty.toLocaleString("ko-KR")}주 (평균 ${Math.round(p.avg).toLocaleString("ko-KR")}원, ${p.since}부터)`).join(" · ")}</p>` : ""}
-    </section>`;
+    </section>
+    ${a.openPos.length ? `<section class="panel" id="openPanel" aria-labelledby="open-title"></section>` : ""}`;
   lastTrade = { a, isSample: tradeText.value.trim() === SAMPLE_TRADES.trim(),
     m: { holdRatio, payoff, avgDownRate: a.avgDownRate, perMonth: a.perMonth, busy: a.busyDays.length, score,
          n: a.trades.length, from: a.trades[0].date, to: a.trades.at(-1).date } };
   tradeResults.querySelectorAll("[data-rule]").forEach(b => b.addEventListener("click", () => focusRule(b.dataset.rule)));
+  renderOpen();
   renderRules(); renderCmp();
 }
 function signedPct(v) { return `${v > 0 ? "+" : ""}${fmt(v)}%`; }
@@ -1834,6 +1868,61 @@ function renderGoal() {
   }
 }
 
+// ---------- 평가손익: 아직 들고 있는 종목 × 현재가 ----------
+// 현재가는 ① 직접 입력한 값 ② GitHub 자동 수집(prices.json, 국내 종목 종가) 순서로 씀
+const PRICE_KEY = "portfit-prices-v1";
+let priceFeed = { asof: null, prices: {} };
+(async () => {
+  try {
+    const r = await fetch("prices.json", { cache: "no-store" });
+    if (r.ok) { const j = await r.json(); if (j && j.prices) { priceFeed = j; if (lastTrade) renderOpen(); } }
+  } catch (_) {}
+})();
+function renderOpen() {
+  const box = document.getElementById("openPanel"); if (!box || !lastTrade) return;
+  const a = lastTrade.a, manual = loadJSON(PRICE_KEY, {});
+  const rows = a.openPos.map(p => {
+    const m = manual[p.name], f = priceFeed.prices[p.name];
+    const price = m ? m.p : f || null, src = m ? `직접 입력 ${m.d}` : f ? `${priceFeed.asof} 종가 (자동)` : "";
+    const cost = p.qty * p.avg, val = price ? p.qty * price : null, pnl = val == null ? null : val - cost;
+    const days = dayDiff(p.since, today());
+    return { ...p, price, src, cost, val, pnl, ret: pnl == null ? null : pnl / cost * 100, days, auto: !m && !!f };
+  });
+  const known = rows.filter(r => r.val != null);
+  const tCost = known.reduce((s, r) => s + r.cost, 0), tVal = known.reduce((s, r) => s + r.val, 0), tPnl = tVal - tCost;
+  const stuck = rows.filter(r => r.pnl != null && r.pnl < 0 && a.winHold != null && r.days > Math.max(30, a.winHold * 2));
+  box.innerHTML = `
+    <h2 id="open-title">아직 들고 있는 종목 ${rows.length}개 · 평가손익</h2>
+    <p class="sub">지금 가격을 넣으면 평가금액과 손익을 계산해요.${Object.keys(priceFeed.prices).length ? ` 국내 종목은 ${priceFeed.asof} 종가가 자동으로 들어가요.` : " 토스증권 앱의 현재가를 보고 넣어 주세요."} 넣은 가격은 저장돼요.</p>
+    ${known.length ? `<div class="kpis">
+      <div class="kpi"><span>산 금액(가격 넣은 종목)</span><b>${won(tCost)}</b></div>
+      <div class="kpi"><span>지금 평가금액</span><b>${won(tVal)}</b></div>
+      <div class="kpi"><span>평가손익</span><b class="${tPnl >= 0 ? "pos" : "neg"}">${tPnl >= 0 ? "+" : ""}${won(tPnl)}</b></div>
+      <div class="kpi"><span>수익률</span><b class="${tPnl >= 0 ? "pos" : "neg"}">${signedPct(tPnl / tCost * 100)}</b></div>
+    </div>` : ""}
+    <div class="table-scroll">
+      <table class="trades open-table">
+        <thead><tr><th>종목</th><th class="r">수량</th><th class="r">평균단가</th><th class="r">지금 가격</th><th class="r">평가손익</th><th class="r">수익률</th><th class="r">보유</th></tr></thead>
+        <tbody>${rows.map((r, i) => `
+          <tr><td>${esc(r.name)}${stuck.includes(r) ? `<span class="chip">오래 버티는 중</span>` : ""}</td>
+            <td class="r num">${r.qty.toLocaleString("ko-KR")}</td>
+            <td class="r num">${Math.round(r.avg).toLocaleString("ko-KR")}</td>
+            <td class="r"><input class="px" type="number" inputmode="decimal" min="0" step="any" data-i="${i}" value="${r.price ?? ""}" placeholder="입력" aria-label="${esc(r.name)} 지금 가격"><small class="src">${esc(r.src)}</small></td>
+            <td class="r num ${r.pnl == null ? "" : r.pnl >= 0 ? "pos" : "neg"}">${r.pnl == null ? "–" : (r.pnl >= 0 ? "+" : "") + won(r.pnl)}</td>
+            <td class="r num ${r.ret == null ? "" : r.ret >= 0 ? "pos" : "neg"}">${r.ret == null ? "–" : signedPct(r.ret)}</td>
+            <td class="r num">${r.days}일</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    ${stuck.length ? `<p class="note">'오래 버티는 중' 종목은 손실인데 이익 종목 평균 보유 기간(${fmt(a.winHold, 0)}일)의 2배 넘게 들고 있어요. 처분효과일 수 있으니 '지금 이 가격이면 새로 살까?'를 한 번 물어보세요.</p>` : ""}
+    <p class="fine">수수료·세금은 빼고, 평균단가는 선입선출로 남은 수량 기준이에요. 해외 주식도 토스증권처럼 원화 가격을 넣으면 돼요.</p>`;
+  box.querySelectorAll("input.px").forEach(inp => inp.addEventListener("change", () => {
+    const r = rows[+inp.dataset.i], v = Number(inp.value), m = loadJSON(PRICE_KEY, {});
+    if (v > 0) m[r.name] = { p: v, d: today() }; else delete m[r.name];
+    saveJSON(PRICE_KEY, m); renderOpen();
+  }));
+}
+
 // ---------- 로그인 · 서버 저장 (Supabase) ----------
 // 이 주소와 키는 '공개용'이라 코드에 들어가도 괜찮아요(행 수준 보안으로 본인 기록만 읽고 쓸 수 있음).
 // 절대 service_role / secret 키를 넣지 마세요.
@@ -1842,7 +1931,7 @@ const SB_KEY = "sb_publishable_LwX5Sxi2L32sFcFPHZ4nUg_RNnqtENW";
 const SB_LIB = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js";
 const SYNC_META = "portfit-sync-meta-v1";
 var sb = null, sbUser = null, sbReady = false, syncTimer = null, syncApplying = false;
-function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY]; }
+function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY, PRICE_KEY]; }
 function syncDirty(key) {
   if (syncApplying || !sbUser || key === SYNC_META) return;
   const m = loadJSON(SYNC_META, {}); m.dirty = true; m.uid = sbUser.id;
