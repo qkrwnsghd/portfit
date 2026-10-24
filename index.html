@@ -225,6 +225,11 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 .acct input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
 .acct-who { font-size: 16px; font-weight: 700; margin: 8px 0 0; word-break: break-all; }
 #acctMsg:empty { display: none; }
+.acct label.agree { display: flex; grid-template-columns: none; gap: 8px; align-items: flex-start; font-weight: 400; font-size: 12.5px; color: var(--muted); margin-top: 12px; }
+.acct label.agree input { width: 18px; height: 18px; padding: 0; margin: 1px 0 0; flex: none; accent-color: var(--accent); }
+.acct a { color: var(--accent); }
+.acct-danger { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.acct-danger button { color: var(--bad); border-color: var(--bad-bg); }
 #acctMsg.bad { color: var(--bad); }
 
 /* 홈 */
@@ -460,6 +465,7 @@ footer a { color: var(--accent); }
         <p class="sub">로그인하면 ETF 목록, 검진 기록, 목표, 습관 진단, 매매 규칙이 계정에 저장돼요. 폰과 PC에서 같은 기록을 볼 수 있어요. 토스 캡처와 거래내역 원본은 저장하지 않아요.</p>
         <label>이메일<input id="acctEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>
         <label>비밀번호 (6자 이상)<input id="acctPw" type="password" autocomplete="current-password" minlength="6"></label>
+        <label class="agree"><input type="checkbox" id="acctAgree"><span>처음 가입할 때: <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보 수집·이용</a>에 동의해요 (필수). 만 14세 이상이에요.</span></label>
         <div class="btns"><button type="button" class="primary" id="acctLogin">로그인</button><button type="button" id="acctSignup">처음이에요, 가입하기</button></div>
       </div>
       <div id="acctIn" hidden>
@@ -467,6 +473,10 @@ footer a { color: var(--accent); }
         <p class="sub" id="acctSync"></p>
         <div class="btns"><button type="button" id="acctSyncNow">지금 동기화</button><button type="button" id="acctLogout">로그아웃</button></div>
         <p class="fine">로그아웃하면 이 기기에 남은 기록도 지워요. 기록은 계정에 저장되어 있어서 다시 로그인하면 돌아와요.</p>
+        <div class="acct-danger">
+          <button type="button" id="acctWipe">내 기록 모두 삭제</button>
+          <p class="fine" style="margin-top:6px">서버와 이 기기에 저장된 포트핏 기록을 모두 지우고 로그아웃해요. 이메일 계정 자체를 지우려면 <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>의 이메일로 요청해 주세요.</p>
+        </div>
       </div>
       <p class="fine" id="acctMsg" role="status"></p>
     </form>
@@ -477,6 +487,7 @@ footer a { color: var(--accent); }
     <div><b>분류:</b> 섹터와 국가는 포트핏이 종목별로 붙인 분류예요. SK스퀘어는 SK하이닉스 지분이 핵심 자산이라 반도체로 분류했어요. 알파벳은 A·C 두 종류 주식을 합쳤어요. 판정 기준은 베타용 임시 기준이에요.</div>
     <div><b>매매 습관 진단:</b> 붙여넣은 거래내역은 이 브라우저 안에서만 계산되고 저장되거나 전송되지 않아요. 지표는 행동재무학의 처분효과(이익은 빨리, 손실은 늦게 파는 경향) 등을 참고한 베타 기준이에요.</div>
     <div>포트핏은 입력한 정보를 바탕으로 현재 상태를 계산해 보여줄 뿐, 특정 금융투자상품의 매매를 권유하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</div>
+    <div><a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보처리방침</a></div>
   </footer>
 </div>
 
@@ -1833,6 +1844,7 @@ const authKo = e => (AUTH_KO.find(([re]) => re.test(e && e.message || "")) || [n
 async function acctAuth(kind) {
   const email = document.getElementById("acctEmail").value.trim(), password = document.getElementById("acctPw").value;
   if (!email || password.length < 6) { acctStatus("이메일과 6자 이상 비밀번호를 넣어 주세요.", true); return; }
+  if (kind === "signup" && !document.getElementById("acctAgree").checked) { acctStatus("가입하려면 개인정보 수집·이용 동의에 체크해 주세요.", true); return; }
   acctStatus(kind === "signup" ? "가입하는 중…" : "로그인하는 중…");
   const { data, error } = kind === "signup" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
   if (error) { acctStatus(authKo(error), true); return; }
@@ -1861,6 +1873,17 @@ async function initAccount() {
     syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
     location.reload();
   });
+  const wipe = document.getElementById("acctWipe");
+  wipe.addEventListener("click", async () => {
+    if (wipe.dataset.armed !== "1") { wipe.dataset.armed = "1"; wipe.textContent = "정말 지울까요? 한 번 더 누르면 지워져요"; return; }
+    acctStatus("지우는 중…");
+    clearTimeout(syncTimer);
+    const { error } = await sb.from("user_data").delete().eq("user_id", sbUser.id);
+    if (error) { acctStatus(`지우지 못했어요: ${error.message}`, true); return; }
+    await sb.auth.signOut(); sbUser = null;
+    syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
+    location.reload();
+  });
   const { data } = await sb.auth.getSession();
   sbUser = data.session ? data.session.user : null;
   acctStatus();
@@ -1873,7 +1896,7 @@ async function initAccount() {
 function ring(pct, color) {
   const r = 26, c = 2 * Math.PI * r, v = Math.max(0, Math.min(100, pct));
   return `<svg class="ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="${r}" fill="none" stroke="var(--soft)" stroke-width="8"/>
-    <circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(c * v / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/></svg>`;
+    ${v <= 0 ? "" : `<circle cx="32" cy="32" r="${r}" fill="none" stroke="${color}" stroke-width="8" stroke-linecap="round" stroke-dasharray="${(c * v / 100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)"/>`}</svg>`;
 }
 const scoreColor = v => v >= 80 ? "var(--good)" : v >= 50 ? "var(--warn)" : "var(--bad)";
 const daysSince = d => dayDiff(d, today());
