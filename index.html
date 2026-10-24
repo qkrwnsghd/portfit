@@ -225,6 +225,31 @@ table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades td.r, .trades th.r { text-align: right; }
 .chip { font-size: 11px; font-weight: 700; padding: 1px 7px; border-radius: 999px; background: var(--warn-bg); color: var(--warn); margin-left: 6px; }
 
+/* 습관 교정 */
+button:disabled { opacity: .55; cursor: default; }
+.coach { display: grid; gap: 12px; }
+.coach-card { border: 1px solid var(--line); border-left: 4px solid var(--warn); border-radius: 8px; padding: 14px 16px; background: var(--surface); }
+.coach-card.bad { border-left-color: var(--bad); }
+.coach-card h3 { margin: 0 0 4px; font-size: 15px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.coach-card p { margin: 0 0 8px; color: var(--muted); font-size: 13px; }
+.coach-card ol { margin: 0 0 10px; padding-left: 20px; display: grid; gap: 5px; font-size: 13.5px; }
+.coach-card button { font-size: 12.5px; padding: 6px 12px; }
+.coach-good { font-size: 13px; color: var(--muted); margin: 12px 0 0; }
+.rules { display: grid; gap: 10px; }
+.rule-row { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; padding: 10px 12px; background: var(--soft); border-radius: 8px; font-size: 13.5px; }
+.rule-row input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--accent); }
+.rule-row .rule-txt { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.rule-row input[type=number] { width: 64px; padding: 5px 8px; text-align: right; font-family: var(--font-num); font-size: 14px; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; }
+.rule-row.flash { outline: 2px solid var(--accent); }
+.cmp { display: grid; gap: 8px; }
+.cmp-row { display: grid; grid-template-columns: minmax(0,1.3fr) auto auto; gap: 10px; align-items: center; padding: 9px 12px; background: var(--soft); border-radius: 8px; font-size: 13.5px; }
+.cmp-row .num { white-space: nowrap; }
+.cmp-row .better { color: var(--good); font-weight: 700; }
+.cmp-row .worse { color: var(--bad); font-weight: 700; }
+.rule-check { padding: 12px 14px; border: 1px solid var(--line); border-radius: 8px; font-size: 13.5px; display: grid; gap: 6px; }
+.rc-line { display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; color: var(--muted); font-size: 13px; }
+.vio { margin: 6px 0 0; padding-left: 18px; font-size: 12.5px; color: var(--muted); }
+
 /* 목표 계산기 */
 .g-form { display: grid; gap: 12px; }
 .g-form label { display: grid; gap: 6px; font-size: 13px; font-weight: 500; }
@@ -1262,12 +1287,16 @@ function runTrades() {
           <thead><tr><th>항목</th><th>결과</th><th>참고 기준</th><th>판정</th></tr></thead>
           <tbody>${rows.map(x => `
             <tr><td class="item">${x.item}<small>${esc(x.note)}</small></td><td class="val num">${x.val}</td><td class="ref">${x.ref}</td>
-            <td><span class="pill ${x.g}">${x.label || LABEL[x.g] || "참고"}</span></td></tr>`).join("")}
+            <td><span class="pill ${x.g}">${x.label || TLABEL[x.g]}</span></td></tr>`).join("")}
           </tbody>
         </table>
       </div>
       <p class="fine">수수료와 세금은 빼고 계산했어요. 같은 종목을 여러 번 샀다면 먼저 산 것부터 판 것으로 봐요(선입선출).</p>
     </section>
+
+    ${coachHTML(rows, a)}
+    <section class="panel" id="rulesPanel" aria-labelledby="rules-title"></section>
+    <section class="panel" id="cmpPanel" aria-labelledby="cmp-title"></section>
 
     ${a.winHold != null && a.lossHold != null ? `
     <section class="panel">
@@ -1294,6 +1323,11 @@ function runTrades() {
       </div>
       ${a.openPos.length ? `<p class="fine">아직 보유 중: ${a.openPos.map(p => `${esc(p.name)} ${p.qty.toLocaleString("ko-KR")}주 (평균 ${Math.round(p.avg).toLocaleString("ko-KR")}원, ${p.since}부터)`).join(" · ")}</p>` : ""}
     </section>`;
+  lastTrade = { a, isSample: tradeText.value.trim() === SAMPLE_TRADES.trim(),
+    m: { holdRatio, payoff, avgDownRate: a.avgDownRate, perMonth: a.perMonth, busy: a.busyDays.length, score,
+         n: a.trades.length, from: a.trades[0].date, to: a.trades.at(-1).date } };
+  tradeResults.querySelectorAll("[data-rule]").forEach(b => b.addEventListener("click", () => focusRule(b.dataset.rule)));
+  renderRules(); renderCmp();
 }
 function signedPct(v) { return `${v > 0 ? "+" : ""}${fmt(v)}%`; }
 
@@ -1316,6 +1350,169 @@ document.getElementById("tradeFile").addEventListener("change", e => {
   e.target.value = "";
 });
 
+
+// ---------- 습관 교정: 교정 카드 · 나만의 규칙 · 지난 진단 비교 ----------
+// 종목을 추천하지 않고, 진단에서 나온 '습관'을 고치는 행동만 안내해요.
+let lastTrade = null;
+const TLABEL = { good: "좋음", warn: "주의", bad: "위험", info: "참고" };
+const COACH = {
+  "손실 거래를 버틴 기간": { title: "처분효과: 손실을 너무 오래 들고 있어요", rule: "stop",
+    why: a => `이익 거래는 평균 ${fmt(a.winHold, 0)}일 만에 팔았는데, 손실 거래는 ${fmt(a.lossHold, 0)}일을 버텼어요. 본전 생각에 손실을 키우는 패턴이에요.`,
+    todo: ["살 때 '이 가격까지 떨어지면 판다'(손절선)를 먼저 정하고 적어 두세요.",
+           "증권사 앱에 가격 도달 시 자동으로 파는 주문(조건 주문) 기능이 있으면 살 때 같이 걸어 두세요.",
+           "손실 종목을 볼 때 '지금 이 가격이면 새로 살까?'를 물어보세요. 아니라면 들고 있을 이유도 약해요."] },
+  "손익비": { title: "손익비: 벌 때는 작게, 잃을 때는 크게", rule: "stop",
+    why: a => `평균 수익은 ${signedPct(a.avgWin)}, 평균 손실은 ${signedPct(a.avgLoss)}예요. 승률이 높아도 이 구조면 돈이 줄어들 수 있어요.`,
+    todo: ["손절선을 정해 손실의 크기부터 묶으세요.",
+           "목표 수익은 손절선의 1.5배 이상으로 잡으세요. 예: 손절 -7%면 목표 +10.5%.",
+           "아래 '판 거래' 표에서 조금 오르자마자 판 거래가 많은지 확인해 보세요."] },
+  "물타기 비율": { title: "물타기: 떨어진 종목을 더 사고 있어요", rule: "add",
+    why: a => `산 거래 중 ${fmt(a.avgDownRate)}%가 평균단가보다 싸게 더 산 거래예요(${a.avgDowns.length}건). 계획 없는 물타기는 한 종목 손실을 키워요.`,
+    todo: ["추가 매수는 처음 살 때 '3번 나눠 산다'처럼 미리 계획한 경우에만 하세요.",
+           "떨어진 이유를 한 줄로 쓸 수 없으면 더 사지 마세요.",
+           "한 종목이 전체 투자금에서 차지할 수 있는 상한을 정하세요. 예: 20%."] },
+  "매매 빈도": { title: "과잉매매: 거래가 잦아요", rule: "day",
+    why: a => `한 달에 평균 ${fmt(a.perMonth)}번 거래했고, 하루에 3번 이상 거래한 날이 ${a.busyDays.length}일이에요. 잦은 거래는 수수료·세금과 충동 매매를 늘려요.`,
+    todo: ["하루 거래 횟수와 한 달 거래 횟수의 상한을 정하세요.",
+           "사기 전에 '왜 사는지' 한 줄을 먼저 적고, 못 쓰면 사지 마세요.",
+           "장중 시세 알림을 줄이고, 주문은 정해 둔 시간에만 하세요."] },
+};
+function coachHTML(rows, a) {
+  const bad = rows.filter(r => r.g === "bad" || r.g === "warn").sort((x, y) => (x.g === "bad" ? 0 : 1) - (y.g === "bad" ? 0 : 1));
+  const good = rows.filter(r => r.g === "good");
+  return `
+    <section class="panel" aria-labelledby="coach-title">
+      <h2 id="coach-title">이렇게 고쳐 보세요</h2>
+      <p class="sub">진단에서 걸린 습관마다 해볼 행동이에요. 마음에 드는 건 '내 규칙으로 정하기'를 눌러 저장하면, 다음 진단 때 지켰는지 확인해 드려요.</p>
+      ${bad.length ? `<div class="coach">${bad.map(r => { const c = COACH[r.item]; return `
+        <article class="coach-card ${r.g}">
+          <h3>${c.title} <span class="pill ${r.g}">${r.label || TLABEL[r.g]}</span></h3>
+          <p>${esc(c.why(a))}</p>
+          <ol>${c.todo.map(t => `<li>${esc(t)}</li>`).join("")}</ol>
+          <button type="button" data-rule="${c.rule}">내 규칙으로 정하기</button>
+        </article>`; }).join("")}</div>` : `<p class="g-sentence" style="font-size:15px;margin:0">고칠 습관이 눈에 띄지 않아요. 지금처럼 규칙을 지키면 돼요. 👏</p>`}
+      ${good.length ? `<p class="coach-good">잘하고 있는 항목: ${good.map(r => r.item).join(" · ")}</p>` : ""}
+    </section>`;
+}
+
+const RULE_KEY = "portfit-rules-v1", TRADE_HIST_KEY = "portfit-trade-hist-v1";
+const RULE_DEFAULT = { start: null, on: { stop: false, add: false, day: false, month: false }, stop: 7, add: 1, day: 2, month: 8 };
+let rules = Object.assign({}, RULE_DEFAULT, loadJSON(RULE_KEY, {}));
+rules.on = Object.assign({}, RULE_DEFAULT.on, rules.on);
+const RULE_TEXT = {
+  stop: v => `손실이 <input type="number" min="1" max="50" step="0.5" data-k="stop" value="${v}" aria-label="손절 기준 %"> % 넘기 전에 판다`,
+  add: v => `한 종목을 평균단가보다 싸게 더 사는 건 <input type="number" min="0" max="10" step="1" data-k="add" value="${v}" aria-label="물타기 최대 횟수"> 번까지만`,
+  day: v => `하루에 <input type="number" min="1" max="30" step="1" data-k="day" value="${v}" aria-label="하루 최대 거래"> 번까지만 거래한다`,
+  month: v => `한 달에 <input type="number" min="1" max="200" step="1" data-k="month" value="${v}" aria-label="한 달 최대 거래"> 번까지만 거래한다`,
+};
+// 규칙을 어긴 거래 찾기 (since 날짜 이후만)
+function ruleViolations(a, r, since) {
+  const ok = d => !since || d >= since;
+  const out = {};
+  const sells = a.realized.filter(x => ok(x.date));
+  out.stop = { total: sells.length,
+    bad: sells.filter(x => x.ret < -r.stop).map(x => `${x.date} ${x.name} ${signedPct(x.ret)}`) };
+  const addBy = {};
+  a.avgDowns.filter(x => ok(x.date)).forEach(x => { addBy[x.name] = (addBy[x.name] || 0) + 1; });
+  const buyNames = new Set(a.trades.filter(t => t.side === "buy" && ok(t.date)).map(t => t.name));
+  out.add = { total: buyNames.size, bad: Object.entries(addBy).filter(([, n]) => n > r.add).map(([nm, n]) => `${nm} ${n}번`) };
+  const byDay = {}, byMonth = {};
+  a.trades.filter(t => ok(t.date)).forEach(t => { byDay[t.date] = (byDay[t.date] || 0) + 1; const m = t.date.slice(0, 7); byMonth[m] = (byMonth[m] || 0) + 1; });
+  out.day = { total: Object.keys(byDay).length, bad: Object.entries(byDay).filter(([, n]) => n > r.day).map(([d, n]) => `${d} ${n}번`) };
+  out.month = { total: Object.keys(byMonth).length, bad: Object.entries(byMonth).filter(([, n]) => n > r.month).map(([m, n]) => `${m} ${n}번`) };
+  return out;
+}
+const UNIT = { stop: n => `${n}건 중`, add: n => `${n}종목 중`, day: n => `${n}일 중`, month: n => `${n}달 중` };
+function vioCell(v, k) {
+  if (!v.total) return `<span class="fine">해당 거래 없음</span>`;
+  return v.bad.length ? `<b class="neg">${v.bad.length}번 어김</b> <span class="fine">(${UNIT[k](v.total)})</span>` : `<b class="pos">다 지켰어요</b> <span class="fine">(${UNIT[k](v.total)})</span>`;
+}
+function renderRules() {
+  const box = document.getElementById("rulesPanel"); if (!box || !lastTrade) return;
+  const a = lastTrade.a, anyOn = Object.values(rules.on).some(Boolean);
+  const keys = ["stop", "add", "day", "month"];
+  const past = ruleViolations(a, rules, null), after = rules.start ? ruleViolations(a, rules, rules.start) : null;
+  const afterHas = rules.start && a.trades.some(t => t.date >= rules.start);
+  box.innerHTML = `
+    <h2 id="rules-title">나만의 매매 규칙</h2>
+    <p class="sub">지킬 규칙에 체크하고 숫자를 정한 뒤 저장하세요. 다음에 거래내역을 다시 넣으면 규칙을 정한 날 이후 거래로 지켰는지 확인해요.</p>
+    <div class="rules">${keys.map(k => `
+      <label class="rule-row" id="rule-${k}"><input type="checkbox" data-on="${k}" ${rules.on[k] ? "checked" : ""}><span class="rule-txt">${RULE_TEXT[k](rules[k])}</span></label>`).join("")}
+    </div>
+    <div class="btns"><button type="button" class="primary" id="ruleSave">규칙 저장하기</button>${rules.start ? `<button type="button" id="ruleRestart">오늘부터 다시 세기</button>` : ""}</div>
+    <p class="fine" id="ruleMsg" role="status">${rules.start ? `규칙을 정한 날: ${rules.start}` : "아직 저장한 규칙이 없어요."}</p>
+    ${anyOn ? `
+    <div class="cmp" style="margin-top:14px">${keys.filter(k => rules.on[k]).map(k => `
+      <div class="rule-check">
+        <b>${RULE_TEXT[k](rules[k]).replace(/<input[^>]*value="([^"]*)"[^>]*>/, "$1")}</b>
+        <div class="rc-line"><span>규칙 정한 날 이후</span><span>${afterHas ? vioCell(after[k], k) : `<span class="fine">${rules.start ? `${rules.start} 이후 거래가 아직 없어요` : "저장하면 시작해요"}</span>`}</span></div>
+        <div class="rc-line"><span>지난 거래에 적용했다면</span><span>${vioCell(past[k], k)}</span></div>
+        ${past[k].bad.length ? `<ul class="vio">${past[k].bad.slice(-3).map(x => `<li>${esc(x)}</li>`).join("")}${past[k].bad.length > 3 ? `<li>외 ${past[k].bad.length - 3}건</li>` : ""}</ul>` : ""}
+      </div>`).join("")}
+    </div>
+    <p class="fine">'지난 거래에 적용했다면'은 이 규칙이 예전부터 있었다면 몇 번 어겼을지 보여줘요. 손절 기준은 실제로 판 거래만 봐요(아직 들고 있는 종목은 지금 가격을 몰라서 빠져요).</p>` : ""}`;
+  box.querySelectorAll("[data-k]").forEach(i => i.addEventListener("change", () => { rules[i.dataset.k] = Math.max(Number(i.min), Number(i.value) || 0); }));
+  box.querySelectorAll("[data-on]").forEach(c => c.addEventListener("change", () => { rules.on[c.dataset.on] = c.checked; }));
+  document.getElementById("ruleSave").addEventListener("click", () => {
+    box.querySelectorAll("[data-k]").forEach(i => { rules[i.dataset.k] = Math.max(Number(i.min), Number(i.value) || 0); });
+    box.querySelectorAll("[data-on]").forEach(c => { rules.on[c.dataset.on] = c.checked; });
+    if (!rules.start) rules.start = today();
+    saveJSON(RULE_KEY, rules); renderRules();
+    document.getElementById("ruleMsg").textContent = `규칙을 저장했어요. 규칙을 정한 날: ${rules.start}`;
+  });
+  const rs = document.getElementById("ruleRestart");
+  if (rs) rs.addEventListener("click", () => { rules.start = today(); saveJSON(RULE_KEY, rules); renderRules(); });
+}
+function focusRule(k) {
+  rules.on[k] = true; if (k === "day") rules.on.month = true;
+  renderRules();
+  const row = document.getElementById(`rule-${k}`); if (!row) return;
+  row.scrollIntoView({ behavior: "smooth", block: "center" });
+  row.classList.add("flash"); setTimeout(() => row.classList.remove("flash"), 1600);
+  const inp = row.querySelector("input[type=number]"); if (inp) inp.focus({ preventScroll: true });
+}
+
+const CMP = [
+  { k: "score", name: "습관 점수", f: v => `${v}점`, better: 1 },
+  { k: "holdRatio", name: "손실 거래를 버틴 기간", f: v => `${fmt(v)}배`, better: -1 },
+  { k: "payoff", name: "손익비", f: v => fmt(v, 2), better: 1 },
+  { k: "avgDownRate", name: "물타기 비율", f: v => `${fmt(v)}%`, better: -1 },
+  { k: "perMonth", name: "월평균 거래", f: v => `${fmt(v)}회`, better: -1 },
+];
+const sameDiag = (x, y) => x && y && x.n === y.n && x.from === y.from && x.to === y.to && x.score === y.score;
+function renderCmp() {
+  const box = document.getElementById("cmpPanel"); if (!box || !lastTrade) return;
+  const hist = loadJSON(TRADE_HIST_KEY, []), cur = lastTrade.m;
+  const saved = hist.some(h => sameDiag(h, cur));
+  const prev = hist.slice().reverse().find(h => !sameDiag(h, cur));
+  box.innerHTML = `
+    <h2 id="cmp-title">지난 진단과 비교</h2>
+    <p class="sub">진단을 저장해 두고, 몇 주 뒤 새 거래내역으로 다시 진단하면 얼마나 나아졌는지 보여줘요.</p>
+    ${prev ? `
+    <p class="fine" style="margin:0 0 8px">${prev.d}에 저장한 진단(거래 ${prev.n}건, ${prev.from} ~ ${prev.to}) → 지금 진단(거래 ${cur.n}건, ${cur.from} ~ ${cur.to})</p>
+    <div class="cmp">${CMP.map(c => {
+      const p = prev[c.k], n = cur[c.k];
+      if (p == null || n == null) return `<div class="cmp-row"><span>${c.name}</span><span class="num">${p == null ? "–" : c.f(p)} → ${n == null ? "–" : c.f(n)}</span><span class="fine">비교 불가</span></div>`;
+      const d = (n - p) * c.better, same = Math.abs(n - p) < 1e-9;
+      return `<div class="cmp-row"><span>${c.name}</span><span class="num">${c.f(p)} → <b>${c.f(n)}</b></span><span class="${same ? "fine" : d > 0 ? "better" : "worse"}">${same ? "그대로" : d > 0 ? "좋아졌어요" : "나빠졌어요"}</span></div>`;
+    }).join("")}</div>` : `<p class="note" style="margin:0">아직 비교할 지난 진단이 없어요. 오늘 진단을 저장해 두고, 2~4주 뒤에 새 거래내역으로 다시 진단해 보세요.</p>`}
+    <div class="btns">
+      <button type="button" class="primary" id="diagSave" ${saved || lastTrade.isSample ? "disabled" : ""}>${saved ? "저장된 진단이에요" : "이 진단 저장하기"}</button>
+      ${hist.length ? `<button type="button" id="diagClear">저장한 진단 모두 지우기</button>` : ""}
+    </div>
+    ${lastTrade.isSample ? `<p class="fine">지금은 예시 거래내역이라 저장할 수 없어요. 내 거래내역으로 진단하면 저장할 수 있어요.</p>` : ""}
+    ${hist.length ? `<p class="fine">저장한 진단 ${hist.length}개: ${hist.slice(-4).map(h => `${h.d}(${h.score}점)`).join(" · ")}</p>` : ""}`;
+  const sv = document.getElementById("diagSave");
+  sv.addEventListener("click", () => {
+    if (lastTrade.isSample) return;
+    const h = loadJSON(TRADE_HIST_KEY, []); h.push({ ...cur, d: today() }); saveJSON(TRADE_HIST_KEY, h.slice(-24)); renderCmp();
+  });
+  const cl = document.getElementById("diagClear");
+  if (cl) cl.addEventListener("click", () => {
+    if (cl.dataset.armed !== "1") { cl.dataset.armed = "1"; cl.textContent = "한 번 더 누르면 지워져요"; return; }
+    try { localStorage.removeItem(TRADE_HIST_KEY); } catch (_) {} renderCmp();
+  });
+}
 
 // ---------- 목표 계산기 (화폐의 시간가치) ----------
 // 매달 말 적립 기준: 미래가치 = 현재금액×(1+r)^n + 월적립×((1+r)^n − 1)/r   (엑셀 FV·RATE와 같은 식)
