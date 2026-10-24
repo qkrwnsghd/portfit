@@ -70,7 +70,7 @@ header.appbar { display: flex; align-items: center; gap: 12px; }
 .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); color: #fff; display: grid; place-items: center; font-weight: 700; font-size: 19px; flex: none; }
 .brand { font-size: 17px; font-weight: 700; line-height: 1.2; }
 .tagline { font-size: 12.5px; color: var(--muted); line-height: 1.3; }
-.beta { margin-left: auto; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
+.beta { font-size: 11px; vertical-align: 2px; margin-left: 2px; font-weight: 700; color: var(--accent); background: var(--accent-soft); padding: 3px 9px; border-radius: 999px; white-space: nowrap; flex: none; }
 .view-intro { display: grid; gap: 6px; margin: 4px 0 18px; }
 h1 { font-size: clamp(22px, 3.4vw, 28px); line-height: 1.3; margin: 0; text-wrap: balance; font-weight: 700; }
 .lead { margin: 0; color: var(--muted); max-width: 62ch; font-size: 14.5px; }
@@ -211,6 +211,22 @@ svg.trend { width: 100%; height: auto; display: block; margin-top: 8px; }
   .tab[aria-selected="true"] { color: var(--accent); background: none; }
 }
 
+/* 계정 */
+.acct-btn { margin-left: auto; flex: none; border-radius: 999px; padding: 8px 14px; font-weight: 600; }
+.acct-btn.on { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+dialog#acctDlg { border: 0; border-radius: 22px; padding: 0; width: min(420px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
+.acct { padding: 22px; display: grid; gap: 4px; margin: 0; }
+.acct-head { display: flex; align-items: center; justify-content: space-between; }
+.acct-head h2 { margin: 0; font-size: 19px; }
+.acct .x { border: 0; background: none; font-size: 24px; line-height: 1; padding: 4px 8px; color: var(--muted); }
+.acct label { display: grid; gap: 6px; font-size: 13px; font-weight: 600; margin-top: 10px; }
+.acct input { font: inherit; font-size: 15px; padding: 11px 12px; border-radius: 12px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); }
+.acct input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; border-color: transparent; }
+.acct-who { font-size: 16px; font-weight: 700; margin: 8px 0 0; word-break: break-all; }
+#acctMsg:empty { display: none; }
+#acctMsg.bad { color: var(--bad); }
+
 /* 홈 */
 .home { display: grid; gap: 16px; }
 .hero { border-radius: 24px; padding: 24px; color: #fff; background: linear-gradient(135deg, var(--hero-a), var(--hero-b)); display: grid; gap: 8px; }
@@ -335,8 +351,8 @@ footer a { color: var(--accent); }
 <div class="wrap">
   <header class="appbar">
     <div class="logo" aria-hidden="true">P</div>
-    <div><div class="brand">포트핏</div><div class="tagline">내 투자 건강검진 · 쏠림, 습관, 목표를 한 번에</div></div>
-    <span class="beta">베타</span>
+    <div><div class="brand">포트핏 <span class="beta">베타</span></div><div class="tagline">내 투자 건강검진 · 쏠림, 습관, 목표를 한 번에</div></div>
+    <button type="button" class="acct-btn" id="acctBtn" hidden>로그인</button>
   </header>
 
   <nav class="tabs" role="tablist" aria-label="메뉴">
@@ -436,6 +452,25 @@ footer a { color: var(--accent); }
     <div class="results" id="goalResults"></div>
   </div>
   </div>
+
+  <dialog id="acctDlg" aria-labelledby="acct-title">
+    <form method="dialog" class="acct" id="acctForm" novalidate>
+      <div class="acct-head"><h2 id="acct-title">로그인</h2><button type="button" class="x" id="acctClose" aria-label="닫기">×</button></div>
+      <div id="acctOut">
+        <p class="sub">로그인하면 ETF 목록, 검진 기록, 목표, 습관 진단, 매매 규칙이 계정에 저장돼요. 폰과 PC에서 같은 기록을 볼 수 있어요. 토스 캡처와 거래내역 원본은 저장하지 않아요.</p>
+        <label>이메일<input id="acctEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>
+        <label>비밀번호 (6자 이상)<input id="acctPw" type="password" autocomplete="current-password" minlength="6"></label>
+        <div class="btns"><button type="button" class="primary" id="acctLogin">로그인</button><button type="button" id="acctSignup">처음이에요, 가입하기</button></div>
+      </div>
+      <div id="acctIn" hidden>
+        <p class="acct-who" id="acctWho"></p>
+        <p class="sub" id="acctSync"></p>
+        <div class="btns"><button type="button" id="acctSyncNow">지금 동기화</button><button type="button" id="acctLogout">로그아웃</button></div>
+        <p class="fine">로그아웃하면 이 기기에 남은 기록도 지워요. 기록은 계정에 저장되어 있어서 다시 로그인하면 돌아와요.</p>
+      </div>
+      <p class="fine" id="acctMsg" role="status"></p>
+    </form>
+  </dialog>
 
   <footer>
     <div><b>데이터:</b> 국내 ETF는 한국거래소 ETF 납부자산구성내역의 전체 구성종목과 업종 분류(<span id="dataAsof">2026-10-23</span> 기준)를 썼어요. 미국 ETF 13종은 거래소가 비중을 공개하지 않아 상위 10개 구성종목과 비중(2026년 10월 기준, RISE 미국S&P500은 9월)을 <a href="https://etfshopping.com/etf/360750" target="_blank" rel="noopener">ETF쇼핑</a>에서 가져왔고, 나머지는 'ETF별 그 외 종목'으로 묶었어요. 그래서 미국 ETF끼리의 중복률은 실제보다 낮게 나올 수 있어요.</div>
@@ -585,7 +620,8 @@ function loadJSON(key, fallback) {
   try { const raw = localStorage.getItem(key); if (raw) return JSON.parse(raw); } catch (_) {}
   return fallback;
 }
-function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (_) {} }
+function saveJSON(key, v) { try { localStorage.setItem(key, JSON.stringify(v)); } catch (_) {} syncDirty(key); }
+function removeKey(key) { try { localStorage.removeItem(key); } catch (_) {} syncDirty(key); }
 let TH = { ...TH_DEFAULT, ...(loadJSON(TH_KEY, {}) || {}) };
 let records = Array.isArray(loadJSON(HIST_KEY, [])) ? loadJSON(HIST_KEY, []) : [];
 let thOpen = false;
@@ -659,7 +695,7 @@ function load() {
   } catch (_) {}
   return EXAMPLE.map(r => [...r]);
 }
-function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(portfolio)); } catch (_) {} }
+function save() { try { localStorage.setItem(STORE_KEY, JSON.stringify(portfolio)); } catch (_) {} syncDirty(STORE_KEY); }
 let portfolio = load();
 const colorOf = code => `var(${COLORS[Math.max(0, portfolio.findIndex(r => r[0] === code)) % COLORS.length]})`;
 
@@ -1571,7 +1607,7 @@ function renderCmp() {
   const cl = document.getElementById("diagClear");
   if (cl) cl.addEventListener("click", () => {
     if (cl.dataset.armed !== "1") { cl.dataset.armed = "1"; cl.textContent = "한 번 더 누르면 지워져요"; return; }
-    try { localStorage.removeItem(TRADE_HIST_KEY); } catch (_) {} renderCmp();
+    removeKey(TRADE_HIST_KEY); renderCmp();
   });
 }
 
@@ -1732,9 +1768,105 @@ function renderGoal() {
     const del = document.getElementById("gDel");
     del.addEventListener("click", () => {
       if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "한 번 더 누르면 지워져요"; return; }
-      goalSaved = null; try { localStorage.removeItem(GOAL_KEY); } catch (_) {} renderGoal();
+      goalSaved = null; removeKey(GOAL_KEY); renderGoal();
     });
   }
+}
+
+// ---------- 로그인 · 서버 저장 (Supabase) ----------
+// 이 주소와 키는 '공개용'이라 코드에 들어가도 괜찮아요(행 수준 보안으로 본인 기록만 읽고 쓸 수 있음).
+// 절대 service_role / secret 키를 넣지 마세요.
+const SB_URL = "https://qrtzhjleopsimxcekbgo.supabase.co";
+const SB_KEY = "sb_publishable_LwX5Sxi2L32sFcFPHZ4nUg_RNnqtENW";
+const SB_LIB = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js";
+const SYNC_META = "portfit-sync-meta-v1";
+var sb = null, sbUser = null, sbReady = false, syncTimer = null, syncApplying = false;
+function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY]; }
+function syncDirty(key) {
+  if (syncApplying || !sbUser || key === SYNC_META) return;
+  const m = loadJSON(SYNC_META, {}); m.dirty = true; m.uid = sbUser.id;
+  try { localStorage.setItem(SYNC_META, JSON.stringify(m)); } catch (_) {}
+  clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 1500);
+}
+function localSnapshot() {
+  const d = {}; syncKeys().forEach(k => { try { d[k] = localStorage.getItem(k); } catch (_) { d[k] = null; } }); return d;
+}
+function setMeta(m) { try { localStorage.setItem(SYNC_META, JSON.stringify(m)); } catch (_) {} }
+async function syncPush() {
+  if (!sb || !sbUser) return;
+  const at = new Date().toISOString();
+  const { error } = await sb.from("user_data").upsert({ user_id: sbUser.id, data: localSnapshot(), updated_at: at });
+  if (error) { acctStatus(`저장하지 못했어요: ${error.message}`, true); return; }
+  setMeta({ uid: sbUser.id, at, dirty: false }); acctStatus();
+}
+async function syncPull() {
+  const { data, error } = await sb.from("user_data").select("data, updated_at").eq("user_id", sbUser.id).maybeSingle();
+  if (error) { acctStatus(`불러오지 못했어요: ${error.message}`, true); return; }
+  const m = loadJSON(SYNC_META, {});
+  if (!data) { await syncPush(); return; }                                   // 서버에 없으면 이 기기 기록을 올림
+  if (m.uid === sbUser.id && m.dirty) { await syncPush(); return; }          // 이 기기에서 바꾼 게 아직 안 올라갔으면 올림
+  if (m.uid === sbUser.id && m.at && data.updated_at && Date.parse(m.at) >= Date.parse(data.updated_at)) { acctStatus(); return; }
+  // 서버 기록을 이 기기에 덮어쓰고 화면을 새로 그림
+  syncApplying = true;
+  Object.entries(data.data || {}).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} });
+  syncApplying = false;
+  setMeta({ uid: sbUser.id, at: data.updated_at, dirty: false });
+  try { sessionStorage.setItem("portfit-just-synced", "1"); } catch (_) {}
+  location.reload();
+}
+function acctStatus(msg, bad) {
+  const btn = document.getElementById("acctBtn");
+  btn.textContent = sbUser ? "내 계정" : "로그인"; btn.classList.toggle("on", !!sbUser);
+  document.getElementById("acctOut").hidden = !!sbUser; document.getElementById("acctIn").hidden = !sbUser;
+  document.getElementById("acct-title").textContent = sbUser ? "내 계정" : "로그인";
+  if (sbUser) {
+    document.getElementById("acctWho").textContent = sbUser.email;
+    const m = loadJSON(SYNC_META, {});
+    document.getElementById("acctSync").textContent = m.at ? `마지막 저장: ${new Date(m.at).toLocaleString("ko-KR")}${m.dirty ? " · 저장 대기 중" : ""}` : "저장 준비 중이에요.";
+  }
+  const el = document.getElementById("acctMsg"); el.textContent = msg || ""; el.classList.toggle("bad", !!bad);
+}
+const AUTH_KO = [[/invalid login credentials/i, "이메일이나 비밀번호가 맞지 않아요."], [/already registered|already been registered/i, "이미 가입된 이메일이에요. '로그인'을 눌러 주세요."],
+  [/password should be at least|at least 6/i, "비밀번호는 6자 이상이어야 해요."], [/valid email|invalid format|unable to validate email/i, "이메일 형식을 확인해 주세요."],
+  [/email not confirmed/i, "이메일 인증이 필요해요. Supabase에서 'Confirm email'을 꺼 주세요."], [/rate limit|too many/i, "잠시 후에 다시 시도해 주세요."], [/fetch|network/i, "인터넷 연결을 확인해 주세요."]];
+const authKo = e => (AUTH_KO.find(([re]) => re.test(e && e.message || "")) || [null, `오류: ${e && e.message}`])[1];
+async function acctAuth(kind) {
+  const email = document.getElementById("acctEmail").value.trim(), password = document.getElementById("acctPw").value;
+  if (!email || password.length < 6) { acctStatus("이메일과 6자 이상 비밀번호를 넣어 주세요.", true); return; }
+  acctStatus(kind === "signup" ? "가입하는 중…" : "로그인하는 중…");
+  const { data, error } = kind === "signup" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
+  if (error) { acctStatus(authKo(error), true); return; }
+  if (!data.session) { acctStatus("가입은 됐지만 이메일 인증이 켜져 있어요. Supabase에서 'Confirm email'을 꺼 주세요.", true); return; }
+  sbUser = data.session.user; acctStatus("불러오는 중…"); await syncPull();
+  if (!document.getElementById("view-home").hidden) renderHome();
+}
+async function initAccount() {
+  const onSite = /github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
+  if (!SB_URL || !SB_KEY || !onSite) return;                       // 설정 전이거나 claude.ai 미리보기에서는 숨김
+  try {
+    if (!window.supabase) await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = SB_LIB; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
+    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+  } catch (_) { return; }
+  sbReady = true;
+  const btn = document.getElementById("acctBtn"), dlg = document.getElementById("acctDlg");
+  btn.hidden = false;
+  btn.addEventListener("click", () => { acctStatus(); dlg.showModal(); });
+  document.getElementById("acctClose").addEventListener("click", () => dlg.close());
+  document.getElementById("acctLogin").addEventListener("click", () => acctAuth("login"));
+  document.getElementById("acctSignup").addEventListener("click", () => acctAuth("signup"));
+  document.getElementById("acctPw").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); acctAuth("login"); } });
+  document.getElementById("acctSyncNow").addEventListener("click", async () => { acctStatus("저장하는 중…"); await syncPush(); acctStatus("저장했어요."); });
+  document.getElementById("acctLogout").addEventListener("click", async () => {
+    await sb.auth.signOut(); sbUser = null;
+    syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
+    location.reload();
+  });
+  const { data } = await sb.auth.getSession();
+  sbUser = data.session ? data.session.user : null;
+  acctStatus();
+  let just = false; try { just = sessionStorage.getItem("portfit-just-synced") === "1"; sessionStorage.removeItem("portfit-just-synced"); } catch (_) {}
+  if (sbUser && !just) await syncPull();
+  if (!document.getElementById("view-home").hidden) renderHome();
 }
 
 // ---------- 홈: 세 가지 검진 요약 + 오늘 할 일 ----------
@@ -1819,7 +1951,7 @@ function renderHome() {
         <div><b>🧾 습관 진단</b>거래내역으로 손실을 오래 버티는지, 물타기와 잦은 거래가 있는지 보고 고치는 방법을 알려줘요.</div>
         <div><b>🎯 목표 계산</b>목표 금액까지 1년에 몇 %씩 불려야 하는지, 계획대로 가고 있는지 보여줘요.</div>
       </div>
-      <p class="fine">기록은 이 기기의 브라우저에만 저장돼요. 포트핏은 종목을 추천하지 않고, 지금 상태만 진단해요.</p>
+      <p class="fine">${sbUser ? `${esc(sbUser.email)} 계정에 기록이 저장돼요.` : sbReady ? "지금은 기록이 이 기기의 브라우저에만 저장돼요. 오른쪽 위 '로그인'을 누르면 폰과 PC에서 같은 기록을 볼 수 있어요." : "기록은 이 기기의 브라우저에만 저장돼요."} 포트핏은 종목을 추천하지 않고, 지금 상태만 진단해요.</p>
     </section>`;
   box.querySelectorAll("[data-go]").forEach(b => b.addEventListener("click", () => goTab(b.dataset.go)));
 }
@@ -1843,6 +1975,7 @@ document.getElementById("tab-trades").addEventListener("click", () => { showTab(
 tradeText.value = SAMPLE_TRADES;
 runTrades();
 showTab(location.hash.slice(1));
+initAccount();
 
 // ---------- 검진 기록 ----------
 function historyHTML() {
