@@ -286,6 +286,9 @@ dialog#fbDlg::backdrop, dialog#welcomeDlg::backdrop { background: rgba(6, 10, 24
 @keyframes pulseRing { 0% { box-shadow: 0 0 0 0 rgba(60, 242, 208, .7); } 100% { box-shadow: 0 0 0 14px rgba(60, 242, 208, 0); } }
 .hint-bubble { display: inline-block; margin-top: 6px; font-size: 12.5px; font-weight: 600; color: #061024; background: var(--neon); padding: 5px 10px; border-radius: 10px; }
 
+.no-dialog dialog:not([open]) { display: none; }
+.no-dialog dialog[open] { display: block; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; max-height: 90vh; overflow: auto; box-shadow: 0 0 0 100vmax rgba(6, 10, 24, .55), 0 20px 60px rgba(0,0,0,.3); }
+
 /* 홈 */
 .home { display: grid; gap: 16px; }
 .hero { position: relative; overflow: hidden; border-radius: 24px; padding: 24px; color: #fff; display: grid; gap: 8px;
@@ -403,7 +406,7 @@ svg.g-chart { width: 100%; height: auto; display: block; }
 
 .g-risk { display: grid; gap: 6px; padding-top: 4px; border-top: 1px solid var(--soft); }
 .g-risk-t { font-size: 13px; font-weight: 600; }
-.g-riskpick button[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-ink); border-color: transparent; }
+.cost-pick button[aria-pressed="true"], .g-riskpick button[aria-pressed="true"] { background: var(--btn-bg); color: var(--btn-ink); border-color: transparent; }
 .g-custom { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .g-custom label { display: grid; gap: 6px; font-size: 12.5px; font-weight: 500; }
 .g-odds { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin: 6px 0 14px; }
@@ -627,6 +630,24 @@ footer a { color: var(--accent); }
 </div>
 
 <script>
+// ---------- 오래된 브라우저 대응 (아이폰 iOS 15 이하 등) ----------
+if (!Array.prototype.at) Object.defineProperty(Array.prototype, "at", { configurable: true, writable: true, value: function (i) { i = Math.trunc(i) || 0; if (i < 0) i += this.length; return this[i]; } });
+if (window.CanvasRenderingContext2D && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+    r = Math.max(0, Math.min(typeof r === "number" ? r : 0, w / 2, h / 2));
+    this.moveTo(x + r, y); this.arcTo(x + w, y, x + w, y + h, r); this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r); this.arcTo(x, y, x + w, y, r); this.closePath(); return this;
+  };
+}
+if (!window.HTMLDialogElement || !HTMLDialogElement.prototype.showModal) {
+  document.documentElement.classList.add("no-dialog");
+  document.querySelectorAll("dialog").forEach(d => {
+    Object.defineProperty(d, "open", { configurable: true, get() { return this.hasAttribute("open"); } });
+    d.showModal = function () { this.setAttribute("open", ""); };
+    d.close = function () { if (this.hasAttribute("open")) { this.removeAttribute("open"); this.dispatchEvent(new Event("close")); } };
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape") document.querySelectorAll("dialog[open]").forEach(d => { d.dispatchEvent(new Event("cancel")); d.close(); }); });
+}
 // ---------- 데이터: ETF별 상위 10개 구성종목 (%), 2026년 10월 ----------
 const ETFS = [
   { code: "069500", name: "KODEX 200", index: "코스피200", group: "국내 대표지수", country: "한국", holdings: [
@@ -1462,7 +1483,10 @@ const toNum = s => Number(String(s).replace(/[,\s원₩]/g, ""));
 function toDate(s) {
   const t = String(s).trim().replace(/[./]/g, "-");
   const m = t.match(/^(\d{4})-?(\d{1,2})-?(\d{1,2})/);
-  return m ? `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}` : null;
+  if (!m) return null;
+  const y = +m[1], mo = +m[2], d = +m[3], dt = new Date(Date.UTC(y, mo - 1, d));   // 13월 40일 같은 없는 날짜는 버림
+  if (y < 1990 || y > 2100 || dt.getUTCMonth() !== mo - 1 || dt.getUTCDate() !== d) return null;
+  return `${m[1]}-${String(mo).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 }
 const dayDiff = (a, b) => Math.round((Date.parse(b) - Date.parse(a)) / 864e5);
 
@@ -1486,42 +1510,50 @@ function parseTrades(text) {
     const t = { date: toDate(c[idx.date]), name: (c[idx.name] || "").trim(), side, qty: toNum(c[idx.qty]), price: toNum(c[idx.price]), row: i + 2 };
     if (!t.date || !t.name || !t.side || !(t.qty > 0) || !(t.price > 0)) bad.push(i + 2); else trades.push(t);
   });
-  trades.sort((a, b) => a.date.localeCompare(b.date) || a.row - b.row);
+  // 증권사 파일은 최신 거래가 위에 오는 경우가 많아요. 그런 파일이면 같은 날짜 안의 순서도 뒤집어야 '매수 → 매도' 순서가 맞아요.
+  const desc = trades.length > 1 && trades[0].date > trades[trades.length - 1].date;
+  trades.sort((a, b) => a.date.localeCompare(b.date) || (desc ? b.row - a.row : a.row - b.row));
   return { trades, bad };
 }
 
-function analyzeTrades(trades) {
-  const lots = {}, realized = [], openPos = [];
+// 평균단가 계산 방식: "avg" 이동평균(국내 증권사 앱이 보통 쓰는 방식, 기본) / "fifo" 먼저 산 것부터 판 것으로 봄
+const COST_KEY = "portfit-cost-method-v1";
+let costMethod = loadJSON(COST_KEY, "avg") === "fifo" ? "fifo" : "avg";
+function analyzeTrades(trades, method = costMethod) {
+  const lots = {}, mav = {}, realized = [], openPos = [];   // lots: 산 날짜별 묶음(보유 기간 계산용), mav: 이동평균 {qty, cost}
   let buys = 0, avgDown = 0, skipped = 0;
   const avgDowns = [];
+  const lotAvg = L => { const q = L.reduce((s, l) => s + l.qty, 0); return q > 1e-9 ? L.reduce((s, l) => s + l.qty * l.price, 0) / q : null; };
   for (const t of trades) {
-    const L = lots[t.name] = lots[t.name] || [];
+    const L = lots[t.name] = lots[t.name] || [], M = mav[t.name] = mav[t.name] || { qty: 0, cost: 0 };
     if (t.side === "buy") {
       buys++;
-      const held = L.reduce((s, l) => s + l.qty, 0);
-      if (held > 0) {
-        const avg = L.reduce((s, l) => s + l.qty * l.price, 0) / held;
-        if (t.price < avg) { avgDown++; avgDowns.push({ ...t, avg }); }
-      }
+      const avg = method === "avg" ? (M.qty > 1e-9 ? M.cost / M.qty : null) : lotAvg(L);
+      if (avg != null && t.price < avg) { avgDown++; avgDowns.push({ ...t, avg }); }
       L.push({ date: t.date, qty: t.qty, price: t.price });
+      M.qty += t.qty; M.cost += t.qty * t.price;
     } else {
-      let need = t.qty, cost = 0, days = 0, matched = 0;
-      while (need > 0 && L.length) {                       // 선입선출(FIFO)
+      let need = t.qty, fifoCost = 0, days = 0, matched = 0;
+      while (need > 1e-9 && L.length) {                    // 보유 기간은 먼저 산 것부터 판 것으로 계산
         const l = L[0], q = Math.min(need, l.qty);
-        cost += q * l.price; days += q * dayDiff(l.date, t.date); matched += q;
+        fifoCost += q * l.price; days += q * dayDiff(l.date, t.date); matched += q;
         l.qty -= q; need -= q;
-        if (l.qty === 0) L.shift();
+        if (l.qty < 1e-9) L.shift();                       // 0.1+0.2 같은 소수점 계산 찌꺼기는 0으로 봄
       }
-      if (need > 0) skipped++;
+      if (need > 1e-9) skipped++;
       if (matched > 0) {
+        const avgNow = M.qty > 1e-9 ? M.cost / M.qty : 0;
+        const cost = method === "avg" ? matched * avgNow : fifoCost;
+        M.cost -= matched * avgNow; M.qty -= matched;           // 이동평균: 팔아도 남은 주식의 평균단가는 그대로
+        if (M.qty < 1e-9) { M.qty = 0; M.cost = 0; }
         const pnl = matched * t.price - cost;
         realized.push({ name: t.name, date: t.date, qty: matched, pnl, ret: pnl / cost * 100, hold: days / matched });
       }
     }
   }
   for (const [name, L] of Object.entries(lots)) {
-    const q = L.reduce((s, l) => s + l.qty, 0);
-    if (q > 0) openPos.push({ name, qty: q, avg: L.reduce((s, l) => s + l.qty * l.price, 0) / q, since: L[0].date });
+    const q = Math.round(L.reduce((s, l) => s + l.qty, 0) * 1e8) / 1e8, M = mav[name];
+    if (q > 0) openPos.push({ name, qty: q, avg: method === "avg" && M.qty > 1e-9 ? M.cost / M.qty : lotAvg(L), since: L[0].date });
   }
   const wins = realized.filter(r => r.pnl > 0), losses = realized.filter(r => r.pnl < 0);
   const mean = (a, f) => a.length ? a.reduce((s, x) => s + f(x), 0) / a.length : null;
@@ -1608,7 +1640,12 @@ function runTrades() {
           </tbody>
         </table>
       </div>
-      <p class="fine">수수료와 세금은 빼고 계산했어요. 같은 종목을 여러 번 샀다면 먼저 산 것부터 판 것으로 봐요(선입선출).</p>
+      <div class="g-quick cost-pick" role="group" aria-label="평균단가 계산 방식" style="margin-top:12px">
+        <span class="fine" style="margin:0 4px 0 0;align-self:center">평균단가 계산</span>
+        <button type="button" data-cost="avg" aria-pressed="${costMethod === "avg"}">이동평균 (증권사 앱 방식)</button>
+        <button type="button" data-cost="fifo" aria-pressed="${costMethod === "fifo"}">선입선출</button>
+      </div>
+      <p class="fine">수수료와 세금은 빼고 계산했어요. ${costMethod === "avg" ? "평균단가는 국내 증권사 앱이 보통 보여주는 이동평균 방식이에요(살 때마다 평균을 다시 내고, 팔아도 남은 주식의 평균단가는 그대로)." : "같은 종목을 여러 번 샀다면 먼저 산 것부터 판 것으로 봐요(선입선출)."} 보유 기간은 먼저 산 주식부터 판 것으로 계산해요.</p>
       <div class="btns"><button type="button" id="shareImgTrades">결과 이미지로 공유</button><span id="shareTradesMsg" class="fine" role="status" style="margin:0"></span></div>
       <details class="th">
         <summary>왜 이 기준이에요?</summary>
@@ -1659,6 +1696,7 @@ function runTrades() {
     m: { holdRatio, payoff, avgDownRate: a.avgDownRate, perMonth: a.perMonth, busy: a.busyDays.length, score,
          n: a.trades.length, from: a.trades[0].date, to: a.trades.at(-1).date } };
   tradeResults.querySelectorAll("[data-rule]").forEach(b => b.addEventListener("click", () => focusRule(b.dataset.rule)));
+  tradeResults.querySelectorAll("[data-cost]").forEach(b => b.addEventListener("click", () => { costMethod = b.dataset.cost; saveJSON(COST_KEY, costMethod); runTrades(); }));
   document.getElementById("shareImgTrades").addEventListener("click", () => shareCard(tradeCard, "portfit-habit.png", document.getElementById("shareTradesMsg")));
   if (!lastTrade.isSample) track("trades_run", { n: a.trades.length, src: lastTradeSrc || "text" });
   renderOpen();
@@ -2229,10 +2267,11 @@ const SB_KEY = "sb_publishable_LwX5Sxi2L32sFcFPHZ4nUg_RNnqtENW";
 const SB_LIB = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.4/dist/umd/supabase.min.js";
 const SYNC_META = "portfit-sync-meta-v1";
 var sb = null, sbUser = null, sbReady = false, syncTimer = null, syncApplying = false;
-function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY, PRICE_KEY]; }
+function syncKeys() { return [STORE_KEY, TH_KEY, HIST_KEY, RULE_KEY, TRADE_HIST_KEY, GOAL_KEY, GOAL_DRAFT_KEY, PRICE_KEY, COST_KEY]; }
 function syncDirty(key) {
   if (syncApplying || !sbUser || key === SYNC_META) return;
   const m = loadJSON(SYNC_META, {}); m.dirty = true; m.uid = sbUser.id;
+  m.keys = Array.from(new Set([...(m.keys || []), key]));               // 이 기기에서 바꾼 항목
   try { localStorage.setItem(SYNC_META, JSON.stringify(m)); } catch (_) {}
   clearTimeout(syncTimer); syncTimer = setTimeout(syncPush, 1500);
 }
@@ -2240,12 +2279,56 @@ function localSnapshot() {
   const d = {}; syncKeys().forEach(k => { try { d[k] = localStorage.getItem(k); } catch (_) { d[k] = null; } }); return d;
 }
 function setMeta(m) { try { localStorage.setItem(SYNC_META, JSON.stringify(m)); } catch (_) {} }
+// 두 기기에서 따로 고친 경우: 이 기기에서 바꾼 항목은 이 기기 것을, 나머지는 서버 것을 쓰고, 기록 목록은 합침
+const pj = v => { try { return v == null ? null : JSON.parse(v); } catch (_) { return null; } };
+function unionBy(a, b, keyFn) {               // b(이 기기)가 같은 항목이면 우선
+  const m = new Map(); (a || []).forEach(x => m.set(keyFn(x), x)); (b || []).forEach(x => m.set(keyFn(x), x));
+  return Array.from(m.values());
+}
+function mergeKey(k, sv, lv) {
+  const S = pj(sv), L = pj(lv);
+  if (L == null) return lv;                   // 이 기기에서 지운 경우
+  if (S == null) return lv;
+  if (k === HIST_KEY && Array.isArray(S) && Array.isArray(L)) return JSON.stringify(unionBy(S, L, x => x.d).sort((x, y) => x.d.localeCompare(y.d)).slice(-36));
+  if (k === TRADE_HIST_KEY && Array.isArray(S) && Array.isArray(L)) return JSON.stringify(unionBy(S, L, x => [x.d, x.n, x.from, x.to].join("|")).sort((x, y) => x.d.localeCompare(y.d)).slice(-24));
+  if (k === GOAL_KEY && S.start && L.start === S.start && S.fv === L.fv && S.months === L.months) return JSON.stringify({ ...L, log: unionBy(S.log, L.log, x => x.d).sort((x, y) => x.d.localeCompare(y.d)) });
+  if (k === PRICE_KEY && typeof S === "object" && typeof L === "object") {
+    const o = { ...S }; Object.entries(L).forEach(([n, v]) => { if (!o[n] || (v.d || "") >= (o[n].d || "")) o[n] = v; }); return JSON.stringify(o);
+  }
+  return lv;
+}
+function mergeData(server, local, dirtyKeys) {
+  const out = {};
+  syncKeys().forEach(k => {
+    const sv = server ? server[k] : undefined, lv = local[k];
+    out[k] = dirtyKeys.has(k) ? mergeKey(k, sv, lv) : (sv !== undefined ? sv : lv);
+  });
+  return out;
+}
+let syncBusy = false;
 async function syncPush() {
-  if (!sb || !sbUser) return;
-  const at = new Date().toISOString();
-  const { error } = await sb.from("user_data").upsert({ user_id: sbUser.id, data: localSnapshot(), updated_at: at });
-  if (error) { acctStatus(`저장하지 못했어요: ${error.message}`, true); return; }
-  setMeta({ uid: sbUser.id, at, dirty: false }); acctStatus();
+  if (!sb || !sbUser || syncBusy) return;
+  syncBusy = true;
+  try {
+    const m = loadJSON(SYNC_META, {}), local = localSnapshot();
+    let data = local, changedHere = false;
+    // 마지막으로 맞춘 뒤 다른 기기가 저장했는지 먼저 확인
+    const { data: row } = await sb.from("user_data").select("data, updated_at").eq("user_id", sbUser.id).maybeSingle();
+    if (row && row.data && (!m.at || m.uid !== sbUser.id || Date.parse(row.updated_at) > Date.parse(m.at))) {
+      data = mergeData(row.data, local, new Set(m.keys || []));
+      syncApplying = true;
+      Object.entries(data).forEach(([k, v]) => { if (v !== local[k]) { changedHere = true; try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} } });
+      syncApplying = false;
+    }
+    const at = new Date().toISOString();
+    const { error } = await sb.from("user_data").upsert({ user_id: sbUser.id, data, updated_at: at });
+    if (error) { acctStatus(`저장하지 못했어요: ${error.message}`, true); return; }
+    setMeta({ uid: sbUser.id, at, dirty: false, keys: [] }); acctStatus();
+    if (changedHere) {                         // 다른 기기 기록이 섞여 들어왔으면 화면을 새로 그림
+      try { sessionStorage.setItem("portfit-just-synced", "1"); } catch (_) {}
+      location.reload();
+    }
+  } finally { syncBusy = false; }
 }
 async function syncPull() {
   const { data, error } = await sb.from("user_data").select("data, updated_at").eq("user_id", sbUser.id).maybeSingle();
@@ -2258,10 +2341,14 @@ async function syncPull() {
   syncApplying = true;
   Object.entries(data.data || {}).forEach(([k, v]) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch (_) {} });
   syncApplying = false;
-  setMeta({ uid: sbUser.id, at: data.updated_at, dirty: false });
+  setMeta({ uid: sbUser.id, at: data.updated_at, dirty: false, keys: [] });
   try { sessionStorage.setItem("portfit-just-synced", "1"); } catch (_) {}
   location.reload();
 }
+// 앱으로 다시 돌아오면(다른 기기에서 고쳤을 수 있으니) 서버 기록을 새로 확인
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && sb && sbUser && !syncBusy) syncPull();
+});
 let acctMode = "";            // "" 보통 / "newpw" 새 비밀번호 정하기
 function acctStatus(msg, bad) {
   const btn = document.getElementById("acctBtn");
