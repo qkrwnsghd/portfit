@@ -1,0 +1,16 @@
+{
+  "name": "포트핏 · 내 투자 건강검진",
+  "short_name": "포트핏",
+  "description": "ETF 쏠림, 매매 습관, 목표까지. 내 투자를 세 가지로 검진해요.",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F4F6",
+  "theme_color": "#0B1230",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
