@@ -3221,7 +3221,7 @@ function renderLevResults() {
   const openSet = new Set([...box.querySelectorAll("details.lev-lots[open]")].map(d => d.dataset.sym));
   box.innerHTML = `${levSample ? `<p class="example-note" style="margin:0 0 10px">예시: ${H.dates[Math.max(0, H.dates.length - 61)]}에 BITX 10주를 그날 종가로 샀다고 가정했어요.</p>` : ""}
     ${total}${groups.map(levCardHTML).join("")}
-    <p class="fine">${t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} 기준 · ${anyLive ? "미국 장이 열려 있는 동안은 ETF 가격을 실시간(야후 파이낸스)으로 받아요. " : ""}${anyEst ? "미국 장이 닫힌 동안 코인 레버리지 ETF는 마지막 거래 가격에 코인이 그 뒤 움직인 만큼 × 배율을 곱해 <b>추정</b>했어요. 토스증권 주간거래 가격과는 다를 수 있어요. " : ""}${levLive.err === "edge" ? "실시간 ETF 시세 서버에 연결하지 못해 마지막 종가를 썼어요. " : ""}코인 시세는 ${Object.values(levLive.crypto)[0] ? esc(Object.values(levLive.crypto)[0].src) : "거래소"}, 지난 시세는 야후 파이낸스(${H.asof}까지)예요.
+    <p class="fine">${t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} 기준 · ${anyLive ? "미국 장이 열려 있는 동안은 ETF 가격을 실시간(야후 파이낸스)으로 받아요. " : ""}${anyEst ? "미국 장이 닫힌 동안 코인 레버리지 ETF는 마지막 거래 가격에 코인이 그 뒤 움직인 만큼 × 배율을 곱해 <b>추정</b>했어요. 토스증권 주간거래 가격과는 다를 수 있어요. " : ""}${levLive.err === "edge" ? "실시간 ETF 시세 서버에 연결하지 못해 마지막 종가를 썼어요. " : ""}${ok.some(g => LEV_U[g.m.u].crypto) ? `코인 시세는 ${Object.values(levLive.crypto)[0] ? esc(Object.values(levLive.crypto)[0].src) : "거래소"}, ` : ""}지난 시세는 야후 파이낸스(${H.asof}까지)예요.
     산 순간의 기초자산 가격은 산 날 종가와 산 가격 차이로 거꾸로 추정했어요. 토스증권이 실제로 쓴 환율과 수수료·세금은 반영하지 않아서 앱 숫자와 조금 다를 수 있어요. 계산만 보여드리고, 사고팔라는 권유가 아니에요.</p>`;
   box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
 }
