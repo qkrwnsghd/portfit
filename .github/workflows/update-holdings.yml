@@ -2,7 +2,7 @@ name: ETF 구성종목 자동 갱신
 
 on:
   schedule:
-    - cron: "10 9 * * 1-5"   # 평일 09:10 UTC = 한국 시간 18:10 (장 마감 후)
+    - cron: "10 9 * * *"     # 매일 09:10 UTC = 한국 시간 18:10 (주말엔 데이터 변화 없음, 서버 깨우기용)
   workflow_dispatch:          # Actions 탭에서 'Run workflow' 버튼으로 바로 실행
 
 permissions:
@@ -13,6 +13,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
+
+      - name: 로그인 서버(Supabase) 깨우기
+        continue-on-error: true   # 무료 서버는 오래 안 쓰면 멈춰서, 매일 한 번 가볍게 조회해 깨워 둠
+        run: |
+          curl -s -o /dev/null -w "Supabase 응답 %{http_code}\n" \
+            "https://qrtzhjleopsimxcekbgo.supabase.co/rest/v1/events?select=id&limit=1" \
+            -H "apikey: sb_publishable_LwX5Sxi2L32sFcFPHZ4nUg_RNnqtENW"
 
       - uses: actions/setup-python@v6
         with:
