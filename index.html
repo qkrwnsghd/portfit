@@ -244,6 +244,7 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 .acct a { color: var(--accent); }
 .acct-danger { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
 .acct-danger button { color: var(--bad); border-color: var(--bad-bg); }
+.acct-link { justify-self: start; border: 0; background: none; padding: 8px 0 0; color: var(--accent); font-size: 13px; text-decoration: underline; font-weight: 500; }
 #acctMsg.bad { color: var(--bad); }
 
 /* 앱 설치 안내 */
@@ -498,17 +499,24 @@ footer a { color: var(--accent); }
         <p class="sub">로그인하면 ETF 목록, 검진 기록, 목표, 습관 진단, 매매 규칙이 계정에 저장돼요. 폰과 PC에서 같은 기록을 볼 수 있어요. 토스 캡처와 거래내역 원본은 저장하지 않아요.</p>
         <label>이메일<input id="acctEmail" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com"></label>
         <label>비밀번호 (6자 이상)<input id="acctPw" type="password" autocomplete="current-password" minlength="6"></label>
-        <label class="agree"><input type="checkbox" id="acctAgree"><span>처음 가입할 때: <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보 수집·이용</a>에 동의해요 (필수). 만 14세 이상이에요.</span></label>
+        <label class="agree"><input type="checkbox" id="acctAgree"><span>처음 가입할 때: <a href="https://qkrwnsghd.github.io/portfit/terms.html" target="_blank" rel="noopener">이용약관</a>과 <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보 수집·이용</a>에 동의해요 (필수). 만 14세 이상이에요.</span></label>
         <div class="btns"><button type="button" class="primary" id="acctLogin">로그인</button><button type="button" id="acctSignup">처음이에요, 가입하기</button></div>
+        <button type="button" class="acct-link" id="acctForgot">비밀번호를 잊었어요</button>
+      </div>
+      <div id="acctNew" hidden>
+        <p class="sub" id="acctNewSub">새로 쓸 비밀번호를 넣어 주세요.</p>
+        <label>새 비밀번호 (6자 이상)<input id="acctNewPw" type="password" autocomplete="new-password" minlength="6"></label>
+        <label>새 비밀번호 한 번 더<input id="acctNewPw2" type="password" autocomplete="new-password" minlength="6"></label>
+        <div class="btns"><button type="button" class="primary" id="acctNewSave">비밀번호 바꾸기</button><button type="button" id="acctNewCancel">취소</button></div>
       </div>
       <div id="acctIn" hidden>
         <p class="acct-who" id="acctWho"></p>
         <p class="sub" id="acctSync"></p>
-        <div class="btns"><button type="button" id="acctSyncNow">지금 동기화</button><button type="button" id="acctLogout">로그아웃</button></div>
+        <div class="btns"><button type="button" id="acctSyncNow">지금 동기화</button><button type="button" id="acctChangePw">비밀번호 바꾸기</button><button type="button" id="acctLogout">로그아웃</button></div>
         <p class="fine">로그아웃하면 이 기기에 남은 기록도 지워요. 기록은 계정에 저장되어 있어서 다시 로그인하면 돌아와요.</p>
         <div class="acct-danger">
-          <button type="button" id="acctWipe">내 기록 모두 삭제</button>
-          <p class="fine" style="margin-top:6px">서버와 이 기기에 저장된 포트핏 기록을 모두 지우고 로그아웃해요. 이메일 계정 자체를 지우려면 <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>의 이메일로 요청해 주세요.</p>
+          <div class="btns" style="margin-top:0"><button type="button" id="acctWipe">내 기록 모두 삭제</button><button type="button" id="acctDelete">회원 탈퇴</button></div>
+          <p class="fine" style="margin-top:6px">'내 기록 모두 삭제'는 계정은 두고 저장된 기록만 지워요. '회원 탈퇴'는 계정(이메일)과 기록을 서버에서 완전히 지우고, 되돌릴 수 없어요.</p>
         </div>
       </div>
       <p class="fine" id="acctMsg" role="status"></p>
@@ -520,7 +528,7 @@ footer a { color: var(--accent); }
     <div><b>분류:</b> 섹터와 국가는 포트핏이 종목별로 붙인 분류예요. SK스퀘어는 SK하이닉스 지분이 핵심 자산이라 반도체로 분류했어요. 알파벳은 A·C 두 종류 주식을 합쳤어요. 판정 기준은 베타용 임시 기준이에요.</div>
     <div><b>매매 습관 진단:</b> 붙여넣은 거래내역은 이 브라우저 안에서만 계산되고 저장되거나 전송되지 않아요. 지표는 행동재무학의 처분효과(이익은 빨리, 손실은 늦게 파는 경향) 등을 참고한 베타 기준이에요.</div>
     <div>포트핏은 입력한 정보를 바탕으로 현재 상태를 계산해 보여줄 뿐, 특정 금융투자상품의 매매를 권유하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</div>
-    <div><a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener">개인정보처리방침</a></div>
+    <div><a href="https://qkrwnsghd.github.io/portfit/terms.html" target="_blank" rel="noopener">이용약관</a> · <a href="https://qkrwnsghd.github.io/portfit/privacy.html" target="_blank" rel="noopener"><b>개인정보처리방침</b></a></div>
   </footer>
 </div>
 
@@ -1992,11 +2000,14 @@ async function syncPull() {
   try { sessionStorage.setItem("portfit-just-synced", "1"); } catch (_) {}
   location.reload();
 }
+let acctMode = "";            // "" 보통 / "newpw" 새 비밀번호 정하기
 function acctStatus(msg, bad) {
   const btn = document.getElementById("acctBtn");
   btn.textContent = sbUser ? "내 계정" : "로그인"; btn.classList.toggle("on", !!sbUser);
-  document.getElementById("acctOut").hidden = !!sbUser; document.getElementById("acctIn").hidden = !sbUser;
-  document.getElementById("acct-title").textContent = sbUser ? "내 계정" : "로그인";
+  const np = acctMode === "newpw" && !!sbUser;
+  document.getElementById("acctOut").hidden = !!sbUser; document.getElementById("acctIn").hidden = !sbUser || np;
+  document.getElementById("acctNew").hidden = !np;
+  document.getElementById("acct-title").textContent = np ? "새 비밀번호" : sbUser ? "내 계정" : "로그인";
   if (sbUser) {
     document.getElementById("acctWho").textContent = sbUser.email;
     const m = loadJSON(SYNC_META, {});
@@ -2006,12 +2017,13 @@ function acctStatus(msg, bad) {
 }
 const AUTH_KO = [[/invalid login credentials/i, "이메일이나 비밀번호가 맞지 않아요."], [/already registered|already been registered/i, "이미 가입된 이메일이에요. '로그인'을 눌러 주세요."],
   [/password should be at least|at least 6/i, "비밀번호는 6자 이상이어야 해요."], [/valid email|invalid format|unable to validate email/i, "이메일 형식을 확인해 주세요."],
+  [/same.*password|different from the old/i, "지금 비밀번호와 다른 비밀번호를 넣어 주세요."], [/expired|invalid.*(token|link)|otp/i, "링크가 만료됐어요. '비밀번호를 잊었어요'를 다시 눌러 주세요."],
   [/email not confirmed/i, "이메일 인증이 필요해요. Supabase에서 'Confirm email'을 꺼 주세요."], [/rate limit|too many/i, "잠시 후에 다시 시도해 주세요."], [/fetch|network/i, "인터넷 연결을 확인해 주세요."]];
 const authKo = e => (AUTH_KO.find(([re]) => re.test(e && e.message || "")) || [null, `오류: ${e && e.message}`])[1];
 async function acctAuth(kind) {
   const email = document.getElementById("acctEmail").value.trim(), password = document.getElementById("acctPw").value;
   if (!email || password.length < 6) { acctStatus("이메일과 6자 이상 비밀번호를 넣어 주세요.", true); return; }
-  if (kind === "signup" && !document.getElementById("acctAgree").checked) { acctStatus("가입하려면 개인정보 수집·이용 동의에 체크해 주세요.", true); return; }
+  if (kind === "signup" && !document.getElementById("acctAgree").checked) { acctStatus("가입하려면 이용약관과 개인정보 수집·이용 동의에 체크해 주세요.", true); return; }
   acctStatus(kind === "signup" ? "가입하는 중…" : "로그인하는 중…");
   const { data, error } = kind === "signup" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
   if (error) { acctStatus(authKo(error), true); return; }
@@ -2019,12 +2031,21 @@ async function acctAuth(kind) {
   sbUser = data.session.user; acctStatus("불러오는 중…"); await syncPull(); checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
 }
+function clearLocalAndReload(note) {
+  syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
+  try { if (note) sessionStorage.setItem("portfit-acct-note", note); } catch (_) {}
+  location.reload();
+}
 async function initAccount() {
   const onSite = /github\.io$|^localhost$|^127\.0\.0\.1$/.test(location.hostname);
   if (!SB_URL || !SB_KEY || !onSite) return;                       // 설정 전이거나 claude.ai 미리보기에서는 숨김
+  const recovery = /type=recovery/.test(location.hash);           // 비밀번호 재설정 메일의 링크로 들어온 경우
   try {
     if (!window.supabase) await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = SB_LIB; sc.onload = ok; sc.onerror = no; document.head.appendChild(sc); });
-    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true } });
+    sb = window.supabase.createClient(SB_URL, SB_KEY, { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } });
+    sb.auth.onAuthStateChange((event, session) => {
+      if (event === "PASSWORD_RECOVERY" && session) { sbUser = session.user; openNewPw("메일 링크로 들어왔어요. 새로 쓸 비밀번호를 넣어 주세요."); }
+    });
   } catch (_) { return; }
   sbReady = true;
   const btn = document.getElementById("acctBtn"), dlg = document.getElementById("acctDlg");
@@ -2035,6 +2056,39 @@ async function initAccount() {
   document.getElementById("acctSignup").addEventListener("click", () => acctAuth("signup"));
   document.getElementById("acctPw").addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); acctAuth("login"); } });
   document.getElementById("acctSyncNow").addEventListener("click", async () => { acctStatus("저장하는 중…"); await syncPush(); acctStatus("저장했어요."); });
+  // 비밀번호 찾기: 메일로 재설정 링크 보내기
+  document.getElementById("acctForgot").addEventListener("click", async () => {
+    const email = document.getElementById("acctEmail").value.trim();
+    if (!email) { acctStatus("위 칸에 가입한 이메일을 먼저 넣어 주세요.", true); return; }
+    acctStatus("메일 보내는 중…");
+    const { error } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname });
+    if (error) { acctStatus(authKo(error), true); return; }
+    acctStatus(`${email}로 비밀번호 재설정 메일을 보냈어요. 메일의 링크를 누르면 포트핏이 열리고 새 비밀번호를 정할 수 있어요. 메일이 안 보이면 스팸함도 확인해 주세요.`);
+  });
+  // 로그인한 상태에서 비밀번호 바꾸기
+  document.getElementById("acctChangePw").addEventListener("click", () => openNewPw("새로 쓸 비밀번호를 넣어 주세요."));
+  document.getElementById("acctNewCancel").addEventListener("click", () => { acctMode = ""; acctStatus(); });
+  document.getElementById("acctNewSave").addEventListener("click", async () => {
+    const a = document.getElementById("acctNewPw").value, b = document.getElementById("acctNewPw2").value;
+    if (a.length < 6) { acctStatus("비밀번호는 6자 이상이어야 해요.", true); return; }
+    if (a !== b) { acctStatus("두 칸의 비밀번호가 달라요.", true); return; }
+    acctStatus("바꾸는 중…");
+    const { error } = await sb.auth.updateUser({ password: a });
+    if (error) { acctStatus(authKo(error), true); return; }
+    document.getElementById("acctNewPw").value = document.getElementById("acctNewPw2").value = "";
+    acctMode = ""; acctStatus("비밀번호를 바꿨어요. 다음부터 새 비밀번호로 로그인하세요.");
+  });
+  // 회원 탈퇴: 서버 함수(delete-account)가 계정과 기록을 지움
+  const del = document.getElementById("acctDelete");
+  del.addEventListener("click", async () => {
+    if (del.dataset.armed !== "1") { del.dataset.armed = "1"; del.textContent = "정말 탈퇴할까요? 한 번 더 누르면 탈퇴돼요"; return; }
+    acctStatus("탈퇴하는 중…");
+    clearTimeout(syncTimer);
+    const { data, error } = await sb.functions.invoke("delete-account", { body: { confirm: true } });
+    if (error || !data || !data.ok) { acctStatus("탈퇴를 처리하지 못했어요. 잠시 뒤 다시 하거나 개인정보처리방침의 이메일로 요청해 주세요.", true); del.dataset.armed = ""; del.textContent = "회원 탈퇴"; return; }
+    try { await sb.auth.signOut({ scope: "local" }); } catch (_) {}
+    sbUser = null; clearLocalAndReload("탈퇴가 끝났어요. 그동안 포트핏을 써 주셔서 고마워요.");
+  });
   document.getElementById("acctLogout").addEventListener("click", async () => {
     await sb.auth.signOut(); sbUser = null;
     syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
@@ -2054,10 +2108,19 @@ async function initAccount() {
   const { data } = await sb.auth.getSession();
   sbUser = data.session ? data.session.user : null;
   acctStatus();
+  if (recovery && sbUser && acctMode !== "newpw") openNewPw("메일 링크로 들어왔어요. 새로 쓸 비밀번호를 넣어 주세요.");
+  let note = null; try { note = sessionStorage.getItem("portfit-acct-note"); sessionStorage.removeItem("portfit-acct-note"); } catch (_) {}
+  if (note) { acctStatus(note); dlg.showModal(); }
   let just = false; try { just = sessionStorage.getItem("portfit-just-synced") === "1"; sessionStorage.removeItem("portfit-just-synced"); } catch (_) {}
   if (sbUser && !just) await syncPull();
   checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
+}
+
+function openNewPw(sub) {
+  acctMode = "newpw"; document.getElementById("acctNewSub").textContent = sub; acctStatus();
+  const dlg = document.getElementById("acctDlg"); if (!dlg.open) dlg.showModal();
+  if (/type=recovery|access_token/.test(location.hash)) { try { history.replaceState(null, "", location.pathname); } catch (_) {} }
 }
 
 // ---------- 앱처럼 설치 (PWA) ----------
