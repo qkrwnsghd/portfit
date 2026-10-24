@@ -60,12 +60,23 @@ YF_SECTOR = {
     "Consumer Defensive": "필수소비재", "Healthcare": "헬스케어", "Financial Services": "금융", "Industrials": "산업재",
     "Energy": "에너지", "Utilities": "유틸리티", "Real Estate": "부동산", "Basic Materials": "소재",
 }
-SUFFIX = r"\b(INCORPORATED|INC|CORPORATION|CORP|COMPANY|CO|LTD|LIMITED|PLC|HOLDINGS?|GROUP|THE|NV|N V|SA|AG|CLASS [A-C]|CL [A-C]|SHS|ADR|SPON|SPONSORED|REIT|LP)\b"
+SUFFIX = r"\b(INCORPORATED|INC|CORPORATION|CORP|COMPANY|COMPANIES|COS|CO|LTD|LIMITED|PLC|HOLDINGS?|HLDGS|GROUP|THE|NV|N V|SA|AG|SE|CLASS [A-C]|CL [A-C]|SHS|ADR|ADS|SP|SPON|SPONSORED|NY|REG|ORD|NEW|REIT|LP)\b"
+# 위키백과(S&P500·나스닥100)에 없는 해외 상장 종목 등 직접 지정 {정규화 이름: 티커}
+ALIAS = {
+    "TAIWAN SEMICONDUCTOR": "TSM", "TAIWAN SEMICONDUCTOR MANUFACTURING": "TSM", "ASML": "ASML", "ARM": "ARM",
+    "STMICROELECTRONICS": "STM", "FERROVIAL": "FER", "NEBIUS": "NBIS", "LINDE": "LIN", "BERKSHIRE HATHWAY": "BRK.B",
+    "BERKSHIRE HATHAWAY": "BRK.B", "BLACKSTONE": "BX", "BOSTON PROPERTIES": "BXP", "CH ROBINSON WORLDWIDE": "CHRW",
+    "FNF": "FNF", "SHOPIFY": "SHOP", "PDD": "PDD", "ASTRAZENECA": "AZN", "MERCADOLIBRE": "MELI",
+    "COCA COLA EUROPACIFIC PARTNERS": "CCEP", "GLOBALFOUNDRIES": "GFS", "NXP SEMICONDUCTORS": "NXPI", "UNITED MICROELECTRONICS": "UMC",
+}
 
 
 def norm(name):
     s = str(name).upper().replace("&", " AND ")
     s = re.sub(r"-\s*CL(ASS)?\s*[A-C]\b", " ", s)
+    s = re.sub(r"\s*-\s*[A-C]\s*$", " ", s)            # 'CBRE GROUP INC - A', 'COGNIZANT ...-A'
+    s = re.sub(r"/[A-Z]{1,4}\b", " ", s)                 # 'CDW CORP/DE', 'BUCKLE INC/THE', '/OH'
+    s = re.sub(r"\bTECH\b", "TECHNOLOGY", s)
     s = re.sub(r"[^A-Z0-9 ]", " ", s)
     s = re.sub(SUFFIX, " ", s)
     return re.sub(r"\s+", " ", s).strip()
@@ -110,7 +121,7 @@ def yahoo_search(name):
     except Exception:                                   # noqa: BLE001
         return None
     for it in q or []:
-        if it.get("quoteType") == "EQUITY" and it.get("exchange") in ("NMS", "NYQ", "NGM", "NCM", "ASE", "PCX", "BTS"):
+        if it.get("quoteType") == "EQUITY" and it.get("exchange") in ("NMS", "NYQ", "NGM", "NCM", "ASE", "PCX", "BTS", "NAS", "NYS"):
             return it.get("symbol"), YF_SECTOR.get(it.get("sector", ""), it.get("sector", "")), it.get("industry", "")
     return None
 
@@ -142,9 +153,11 @@ def main(dry):
     todo = [n for n in names if norm(n) not in cache]
     if todo:
         wiki = wiki_universe()
+        wiki_sector = {t: sec for t, sec in wiki.values()}
+        wiki_sector.update({"TSM": "반도체", "ASML": "반도체", "ARM": "반도체", "STM": "반도체", "GFS": "반도체", "NXPI": "반도체", "UMC": "반도체"})
         for n in todo:
             k = norm(n)
-            hit = wiki.get(k)
+            hit = (ALIAS[k], wiki_sector.get(ALIAS[k], "")) if k in ALIAS else wiki.get(k)
             if not hit:                                 # 앞 두 단어만으로 다시 맞춰 보기
                 k2 = " ".join(k.split()[:2])
                 cand = [v for kk, v in wiki.items() if kk.startswith(k2)] if len(k2) >= 4 else []
@@ -152,7 +165,7 @@ def main(dry):
             if hit:
                 cache[k] = {"t": hit[0], "s": hit[1]}
             else:
-                y = yahoo_search(n)
+                y = yahoo_search(k.title()) or yahoo_search(n)
                 cache[k] = {"t": y[0], "s": sector_of(y[2], y[1])} if y else {"t": None, "s": ""}
                 time.sleep(0.3)
         print(f"새로 찾은 이름 {len(todo)}개 (못 찾음 {sum(1 for n in todo if not cache[norm(n)]['t'])}개)")
