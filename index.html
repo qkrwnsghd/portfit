@@ -206,6 +206,10 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .fmt { font-size: 12px; color: var(--muted); margin-top: 12px; }
 .fmt code { font-family: var(--font-num); background: var(--soft); padding: 1px 5px; border-radius: 4px; }
 .err { font-size: 13px; color: var(--bad); background: var(--bad-bg); border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
+.note.ok { color: var(--good); background: var(--good-bg); }
+.raw { margin-top: 8px; font-size: 12px; color: var(--muted); }
+.raw summary { cursor: pointer; }
+.raw pre { white-space: pre-wrap; max-height: 220px; overflow: auto; background: var(--soft); border-radius: 6px; padding: 8px; font-family: var(--font-num); font-size: 11.5px; }
 .note { font-size: 12.5px; color: var(--warn); background: var(--warn-bg); border-radius: 6px; padding: 8px 10px; margin-top: 10px; }
 .hold-compare { display: grid; gap: 10px; margin-top: 4px; }
 .kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 14px; }
@@ -281,13 +285,15 @@ footer a { color: var(--accent); }
       <div class="btns">
         <button type="button" class="primary" id="tradeRun">진단하기</button>
         <label class="file-btn">파일 올리기 (.csv)<input type="file" id="tradeFile" accept=".csv,.txt,text/csv"></label>
+        <label class="file-btn">캡처 올리기 (토스증권)<input type="file" id="tossFiles" accept="image/*" multiple></label>
         <button type="button" id="tradeSample">예시 내역</button>
         <button type="button" id="tradeClear">지우기</button>
       </div>
+      <div id="ocrMsg"></div>
       <div id="tradeMsg"></div>
       <div class="fmt">
         필요한 열: <code>날짜</code> <code>종목</code> <code>구분</code>(매수/매도) <code>수량</code> <code>단가</code><br>
-        증권사 이름(체결일자, 종목명, 매매구분, 체결수량, 체결단가 등)도 자동으로 알아봐요. 첫 줄은 열 이름이어야 해요.
+        증권사 이름(체결일자, 종목명, 매매구분, 체결수량, 체결단가 등)도 자동으로 알아봐요. 첫 줄은 열 이름이어야 해요.<br>토스증권은 「주문내역」 화면을 위에서부터 차례로 캡처해서 여러 장을 한 번에 올리면 돼요. 캡처는 이 브라우저 안에서만 읽어요.
       </div>
       <p class="example-note" id="tradeExampleNote">처음 보이는 내역은 예시예요. 실제 사람의 거래가 아니라, 진단 기능을 보여주려고 만든 가상 거래예요.</p>
     </section>
@@ -784,6 +790,100 @@ function renderResults() {
   });
 }
 
+// 토스증권 「주문내역」 화면 글자 → 거래 목록
+// 화면 구조(위가 최신): [날짜] 종목명 … 주당 N원 / (N주|N원) (구매|판매) 완료
+function parseTossText(pages, today) {
+  today = today || new Date();
+  const year = today.getFullYear(), curMonth = today.getMonth() + 1;
+  const num = s => Number(String(s).replace(/[^\d.]/g, ""));
+  const all = [];
+  let date = null;
+  for (const text of pages) {
+    const found = [];
+    let head = null;                                   // { name, price }
+    const lines = String(text).replace(/\r/g, "").split("\n").map(l => l.replace(/\s+/g, " ").trim()).filter(Boolean);
+    for (let line of lines) {
+      const d = line.match(/^(\d{1,2})\s?[.,·]\s?(\d{1,2})(?=\s|[A-Za-z가-힣])\s*(.*)$/);
+      if (d && +d[1] >= 1 && +d[1] <= 12 && +d[2] >= 1 && +d[2] <= 31) {
+        const m = +d[1], y = m > curMonth + 1 ? year - 1 : year;
+        date = `${y}-${String(m).padStart(2, "0")}-${String(+d[2]).padStart(2, "0")}`;
+        line = d[3];
+      }
+      const price = line.match(/주\s?당\s*([\d,]{3,})\s*원/);
+      const act = line.match(/([\d,]+(?:\.\d+)?)\s*(주|원)\s*(구매|판매|매수|매도)/);
+      if (price) {
+        let name = line.slice(0, price.index).replace(/[|>›»]/g, " ").trim();
+        if (act && act.index < price.index) name = line.slice(0, act.index).trim();
+        head = { name, price: num(price[1]) };
+      }
+      if (act && head && date) {
+        const amount = num(act[1]);
+        const qty = act[2] === "주" ? amount : Math.round(amount / head.price * 10000) / 10000;
+        const side = /구매|매수/.test(act[3]) ? "매수" : "매도";
+        if (head.name && qty > 0 && head.price > 0) found.push({ date, name: head.name, side, qty, price: head.price, raw: act[1] + act[2] });
+        head = null;
+      }
+    }
+    // 캡처끼리 겹친 부분(앞 캡처의 끝 = 다음 캡처의 시작) 지우기
+    const same = (a, b) => a.date === b.date && a.name === b.name && a.side === b.side && a.raw === b.raw && a.price === b.price;
+    let overlap = 0;
+    for (let L = Math.min(all.length, found.length); L > 0; L--) {
+      let ok = true;
+      for (let i = 0; i < L; i++) if (!same(all[all.length - L + i], found[i])) { ok = false; break; }
+      if (ok) { overlap = L; break; }
+    }
+    all.push(...found.slice(overlap));
+  }
+  return all.reverse();                                // 화면은 최신순 → 날짜순으로
+}
+function tradesToCSV(trades) {
+  return ["날짜,종목,구분,수량,단가"].concat(trades.map(t => `${t.date},${t.name.replace(/,/g, " ")},${t.side},${t.qty},${t.price}`)).join("\n");
+}
+
+// ---------- 캡처 자동 인식 (브라우저 안 Tesseract OCR, 캡처는 전송되지 않음) ----------
+const TESS_URL = "https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js";
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (window.Tesseract) return res();
+    const el = document.createElement("script");
+    el.src = src; el.onload = () => res(); el.onerror = () => rej(new Error("script"));
+    document.head.appendChild(el);
+  });
+}
+async function readScreens(files) {
+  const box = document.getElementById("ocrMsg");
+  const say = h => { box.innerHTML = h; };
+  files.sort((a, b) => a.lastModified - b.lastModified);      // 찍은 순서 = 위에서 아래로 스크롤한 순서
+  let cur = 0, worker = null;
+  say(`<p class="note">글자 인식을 준비하고 있어요. 처음 한 번은 인식 모델을 받느라 30초쯤 걸려요.</p>`);
+  try {
+    await loadScript(TESS_URL);
+    worker = await Tesseract.createWorker("kor+eng", 1, {
+      logger: m => { if (m.status === "recognizing text") say(`<p class="note">캡처 ${cur}/${files.length}장 읽는 중… ${Math.round(m.progress * 100)}%</p>`); },
+    });
+    await worker.setParameters({ tessedit_pageseg_mode: "6" });   // 화면 전체를 한 줄씩 읽기
+    const pages = [];
+    for (let i = 0; i < files.length; i++) {
+      cur = i + 1;
+      const { data } = await worker.recognize(files[i]);
+      pages.push(data.text || "");
+    }
+    await worker.terminate(); worker = null;
+    const trades = parseTossText(pages);
+    const raw = `<details class="raw"><summary>인식된 원문 보기</summary><pre>${esc(pages.map((t, i) => `[캡처 ${i + 1}]\n${t}`).join("\n\n"))}</pre></details>`;
+    if (!trades.length) {
+      say(`<p class="err">거래를 찾지 못했어요. 토스증권 「주문내역」 화면을 캡처했는지 확인해 주세요. 원문을 개발자에게 보내 주면 고칠 수 있어요.</p>${raw}`);
+      return;
+    }
+    tradeText.value = tradesToCSV(trades);
+    runTrades();
+    say(`<p class="note ok">캡처 ${files.length}장에서 거래 ${trades.length}건을 읽었어요. 글자 인식은 틀릴 수 있으니 칸의 숫자를 캡처와 비교해 보고, 고친 뒤 「진단하기」를 다시 누르세요.</p>${raw}`);
+  } catch (err) {
+    if (worker) { try { await worker.terminate(); } catch (_) {} }
+    say(`<p class="err">글자 인식을 시작하지 못했어요. 이 화면에서는 인식 모델을 받을 수 없는 것 같아요. qkrwnsghd.github.io/portfit 에서 다시 해 보세요.</p>`);
+  }
+}
+
 // ---------- 매매 습관 진단 ----------
 const SAMPLE_TRADES = `날짜,종목,구분,수량,단가
 2026-01-05,삼성전자,매수,20,78000
@@ -1013,6 +1113,11 @@ function runTrades() {
 function signedPct(v) { return `${v > 0 ? "+" : ""}${fmt(v)}%`; }
 
 document.getElementById("tradeRun").addEventListener("click", runTrades);
+document.getElementById("tossFiles").addEventListener("change", e => {
+  const files = Array.from(e.target.files || []);
+  e.target.value = "";
+  if (files.length) readScreens(files);
+});
 document.getElementById("tradeSample").addEventListener("click", () => { tradeText.value = SAMPLE_TRADES; runTrades(); });
 document.getElementById("tradeClear").addEventListener("click", () => { tradeText.value = ""; runTrades(); });
 document.getElementById("tradeFile").addEventListener("change", e => {
