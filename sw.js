@@ -2,7 +2,7 @@
 // - 화면(HTML)과 데이터(JSON)는 항상 인터넷에서 새로 받고, 실패할 때만 저장해 둔 것을 씀 (항상 최신 유지)
 // - 아이콘 같은 고정 파일은 저장해 둔 것을 먼저 씀
 // - 로그인·AI 서버(Supabase) 같은 다른 사이트 요청은 건드리지 않음
-const CACHE = "portfit-v6";
+const CACHE = "portfit-v7";
 const CORE = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
