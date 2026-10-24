@@ -22,9 +22,18 @@ ETFS = {
     "091160": "KODEX 반도체",
     "305720": "KODEX 2차전지산업",
     "364980": "TIGER 2차전지TOP10",
+    "148020": "RISE 200",
+    "232080": "TIGER 코스닥150",
+    "091170": "KODEX 은행",
+    "091180": "KODEX 자동차",
+    "102970": "KODEX 증권",
+    "244580": "KODEX 바이오",
+    "449450": "PLUS K방산",
+    "494670": "TIGER 조선TOP10",
 }
+KST = datetime.timezone(datetime.timedelta(hours=9))
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "holdings.json")
-MIN_ETFS = 5          # 이보다 적게 성공하면 기존 파일을 지키기 위해 저장하지 않음
+MIN_ETFS = 10         # 이보다 적게 성공하면 기존 파일을 지키기 위해 저장하지 않음
 
 
 def get_holdings(stock, code):
@@ -48,7 +57,7 @@ def get_holdings(stock, code):
 
 def get_sectors(stock):
     """최근 영업일 기준 국내 종목 업종 분류 {티커: 업종명}. 실패하면 빈 사전."""
-    today = datetime.date.today()
+    today = datetime.datetime.now(KST).date()
     for back in range(0, 8):
         day = (today - datetime.timedelta(days=back)).strftime("%Y%m%d")
         sectors = {}
@@ -106,7 +115,7 @@ def main():
             pass
 
     data = {
-        "asof": datetime.date.today().isoformat(),
+        "asof": datetime.datetime.now(KST).date().isoformat(),
         "source": "한국거래소 ETF 납부자산구성내역 (pykrx)",
         "etfs": result,
     }

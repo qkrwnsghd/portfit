@@ -297,7 +297,7 @@ footer a { color: var(--accent); }
   </div>
 
   <footer>
-    <div><b>데이터:</b> 국내 ETF 7종은 한국거래소 ETF 납부자산구성내역의 전체 구성종목과 업종 분류(<span id="dataAsof">2026-10-23</span> 기준)를 썼어요. 미국 ETF 13종은 거래소가 비중을 공개하지 않아 상위 10개 구성종목과 비중(2026년 10월 기준, RISE 미국S&P500은 9월)을 <a href="https://etfshopping.com/etf/360750" target="_blank" rel="noopener">ETF쇼핑</a>에서 가져왔고, 나머지는 'ETF별 그 외 종목'으로 묶었어요. 그래서 미국 ETF끼리의 중복률은 실제보다 낮게 나올 수 있어요.</div>
+    <div><b>데이터:</b> 국내 ETF는 한국거래소 ETF 납부자산구성내역의 전체 구성종목과 업종 분류(<span id="dataAsof">2026-10-23</span> 기준)를 썼어요. 미국 ETF 13종은 거래소가 비중을 공개하지 않아 상위 10개 구성종목과 비중(2026년 10월 기준, RISE 미국S&P500은 9월)을 <a href="https://etfshopping.com/etf/360750" target="_blank" rel="noopener">ETF쇼핑</a>에서 가져왔고, 나머지는 'ETF별 그 외 종목'으로 묶었어요. 그래서 미국 ETF끼리의 중복률은 실제보다 낮게 나올 수 있어요.</div>
     <div><b>분류:</b> 섹터와 국가는 포트핏이 종목별로 붙인 분류예요. SK스퀘어는 SK하이닉스 지분이 핵심 자산이라 반도체로 분류했어요. 알파벳은 A·C 두 종류 주식을 합쳤어요. 판정 기준은 베타용 임시 기준이에요.</div>
     <div><b>매매 습관 진단:</b> 붙여넣은 거래내역은 이 브라우저 안에서만 계산되고 저장되거나 전송되지 않아요. 지표는 행동재무학의 처분효과(이익은 빨리, 손실은 늦게 파는 경향) 등을 참고한 베타 기준이에요.</div>
     <div>포트핏은 입력한 정보를 바탕으로 현재 상태를 계산해 보여줄 뿐, 특정 금융투자상품의 매매를 권유하지 않습니다. 투자 판단과 책임은 이용자 본인에게 있습니다.</div>
@@ -328,6 +328,15 @@ const ETFS = [
   { code: "364980", name: "TIGER 2차전지TOP10", index: "2차전지 TOP10", group: "국내 업종·테마", country: "한국", holdings: [
     ["LG에너지솔루션", 27.76], ["삼성SDI", 25.29], ["POSCO홀딩스", 21.79], ["SK이노베이션", 5.73], ["LG화학", 5.59],
     ["에코프로", 4.27], ["에코프로비엠", 3.35], ["포스코퓨처엠", 3.21], ["엘앤에프", 1.53], ["SKC", 1.22] ] },
+  // 아래 8종은 내장 데이터 없이, GitHub Actions가 매일 갱신하는 holdings.json에서 전체 구성종목을 받아요
+  { code: "148020", name: "RISE 200", index: "코스피200", group: "국내 대표지수", country: "한국", holdings: [] },
+  { code: "232080", name: "TIGER 코스닥150", index: "코스닥150", group: "국내 대표지수", country: "한국", holdings: [] },
+  { code: "091170", name: "KODEX 은행", index: "KRX 은행", group: "국내 업종·테마", country: "한국", holdings: [] },
+  { code: "091180", name: "KODEX 자동차", index: "KRX 자동차", group: "국내 업종·테마", country: "한국", holdings: [] },
+  { code: "102970", name: "KODEX 증권", index: "KRX 증권", group: "국내 업종·테마", country: "한국", holdings: [] },
+  { code: "244580", name: "KODEX 바이오", index: "바이오", group: "국내 업종·테마", country: "한국", holdings: [] },
+  { code: "449450", name: "PLUS K방산", index: "K방산", group: "국내 업종·테마", country: "한국", holdings: [] },
+  { code: "494670", name: "TIGER 조선TOP10", index: "조선 TOP10", group: "국내 업종·테마", country: "한국", holdings: [] },
   { code: "360750", name: "TIGER 미국S&P500", index: "S&P500", group: "미국 대표지수", country: "미국", holdings: [
     ["엔비디아", 7.85], ["애플", 7.60], ["마이크로소프트", 5.95], ["알파벳", 5.46], ["아마존", 3.72],
     ["브로드컴", 2.37], ["메타", 2.37], ["일라이릴리", 1.52], ["테슬라", 1.51] ] },
@@ -520,14 +529,14 @@ const results = document.getElementById("results");
 
 function buildSelect() {
   const heldCodes = new Set(portfolio.map(r => r[0]));
-  const avail = ETFS.filter(e => !heldCodes.has(e.code));
+  const avail = ETFS.filter(e => e.holdings.length && !heldCodes.has(e.code));
   select.innerHTML = `<option value="">${avail.length ? "ETF를 골라 추가하세요" : "목록의 ETF를 모두 추가했어요"}</option>` +
     GROUPS.map(g => {
       const opts = avail.filter(e => e.group === g);
       return opts.length ? `<optgroup label="${g}">${opts.map(e => `<option value="${e.code}">${esc(e.name)} (${e.code})</option>`).join("")}</optgroup>` : "";
     }).join("");
   select.disabled = avail.length === 0;
-  document.getElementById("etfCount").textContent = `· 전체 ${ETFS.length}개 중 선택`;
+  document.getElementById("etfCount").textContent = `· 전체 ${ETFS.filter(e => e.holdings.length).length}개 중 선택`;
 }
 
 function buildList() {
@@ -1070,7 +1079,7 @@ async function loadLatest() {
     const res = await fetch("holdings.json", { cache: "no-store" });
     if (!res.ok) return;
     const data = await res.json();
-    if (!data || !data.etfs || !data.asof || data.asof <= FULL_ASOF) return;
+    if (!data || !data.etfs) return;
     let n = 0;
     for (const [code, v] of Object.entries(data.etfs)) {
       const e = BY_CODE[code];
@@ -1080,7 +1089,7 @@ async function loadLatest() {
       }
     }
     if (n) {
-      document.getElementById("dataAsof").textContent = data.asof;
+      if (data.asof) document.getElementById("dataAsof").textContent = data.asof;
       renderAll();
     }
   } catch (_) { /* 파일이 없으면 내장 데이터 사용 */ }
