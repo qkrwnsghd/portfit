@@ -1138,11 +1138,55 @@ const AI_PROMPT = `첨부한 이미지는 토스증권 앱 「주문내역」 �
 규칙: 캡처끼리 겹쳐서 두 번 보이는 거래는 한 번만 넣으세요. 화면 끝에 잘려서 정보가 다 보이지 않는 거래와 취소된 주문은 빼세요. 추측해서 지어내지 마세요.
 JSON 배열만 답하세요. 예: [{"date":"10.22","name":"SOXL","side":"판매","amount":3,"unit":"주","price":134659}]`;
 
+// 서버(GitHub 사이트, 로그인 시) 또는 claude.ai 중 쓸 수 있는 쪽으로 캡처를 읽음
+let aiServer = false, aiLeft = null;
+async function shrinkToJpeg(file, maxEdge = 2000) {
+  const bmp = await createImageBitmap(file);
+  const sc = Math.min(1, maxEdge / Math.max(bmp.width, bmp.height));
+  const c = document.createElement("canvas"); c.width = Math.round(bmp.width * sc); c.height = Math.round(bmp.height * sc);
+  c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+  const url = c.toDataURL("image/jpeg", 0.85);
+  return { media_type: "image/jpeg", data: url.slice(url.indexOf(",") + 1) };
+}
+async function serverRead(prevDate, chunk) {
+  const images = await Promise.all(chunk.map(f => shrinkToJpeg(f)));
+  const { data, error } = await sb.functions.invoke("read-screens", { body: { prevDate, images } });
+  if (error) {
+    let info = {}; try { info = await error.context.json(); } catch (_) {}
+    throw { code: info.error === "user_limit" ? "user_limit" : info.error === "global_limit" ? "global_limit" : info.error === "no_key" ? "no_key" : info.error === "invalid_json" ? "invalid_json" : "server", left: info.left };
+  }
+  if (typeof data.left === "number") aiLeft = data.left;
+  return data.items;
+}
+async function checkAiServer() {
+  aiServer = false;
+  if (!sb || !sbUser) { setTossHint(); return; }
+  try {
+    const { data, error } = await sb.functions.invoke("read-screens", { method: "GET" });
+    if (!error && data && data.ready) { aiServer = true; aiLeft = data.left; }
+  } catch (_) {}
+  setTossHint();
+}
+function setTossHint() {
+  if (aiSample) return;
+  const label = document.getElementById("tossLabel"), hint = document.getElementById("tossHint");
+  if (aiServer) {
+    label.firstChild.textContent = "캡처 올리기 (AI 인식)";
+    hint.textContent = `토스증권 「주문내역」 화면을 위에서부터 차례로 캡처해서 여러 장을 한 번에 올리면 AI가 읽어서 표로 바꿔 줘요. 캡처는 읽기만 하고 저장하지 않아요. 오늘 ${aiLeft ?? "–"}장 더 읽을 수 있어요.`;
+  } else {
+    label.firstChild.textContent = "캡처 올리기 (토스증권)";
+    hint.textContent = `토스증권은 「주문내역」 화면을 위에서부터 차례로 캡처해서 여러 장을 한 번에 올리면 돼요. 캡처는 이 브라우저 안에서만 읽고, 무료 글자 인식이라 틀린 곳이 많을 수 있어요.${sbReady && !sbUser ? " 로그인하면 AI가 더 정확하게 읽어요." : ""}`;
+  }
+}
+
 async function readScreensAI(files) {
   const box = document.getElementById("ocrMsg");
   const say = h => { box.innerHTML = h; };
   files.sort((a, b) => a.lastModified - b.lastModified);      // 찍은 순서 = 위에서 아래로 스크롤한 순서
-  const size = Math.max(1, aiImgLimit);
+  const viaServer = !aiSample && aiServer;
+  const read = viaServer ? (prompt, chunk, prev) => serverRead(prev, chunk)
+    : (prompt, chunk) => aiSample.json(prompt, { images: chunk, signal: aiCtl.signal });
+  const size = viaServer ? 5 : Math.max(1, aiImgLimit);
   const pages = [];
   let prevDate = null, started = Date.now();
   aiCtl = new AbortController();
@@ -1157,7 +1201,8 @@ async function readScreensAI(files) {
     for (let i = 0; i < files.length; i += size) {
       const chunk = files.slice(i, i + size);
       const prompt = AI_PROMPT.replace("{{PREV}}", prevDate ? `첫 이미지 맨 위에 날짜 없이 시작하는 거래는 ${prevDate} 날짜예요.` : "");
-      const items = await aiSample.json(prompt, { images: chunk, signal: aiCtl.signal });
+      const items = await read(prompt, chunk, prevDate);
+      if (aiCtl.signal.aborted) throw { code: "cancelled" };
       if (!Array.isArray(items)) throw { code: "invalid_json" };
       // 기존 변환기(parseTossText)가 이해하는 글자 모양으로 바꿔서 넘김: 연도 추정·수량 계산·캡처 겹침 제거를 그대로 씀
       const lines = [];
@@ -1182,6 +1227,7 @@ async function readScreensAI(files) {
     }
     tradeText.value = tradesToCSV(trades);
     runTrades();
+    if (viaServer) setTossHint();
     say(`<p class="note ok">캡처 ${files.length}장에서 거래 ${trades.length}건을 읽었어요. AI도 가끔 틀릴 수 있으니 칸의 숫자를 캡처와 한 번 비교해 보세요. 고쳤다면 「진단하기」를 다시 누르면 돼요.</p>`);
   } catch (e) {
     clearInterval(tick);
@@ -1195,6 +1241,10 @@ async function readScreensAI(files) {
       image_rejected: `이미지를 받지 못했어요. 한 번에 ${aiImgLimit}장 이하의 캡처(JPG·PNG)로 다시 올려 주세요.`,
       invalid_json: "Claude 답을 표로 바꾸지 못했어요. 한 번 더 올려 보세요.",
       refused: "이 캡처는 읽을 수 없었어요. 주문내역 화면만 캡처해서 올려 주세요.",
+      user_limit: `오늘 AI로 읽을 수 있는 캡처를 다 썼어요${e && e.left ? ` (남은 ${e.left}장보다 많이 올렸어요)` : ""}. 내일 다시 하거나, 장수를 줄여서 올려 주세요.`,
+      global_limit: "오늘은 포트핏 전체 AI 사용량이 다 찼어요. 내일 다시 해 주세요.",
+      no_key: "AI 인식 서버가 아직 준비되지 않았어요.",
+      server: "AI 인식 서버에 연결하지 못했어요. 잠시 뒤 다시 해 주세요.",
     }[code] || "캡처를 읽는 중에 문제가 생겼어요. 잠시 뒤 다시 올려 주세요.";
     say(`<p class="${code === "cancelled" ? "note" : "err"}">${msg}</p>`);
   } finally {
@@ -1444,7 +1494,7 @@ document.getElementById("tossFiles").addEventListener("change", e => {
   const files = Array.from(e.target.files || []);
   e.target.value = "";
   if (!files.length) return;
-  if (aiSample) readScreensAI(files); else readScreens(files);
+  if (aiSample || aiServer) readScreensAI(files); else readScreens(files);
 });
 document.getElementById("tradeSample").addEventListener("click", () => { tradeText.value = SAMPLE_TRADES; runTrades(); });
 document.getElementById("tradeClear").addEventListener("click", () => { tradeText.value = ""; runTrades(); });
@@ -1849,7 +1899,7 @@ async function acctAuth(kind) {
   const { data, error } = kind === "signup" ? await sb.auth.signUp({ email, password }) : await sb.auth.signInWithPassword({ email, password });
   if (error) { acctStatus(authKo(error), true); return; }
   if (!data.session) { acctStatus("가입은 됐지만 이메일 인증이 켜져 있어요. Supabase에서 'Confirm email'을 꺼 주세요.", true); return; }
-  sbUser = data.session.user; acctStatus("불러오는 중…"); await syncPull();
+  sbUser = data.session.user; acctStatus("불러오는 중…"); await syncPull(); checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
 }
 async function initAccount() {
@@ -1889,6 +1939,7 @@ async function initAccount() {
   acctStatus();
   let just = false; try { just = sessionStorage.getItem("portfit-just-synced") === "1"; sessionStorage.removeItem("portfit-just-synced"); } catch (_) {}
   if (sbUser && !just) await syncPull();
+  checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
 }
 
