@@ -1,7 +1,7 @@
 {
-  "name": "포트핏 · 내 투자 건강검진",
+  "name": "포트핏 · 레버리지 손익 계산기",
   "short_name": "포트핏",
-  "description": "ETF 쏠림, 매매 습관, 목표까지. 내 투자를 세 가지로 검진해요.",
+  "description": "레버리지 ETF, 1배보다 얼마나 더 벌고 잃었을까. 음의 복리 계산과 익절·손절 규칙 알림.",
   "lang": "ko",
   "start_url": "./",
   "scope": "./",
@@ -9,8 +9,21 @@
   "background_color": "#F1F3F8",
   "theme_color": "#0B1230",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
-    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }
