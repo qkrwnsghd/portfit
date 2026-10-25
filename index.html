@@ -373,6 +373,12 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-px b { color: var(--ink); }
 .lev-card .kpi small { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
 .lev-big { font-size: 22px !important; }
+.lev-ub { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; align-items: center; gap: 6px; background: var(--accent-soft); border-radius: 14px; padding: 12px; margin: 0 0 12px; text-align: center; }
+.lev-ub span { display: block; font-size: 11.5px; color: var(--muted); }
+.lev-ub b { display: block; font-size: 16px; font-variant-numeric: tabular-nums; }
+.lev-ub small { display: block; font-size: 11.5px; color: var(--muted); }
+.lev-ub small.pos { color: var(--good); } .lev-ub small.neg { color: var(--bad); }
+.lev-ub i { color: var(--muted); font-style: normal; }
 .lev-h3 { font-size: 14px; margin: 4px 0 8px; }
 .lev-bar { margin: 0 0 9px; }
 .lev-bar-t { display: flex; justify-content: space-between; gap: 10px; font-size: 13.5px; align-items: baseline; }
@@ -3172,7 +3178,7 @@ function levChart(g) {
     <polyline points="${line(p => p.x)}" fill="none" stroke="var(--c2)" stroke-width="1.5" stroke-dasharray="5 4"/>
     <polyline points="${line(p => p.a)}" fill="none" stroke="var(--accent)" stroke-width="2.25"/>
     <circle cx="${X(pts.length - 1)}" cy="${Y(g.re)}" r="4.5" fill="var(--accent)" stroke="var(--surface)" stroke-width="1.5"/>
-    <text x="${Lm}" y="${Ht - 7}" font-size="11" fill="var(--muted)">${pts[0].d.slice(2).replace(/-/g, ".")}${lot ? " 산 날" : " 첫 매수"}</text>
+    <text x="${Lm}" y="${Ht - 7}" font-size="11" fill="var(--muted)">${(lot ? lot.p.date : pts[0].d).slice(2).replace(/-/g, ".")}${lot ? " 산 날" : " 첫 매수"}</text>
     <text x="${Wd - R}" y="${Ht - 7}" text-anchor="end" font-size="11" fill="var(--muted)">지금</text>
   </svg>
   <p class="fine" style="margin-top:6px"><span style="color:var(--accent)">━</span> 내 ${g.sym} 실제 · <span style="color:var(--c2)">╍</span> 정확히 ${g.m.L}배였다면 · <span style="color:var(--muted)">┅</span> ${LEV_U[g.m.u].ko} 1배 (환율 영향 뺀 수익률)</p>`;
@@ -3201,6 +3207,7 @@ function levCardHTML(g) {
   return `<section class="panel lev-card" aria-label="${g.sym} 레버리지 분석">
     <div class="lev-head"><h2>${g.sym} <small>${uName} ${inv ? "인버스 " + -L : L}배</small></h2><span class="lev-tags">${tag}<button type="button" class="g-link" data-al="${g.sym}">🔔 규칙 알림</button></span></div>
     <p class="lev-px">${uName} <b class="num">${usd(now.Unow)}</b>${now.uLive ? "" : " (기록)"} · ${g.sym} <b class="num">${usd(now.Enow)}</b>${now.mode === "est" ? " (추정)" : ""} · 환율 <b class="num">${Math.round(now.FXnow).toLocaleString("ko-KR")}원</b>${now.fxLive ? "" : " (기록)"}</p>
+    <div class="lev-ub"><div><span>산 시점 ${uName}</span><b class="num">${usd(g.UbAvg)}</b><small>${g.ok.length === 1 ? g.ok[0].p.date : `${g.ok.length}번 산 평균`}</small></div><i aria-hidden="true">→</i><div><span>지금 ${uName}</span><b class="num">${usd(now.Unow)}</b><small class="${g.ru >= 0 ? "pos" : "neg"}">${pctS(g.ru)}</small></div><i aria-hidden="true">→</i><div><span>내 ${g.sym}</span><b class="num ${g.re >= 0 ? "pos" : "neg"}">${pctS(g.re)}</b><small>${inv ? "인버스 " + -L : L}배 방향</small></div></div>
     <div class="kpis">
       <div class="kpi"><span>지금 손익</span><b class="${g.total >= 0 ? "pos" : "neg"} lev-big">${wonS(g.total)}</b><small class="num">${pctS(g.total / g.cost)} · 산 금액 ${won(g.cost)}</small></div>
       <div class="kpi"><span>${levTxt}</span><b class="${g.lev >= 0 ? "pos" : "neg"} lev-big">${wonS(g.lev)}</b><small>${uName} 1배와 비교</small></div>
