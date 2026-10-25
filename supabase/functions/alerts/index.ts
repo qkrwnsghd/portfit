@@ -1,6 +1,8 @@
 // 포트핏 규칙 알림 서버 (Supabase Edge Function: alerts)
 // - 사용자가 직접 정한 매도 규칙(목표가·손절가)에 가격이 닿으면 폰으로 알림(웹 푸시)을 보내요.
 // - 2분마다 데이터베이스 예약 작업(pg_cron)이 action:"check"로 이 함수를 불러요. 예약 작업만 아는 열쇠(cron_key)로 확인해요.
+// - 규칙 종류: above(이 가격 이상), below(이 가격 이하), trail(규칙을 만든 뒤 최고가에서 N% 떨어지면)
+// - 매시 3분에 action:"digest"로 불리면, 그 시각(한국 시간)에 받기로 한 사람에게 '아침 요약'을 보내요.
 // - 알림 암호화 열쇠(VAPID)는 처음 한 번 이 함수가 스스로 만들어 app_secrets 표에 저장해요. (채팅·코드에 비밀 열쇠가 나오지 않음)
 // - 종목을 추천하거나 사고팔라고 하지 않아요. 사용자가 정한 규칙과 사용자가 남긴 말만 다시 보여줘요.
 // - Verify JWT는 꺼 두세요. (로그인 확인은 함수 안에서 직접 해요)
@@ -61,7 +63,7 @@ async function yahoo(ysym: string): Promise<Omit<Quote, "sym"> | null> {
 async function quote(sym: string): Promise<Quote | null> {
   const c = qcache.get(sym);
   if (c && Date.now() - c.at < 30_000) return c.q;
-  const tries = CRYPTO.has(sym) ? [`${sym}-USD`] : /^\d{6}$/.test(sym) ? [`${sym}.KS`, `${sym}.KQ`] : [sym.replace(".", "-")];
+  const tries = sym === "KRW" ? ["KRW=X"] : CRYPTO.has(sym) ? [`${sym}-USD`] : /^\d{6}$/.test(sym) ? [`${sym}.KS`, `${sym}.KQ`] : [sym.replace(".", "-")];
   let q: Quote | null = null;
   for (const y of tries) { const v = await yahoo(y); if (v) { q = { sym, ...v }; break; } }
   qcache.set(sym, { at: Date.now(), q });
@@ -97,20 +99,122 @@ async function check(db: ReturnType<typeof admin>) {
   for (const r of rules ?? []) {
     const q = quotes[r.sym];
     if (!q) continue;
-    const hit = r.kind === "above" ? q.p >= Number(r.price) : q.p <= Number(r.price);
-    if (!hit) { await db.from("alert_rules").update({ last_price: q.p, checked_at: now }).eq("id", r.id); continue; }
+    let hit: boolean, extra: Record<string, unknown> = {};
+    if (r.kind === "trail") {
+      // 최고가를 따라 올라가는 손절선: 최고가 × (1 − N%)
+      const peak = Math.max(Number(r.peak) || q.p, q.p), line = peak * (1 - Number(r.trail_pct) / 100);
+      extra = { peak, price: +line.toPrecision(8) };
+      hit = q.p <= line;
+    } else hit = r.kind === "above" ? q.p >= Number(r.price) : q.p <= Number(r.price);
+    if (!hit) { await db.from("alert_rules").update({ last_price: q.p, checked_at: now, ...extra }).eq("id", r.id); continue; }
     // 먼저 '울림'으로 바꾼 쪽만 알림을 보냄 (예약 작업이 겹쳐도 한 번만)
-    const { data: claimed } = await db.from("alert_rules").update({ active: false, fired_at: now, fired_price: q.p, last_price: q.p, checked_at: now })
+    const { data: claimed } = await db.from("alert_rules").update({ active: false, fired_at: now, fired_price: q.p, last_price: q.p, checked_at: now, ...extra })
       .eq("id", r.id).eq("active", true).select("id");
     if (!claimed || !claimed.length) continue;
     const pnl = r.base ? ` · 평균단가 대비 ${q.p >= r.base ? "+" : ""}${((q.p / r.base - 1) * 100).toFixed(1)}%` : "";
     const lines = [`지금 ${fmtP(q.p, q.cur)}${pnl}`];
+    if (r.kind === "trail") lines.push(`규칙을 만든 뒤 최고가 ${fmtP(Number(extra.peak), q.cur)}에서 ${r.trail_pct}% 넘게 떨어졌어요.`);
     if (r.note) lines.push(`내가 정한 규칙: ${r.note}`);
     if (r.hint) lines.push(r.hint);
-    await pushTo(db, r.user_id, { title: `🔔 ${r.sym} ${r.label || (r.kind === "above" ? "목표가 도달" : "손절가 도달")}`, body: lines.join("\n"), url: SITE + "#lev", tag: `rule-${r.id}` });
+    await pushTo(db, r.user_id, { title: `🔔 ${r.sym} ${r.label || (r.kind === "above" ? "목표가 도달" : r.kind === "trail" ? "고점 대비 하락" : "손절가 도달")}`, body: lines.join("\n"), url: SITE + "#lev", tag: `rule-${r.id}` });
     fired++;
   }
   return { rules: (rules ?? []).length, syms: syms.length, fired };
+}
+
+// ----- 아침 요약 -----
+// 레버리지 ETF: [기초자산 야후 티커, 배율]  (사이트의 LEV_ETFS와 같은 표)
+const LEV: Record<string, [string, number, string]> = {
+  BITX: ["BTC-USD", 2, "비트코인"], BITU: ["BTC-USD", 2, "비트코인"], SBIT: ["BTC-USD", -2, "비트코인"], ETHU: ["ETH-USD", 2, "이더리움"], ETHT: ["ETH-USD", 2, "이더리움"],
+  SOLT: ["SOL-USD", 2, "솔라나"], XXRP: ["XRP-USD", 2, "리플"], TQQQ: ["QQQ", 3, "나스닥100"], SQQQ: ["QQQ", -3, "나스닥100"], QLD: ["QQQ", 2, "나스닥100"],
+  UPRO: ["SPY", 3, "S&P500"], SPXL: ["SPY", 3, "S&P500"], SSO: ["SPY", 2, "S&P500"], SPXU: ["SPY", -3, "S&P500"], SOXL: ["SOXX", 3, "반도체"], SOXS: ["SOXX", -3, "반도체"],
+  TECL: ["XLK", 3, "기술주"], TNA: ["IWM", 3, "러셀2000"], LABU: ["XBI", 3, "바이오"], TMF: ["TLT", 3, "장기국채"], TSLL: ["TSLA", 2, "테슬라"], NVDL: ["NVDA", 2, "엔비디아"],
+  NVDU: ["NVDA", 2, "엔비디아"], CONL: ["COIN", 2, "코인베이스"], MSTU: ["MSTR", 2, "스트래티지"], MSTX: ["MSTR", 2, "스트래티지"], AAPU: ["AAPL", 2, "애플"],
+  AMZU: ["AMZN", 2, "아마존"], GGLL: ["GOOGL", 2, "알파벳"],
+};
+type Daily = { ts: number[]; c: number[]; splits: { d: number; r: number }[]; last: number };
+const dcache = new Map<string, { at: number; v: Daily | null }>();
+async function daily(ysym: string, interval = "1d", range = "2y"): Promise<Daily | null> {
+  const key = `${ysym}|${interval}|${range}`, hit = dcache.get(key);
+  if (hit && Date.now() - hit.at < 600_000) return hit.v;
+  let v: Daily | null = null;
+  try {
+    const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=${range}&interval=${interval}&events=split`, { headers: { "User-Agent": UA } });
+    if (r.ok) {
+      const res = (await r.json())?.chart?.result?.[0];
+      const ts: number[] = res?.timestamp ?? [], cl: (number | null)[] = res?.indicators?.quote?.[0]?.close ?? [];
+      const T: number[] = [], C: number[] = [];
+      ts.forEach((t, i) => { if (cl[i] != null && cl[i]! > 0) { T.push(t); C.push(cl[i]!); } });
+      const sp = Object.values(res?.events?.splits ?? {}) as { date: number; numerator: number; denominator: number }[];
+      if (C.length) v = { ts: T, c: C, splits: sp.map((x) => ({ d: x.date, r: x.numerator / x.denominator })), last: res?.meta?.regularMarketPrice ?? C[C.length - 1] };
+    }
+  } catch (_) { /* 없음 */ }
+  dcache.set(key, { at: Date.now(), v });
+  return v;
+}
+const kstDate = (ms = Date.now()) => new Date(ms + 9 * 3600_000).toISOString().slice(0, 10);
+const pctS = (v: number) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
+const wonS = (v: number) => `${v >= 0 ? "+" : "-"}${Math.abs(Math.round(v)).toLocaleString("ko-KR")}원`;
+
+async function digestFor(db: ReturnType<typeof admin>, userId: string) {
+  const { data: ud } = await db.from("user_data").select("data").eq("user_id", userId).maybeSingle();
+  let pos: { sym: string; date: string; qty: number; price: number; cur: string }[] = [];
+  try { const raw = ud?.data?.["portfit-lev-v1"]; const j = typeof raw === "string" ? JSON.parse(raw) : raw; pos = Array.isArray(j?.pos) ? j.pos : []; } catch (_) { pos = []; }
+  pos = pos.filter((p) => LEV[p.sym] && p.qty > 0 && p.price > 0);
+  const fxq = await quote("KRW");                       // KRW → 야후 KRW=X
+  const fx = fxq?.p ?? null;
+  const lines: string[] = [];
+  let totalPnl = 0, totalCost = 0, n = 0;
+  for (const sym of [...new Set(pos.map((p) => p.sym))]) {
+    const [usym, L, uko] = LEV[sym];
+    const e = await daily(sym);
+    if (!e || e.c.length < 2) continue;
+    const k = e.c.length - 1, eRet = e.c[k] / e.c[k - 1] - 1;
+    // 기초자산의 같은 기간 움직임: 주식은 일봉, 코인은 미국 장 마감 시각(시작 시각 + 6.5시간)의 1시간 봉
+    let uRet: number | null = null;
+    if (usym.endsWith("-USD")) {
+      const h = await daily(usym, "1h", "5d");
+      const at = (t: number): number | null => {
+        if (!h) return null;
+        let best: number | null = null;
+        for (let i = 0; i < h.ts.length; i++) if (h.ts[i] <= t - 3600 + 60) best = h.c[i];
+        return best;
+      };
+      const a = at(e.ts[k - 1] + 23400), b = at(e.ts[k] + 23400);
+      if (a && b) uRet = b / a - 1;
+    } else {
+      const u = await daily(usym, "1d", "1mo");
+      if (u && u.c.length >= 2) uRet = u.c[u.c.length - 1] / u.c[u.c.length - 2] - 1;
+    }
+    let pnl = 0, cost = 0;
+    if (fx) for (const p of pos.filter((x) => x.sym === sym)) {
+      const t0 = Date.parse(p.date + "T00:00:00+09:00") / 1000;
+      const ratio = e.splits.filter((s) => s.d > t0).reduce((r, s) => r * s.r, 1);     // 산 뒤 분할·병합 반영
+      const c = p.cur === "USD" ? p.qty * p.price * fx : p.qty * p.price;
+      cost += c; pnl += p.qty * ratio * e.last * fx - c;
+    }
+    totalPnl += pnl; totalCost += cost; n++;
+    if (lines.length < 3) lines.push(`${sym}: ${uko} ${uRet == null ? "?" : pctS(uRet)} → ${pctS(eRet)}${uRet == null ? "" : ` (딱 ${L}배면 ${pctS(L * uRet)})`}${cost ? ` · 손익 ${wonS(pnl)}` : ""}`);
+  }
+  const { data: rules } = await db.from("alert_rules").select("sym, kind, price, last_price").eq("user_id", userId).eq("active", true);
+  if (!n && !(rules ?? []).length) return null;
+  const body: string[] = [];
+  if (n) body.push(...lines, totalCost ? `전체 손익 약 ${wonS(totalPnl)} (${pctS(totalPnl / totalCost)})` : "");
+  if ((rules ?? []).length) body.push(`지켜보는 규칙 ${(rules ?? []).length}개`);
+  return { title: `☀️ 포트핏 아침 요약 · ${kstDate().slice(5).replace("-", "/")}`, body: body.filter(Boolean).join("\n"), url: SITE + "#lev", tag: "digest" };
+}
+async function digest(db: ReturnType<typeof admin>) {
+  const hour = new Date(Date.now() + 9 * 3600_000).getUTCHours(), today = kstDate();
+  const { data: prefs } = await db.from("alert_prefs").select("user_id, last_digest").eq("digest", true).eq("digest_hour", hour);
+  let sent = 0;
+  for (const p of prefs ?? []) {
+    if (p.last_digest === today) continue;
+    const { data: claimed } = await db.from("alert_prefs").update({ last_digest: today }).eq("user_id", p.user_id).or(`last_digest.is.null,last_digest.lt.${today}`).select("user_id");
+    if (!claimed || !claimed.length) continue;          // 예약 작업이 겹쳐도 하루 한 번만
+    const msg = await digestFor(db, p.user_id);
+    if (msg) { await pushTo(db, p.user_id, msg); sent++; }
+  }
+  return { hour, users: (prefs ?? []).length, sent };
 }
 
 Deno.serve(async (req) => {
@@ -130,6 +234,19 @@ Deno.serve(async (req) => {
     const { data } = await db.from("app_secrets").select("v").eq("k", "cron_key").maybeSingle();
     if (!data || !body.key || body.key !== data.v) return json({ error: "key" }, 401);
     return json({ ok: true, ...(await check(db)) });
+  }
+  if (body.action === "digest") {
+    const { data } = await db.from("app_secrets").select("v").eq("k", "cron_key").maybeSingle();
+    if (!data || !body.key || body.key !== data.v) return json({ error: "key" }, 401);
+    return json({ ok: true, ...(await digest(db)) });
+  }
+  if (body.action === "digest_me") {               // 사용자가 '지금 한 번 받아보기'를 눌렀을 때
+    const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");
+    const { data: auth } = await db.auth.getUser(token);
+    if (!auth?.user) return json({ error: "login" }, 401);
+    const msg = await digestFor(db, auth.user.id);
+    if (!msg) return json({ ok: true, sent: 0, empty: true });
+    return json({ ok: true, ...(await pushTo(db, auth.user.id, msg)) });
   }
   if (body.action === "test") {
     const token = (req.headers.get("Authorization") ?? "").replace(/^Bearer\s+/i, "");

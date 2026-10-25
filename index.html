@@ -396,6 +396,15 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .h-lev-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 14px; background: var(--soft); border-radius: 12px; padding: 9px 12px; }
 .h-lev-list li span { color: var(--muted); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lev-amt { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.al-digest { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; background: var(--soft); border-radius: 12px; padding: 10px 12px; margin: 0 0 12px; font-size: 13.5px; }
+.al-digest label { display: inline-flex; gap: 6px; align-items: center; font-weight: 600; }
+.al-digest select { border: 1px solid var(--line); border-radius: 8px; padding: 4px 6px; background: var(--surface); color: var(--ink); font: inherit; font-size: 13px; }
+.al-digest small { flex-basis: 100%; color: var(--muted); font-size: 12px; }
+.lev-fut { background: var(--soft); border-radius: 14px; padding: 10px 12px; margin: 10px 0; }
+.lev-fut summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.lev-fut-t td, .lev-fut-t th { padding: 5px 6px; font-size: 13px; }
+.sc-pre { margin: 10px 0; flex-wrap: wrap; }
+.sc-kpi { margin: 6px 0 0; }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -414,7 +423,7 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .al-grid label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
 .al-grid .al-wide { grid-column: 1 / -1; }
 .al-grid input, .al-grid select, .al-grid textarea { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
-.al-grid textarea { resize: vertical; }
+.al-grid textarea { resize: vertical; height: auto; min-height: 64px; }
 .lev-lots summary { cursor: pointer; font-size: 13.5px; font-weight: 600; margin: 10px 0 6px; }
 table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -592,11 +601,14 @@ footer a { color: var(--accent); }
         <button type="button" class="primary" id="levAdd">+ 직접 추가</button>
         <button type="button" id="levClear">모두 지우기</button>
       </div>
-      <div class="al-box" id="alertBox" aria-labelledby="al-title"></div>
       <p class="example-note" id="levExampleNote">처음 보이는 건 예시예요. 약 3달 전에 BITX(비트코인 2배) 10주를 샀다고 가정했어요.</p>
     </section>
 
-    <div class="results" id="levResults"></div>
+    <div class="results">
+      <div class="results" id="levResults"></div>
+      <section class="panel" id="alertBox" aria-labelledby="al-title"></section>
+      <section class="panel" id="scenBox"></section>
+    </div>
   </div>
   </div>
 
@@ -2548,6 +2560,7 @@ async function initAccount() {
     if (error) { acctStatus(`지우지 못했어요: ${error.message}`, true); return; }
     await sb.from("alert_rules").delete().eq("user_id", sbUser.id);     // 규칙 알림 표가 아직 없으면 그냥 넘어감
     await sb.from("push_subs").delete().eq("user_id", sbUser.id);
+    await sb.from("alert_prefs").delete().eq("user_id", sbUser.id);
     await sb.auth.signOut(); sbUser = null;
     syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
     location.reload();
@@ -3077,6 +3090,25 @@ function levLot(p, H, now) {
   return { p, qty, pUsd, Ub, FX0, cost, ru, re, actual0, one, exact, amp: exact - one, decay: actual0 - exact, fx,
     total: actual0 + fx, val: qty * now.Enow * now.FXnow, warn: best.dev > Math.log(1.35), path, d0: H.dates[i] };
 }
+// 앞으로 녹을 돈: 기초자산이 n거래일 뒤 지금 가격 그대로일 때 L배 매일 리셋 ETF가 줄어드는 비율 (평균적인 경우)
+//   1 − exp(−L(L−1)/2 · σ² · (n−1) − 보수 · n/252)   σ = 최근 21거래일 기초자산 하루 변동성
+//   (파이썬 10만 번 모의실험으로 확인한 공식)
+const LEV_FEE = 0.01;
+function levVol(H, u, days = 21) {
+  const U = H.under[u], r = [];
+  for (let i = U.length - 1; i > 0 && r.length < days; i--) if (U[i] && U[i - 1]) r.push(Math.log(U[i] / U[i - 1]));
+  if (r.length < 10) return null;
+  const m = r.reduce((a, b) => a + b, 0) / r.length;
+  return Math.sqrt(r.reduce((a, b) => a + (b - m) ** 2, 0) / (r.length - 1));
+}
+const levDrag = (L, sd, n) => 1 - Math.exp(-L * (L - 1) / 2 * sd * sd * Math.max(0, n - 1) - LEV_FEE * n / 252);
+// 시나리오: 기초자산이 매일 moves 만큼 움직일 때
+function levScenario(L, moves) {
+  let u = 1, e = 1;
+  for (const m of moves) { u *= 1 + m; e *= Math.max(0, 1 + L * m); }
+  return { u: u - 1, e: e - 1, exact: Math.max(-1, L * (u - 1)) };
+}
+
 // 같은 ETF 여러 번 산 것 합치기
 function levGroup(sym, lots, H, now) {
   const ok = lots.filter(r => !r.err), sum = k => ok.reduce((a, r) => a + r[k], 0);
@@ -3229,7 +3261,36 @@ function renderLev() {
     levState.pos.splice(+b.dataset.del, 1); levSave(); renderLev();
   }));
   document.getElementById("levExampleNote").hidden = !levSample;
-  renderLevResults();
+  renderLevResults(); renderScen();
+}
+const SCEN_PRESETS = [["+10% → −10%", "10,-10"], ["−10% → +10%", "-10,10"], ["±5% 10일 반복", "5,-5,5,-5,5,-5,5,-5,5,-5"], ["매일 +3% 5일", "3,3,3,3,3"], ["매일 −3% 5일", "-3,-3,-3,-3,-3"]];
+let scenState = { sym: "", moves: "10,-10" };
+function renderScen() {
+  const box = document.getElementById("scenBox"); if (!box) return;
+  const syms = [...new Set(levPositions().map(p => p.sym))], sym = LEV_MAP[scenState.sym] ? scenState.sym : syms[0] || "BITX";
+  const m = LEV_MAP[sym], uName = LEV_U[m.u].ko, L = m.L;
+  const moves = String(scenState.moves).split(/[,\s]+/).map(Number).filter(x => isFinite(x) && x > -100 && x !== 0).slice(0, 60).map(x => x / 100);
+  const r = moves.length ? levScenario(L, moves) : null;
+  let val = 1e6, mine = false;
+  if (levHist && !levSample) { const g = levCompute(levState.pos).ok.find(x => x.sym === sym); if (g && g.val > 0) { val = g.val; mine = true; } }
+  box.innerHTML = `<h2>🧮 시나리오 계산기</h2>
+    <p class="sub">${josa(uName, "이가")} 이렇게 움직이면 내 ${josa(sym, "은는")} 어떻게 될까? 오르내리기만 해도 레버리지는 녹아요.</p>
+    <div class="al-grid">
+      <label>ETF<select id="scSym">${LEV_ETFS.map(([s, u, l]) => `<option value="${s}"${s === sym ? " selected" : ""}>${s} · ${LEV_U[u].ko} ${l > 0 ? l + "배" : "인버스 " + -l + "배"}</option>`).join("")}</select></label>
+      <label>날마다 움직임 (%, 쉼표로)<input id="scMoves" value="${esc(scenState.moves)}" inputmode="text" placeholder="10, -10"></label>
+    </div>
+    <div class="g-quick sc-pre" role="group" aria-label="자주 쓰는 시나리오">${SCEN_PRESETS.map(([t, v]) => `<button type="button" data-mv="${v}">${t}</button>`).join("")}</div>
+    ${r ? `<div class="kpis sc-kpi">
+      <div class="kpi"><span>${uName}</span><b class="${r.u >= 0 ? "pos" : "neg"}">${pctS(r.u)}</b></div>
+      <div class="kpi"><span>정확히 ${Math.abs(L)}배였다면</span><b class="${r.exact >= 0 ? "pos" : "neg"}">${pctS(r.exact)}</b></div>
+      <div class="kpi"><span>실제 ${sym}</span><b class="${r.e >= 0 ? "pos" : "neg"}">${pctS(r.e)}</b></div>
+    </div>
+    <p class="lev-story" style="margin:6px 0">${mine ? `지금 내 ${sym} ${won(val)}어치` : `${sym} 100만 원어치`}라면 <b class="${r.e >= 0 ? "pos" : "neg"}">${wonS(val * r.e)}</b>. 정확히 ${Math.abs(L)}배보다 <b class="${r.e - r.exact >= 0 ? "pos" : "neg"}">${wonS(val * (r.e - r.exact))}</b>${r.e - r.exact < 0 ? "이 녹아요" : " 더 생겨요 (한 방향으로 쭉 갈 때)"}.${Math.abs(r.u) < 0.005 && r.e < -0.001 ? ` ${josa(uName, "은는")} 제자리인데 ${josa(sym, "은는")} ${pctS(r.e)}예요. 이게 음의 복리예요.` : ""}</p>` : `<p class="fine">움직임을 숫자로 넣어 주세요. 예: 10, -10</p>`}
+    <p class="fine">하루 단위로 매일 ${Math.abs(L)}배씩 다시 맞추는 구조만 계산했어요(보수·환율 제외).</p>`;
+  document.getElementById("scSym").addEventListener("change", e => { scenState.sym = e.target.value; renderScen(); });
+  const mv = document.getElementById("scMoves");
+  mv.addEventListener("change", () => { scenState.moves = mv.value; renderScen(); });
+  box.querySelectorAll("[data-mv]").forEach(b => b.addEventListener("click", () => { scenState.moves = b.dataset.mv; scenState.sym = sym; renderScen(); track("lev_scenario"); }));
 }
 function levAdd() {
   if (levSample) levState.pos = [];
@@ -3267,6 +3328,14 @@ function levChart(g) {
     <text x="${Wd - R}" y="${Ht - 7}" text-anchor="end" font-size="11" fill="var(--muted)">지금</text>
   </svg>
   <p class="fine" style="margin-top:6px"><span style="color:var(--accent)">━</span> 내 ${g.sym} 실제 · <span style="color:var(--c2)">╍</span> 정확히 ${g.m.L}배였다면 · <span style="color:var(--muted)">┅</span> ${LEV_U[g.m.u].ko} 1배 (환율 영향 뺀 수익률)</p>`;
+}
+function levFutureHTML(g) {
+  const sd = levVol(levHist, g.m.u); if (!sd || !(g.val > 0)) return "";
+  const uName = LEV_U[g.m.u].ko, rows = [["1주", 5], ["1달", 21], ["3달", 63]].map(([k, n]) => { const d = levDrag(g.m.L, sd, n); return `<tr><td>${k} 뒤</td><td class="r num neg">-${fmt(d * 100)}%</td><td class="r num neg">-${won(g.val * d).replace("-", "")}</td></tr>`; }).join("");
+  return `<details class="lev-fut" open><summary>📉 앞으로 녹을 돈 미리보기</summary>
+    <p class="fine" style="margin:4px 0 6px">요즘 ${josa(uName, "은는")} 하루에 평균 ±${fmt(sd * 100)}%씩 출렁여요. 이 출렁임이 이어지고 ${josa(uName, "이가")} 그 기간 뒤 <b>지금 가격 그대로</b>라면, 지금 ${won(g.val)}어치 ${josa(g.sym, "은는")} 이만큼 녹아 있어요.</p>
+    <table class="trades lev-fut-t"><thead><tr><th>기간</th><th class="r">녹는 비율</th><th class="r">녹는 돈</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="fine" style="margin-top:4px">평균적인 경우이고 보수 연 1%를 넣었어요. 출렁임이 커지면 더 녹고, 한 방향으로 쭉 가면 덜 녹거나 오히려 더 벌 수 있어요. 예측이 아니라 '지금 출렁임이 이어진다면'의 계산이에요.</p></details>`;
 }
 function levBar(label, v, max, cls, sub) {
   const w = max > 0 ? Math.min(100, Math.abs(v) / max * 100) : 0;
@@ -3308,6 +3377,7 @@ function levCardHTML(g) {
     <div class="lev-sum"><span>합계 = 지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></div>
     <p class="lev-story">${story}</p>
     ${be || back ? `<p class="note">${be} ${back} <small>(${josa(uName, "이가")} 지금부터 곧장 그 가격으로 간다고 가정, 환율 변화 제외. 오르내리며 가면 더 녹아요.)</small></p>` : ""}
+    ${levFutureHTML(g)}
     ${levChart(g)}
     ${g.ok.length > 1 || errs.length ? `<details class="lev-lots" data-sym="${g.sym}"><summary>산 날짜별로 보기 (${g.lots.length}번)</summary><div class="table-scroll"><table class="trades"><thead><tr><th>산 날</th><th class="r">수량</th><th class="r">산 금액</th><th class="r">${uName}</th><th class="r">지금 손익</th><th class="r">녹은 돈</th></tr></thead><tbody>
       ${g.lots.map(r => r.err ? `<tr><td>${esc(r.p.date)}</td><td colspan="5" class="neg">${esc(r.err)}</td></tr>` : `<tr><td>${r.p.date}</td><td class="r num">${r.qty.toLocaleString("ko-KR")}</td><td class="r num">${won(r.cost)}</td><td class="r num">${pctS(r.ru)}</td><td class="r num ${r.total >= 0 ? "pos" : "neg"}">${wonS(r.total)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${wonS(r.decay)}</td></tr>`).join("")}
@@ -3379,9 +3449,9 @@ function renderLevResults() {
 // ---------- 규칙 알림: 내가 정한 목표가·손절가에 닿으면 폰으로 알림 ----------
 // 포트핏이 사고팔 때를 정해 주지 않아요. 사용자가 미리 정한 규칙과 남긴 말을, 그 순간에 다시 보여줄 뿐이에요.
 const AL_FN = `${SB_URL}/functions/v1/alerts`;
-const alState = { rules: [], loaded: false, sub: null, busy: false, msg: "", bad: false, prefill: null };
+const alState = { rules: [], loaded: false, sub: null, busy: false, msg: "", bad: false, prefill: null, prefs: null, prefsOK: true };
 const levAvgUsd = {};                              // 레버리지 탭에서 계산한 평균단가(달러) → 규칙 기준가 자동 채우기
-const AL_KINDS = { tp: "목표 수익률에 닿으면 (익절)", sl: "손절 수익률에 닿으면 (손절)", pa: "이 가격 이상이 되면", pb: "이 가격 이하가 되면" };
+const AL_KINDS = { tp: "목표 수익률에 닿으면 (익절)", sl: "손절 수익률에 닿으면 (손절)", tr: "최고가에서 N% 떨어지면 (번 돈 지키기)", pa: "이 가격 이상이 되면", pb: "이 가격 이하가 되면" };
 const alPushOK = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 function b64u(s) { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); }
 const alSym = s => { s = String(s || "").toUpperCase().replace(/\s/g, ""); return /^([A-Z]{1,6}(\.[A-Z])?|\d{6})$/.test(s) ? s : null; };
@@ -3397,6 +3467,8 @@ async function alInit() {
     alState.loaded = true;
     if (error) { alState.rules = []; alState.msg = /relation|does not exist|schema cache/i.test(error.message) ? "알림 서버 준비가 아직 안 됐어요. (Supabase에 setup_alerts.sql 실행 필요)" : `규칙을 못 불러왔어요: ${error.message}`; alState.bad = true; }
     else alState.rules = data || [];
+    const pr = await sb.from("alert_prefs").select("*").maybeSingle();
+    alState.prefsOK = !pr.error; alState.prefs = pr.data || { digest: false, digest_hour: 8 };
     if (alPushOK() && Notification.permission === "granted") { try { alState.sub = await (await alReg()).pushManager.getSubscription(); } catch (_) { alState.sub = null; } }
   }
   renderAlerts();
@@ -3441,11 +3513,19 @@ async function alSave() {
   if (!sym) return alSay("종목 티커를 확인해 주세요. 예: SOXL, BITX, BTC, 005930", true);
   if (!(v > 0)) return alSay(type === "tp" || type === "sl" ? "수익률(%)을 넣어 주세요." : "가격을 넣어 주세요.", true);
   if ((type === "tp" || type === "sl") && !(base > 0)) return alSay("수익률로 정하려면 평균단가를 넣어 주세요.", true);
-  if (type === "sl" && v >= 100) return alSay("손절 수익률은 100%보다 작아야 해요.", true);
+  if ((type === "sl" || type === "tr") && v >= 100) return alSay("떨어지는 비율은 100%보다 작아야 해요.", true);
   alSay("지금 가격을 확인하는 중…");
   let q = null;
   try { const r = await withTimeout(fetch(`${AL_FN}?quote=${encodeURIComponent(sym)}`), 10000); if (r.ok) q = (await r.json()).q; } catch (_) {}
   if (!q) return alSay(`${sym} 시세를 찾지 못했어요. 미국은 티커(예: SOXL), 국내는 6자리 종목코드, 코인은 BTC·ETH처럼 넣어 주세요.`, true);
+  if (type === "tr") {
+    const line = q.p * (1 - v / 100), pv = fmt(v, v % 1 ? 1 : 0);
+    const row = { sym, kind: "trail", trail_pct: v, peak: q.p, price: +line.toPrecision(8), base: base > 0 ? base : null, label: `고점 대비 -${pv}%`, note: note || null, hint: alHint("above") };
+    const { data, error } = await sb.from("alert_rules").insert(row).select("*").single();
+    if (error) return alSay(/trail|peak|check constraint|column/i.test(error.message) ? "알림 서버 업데이트가 필요해요. (Supabase에 setup_alerts2.sql 실행)" : /30개/.test(error.message) ? "규칙은 30개까지 만들 수 있어요." : `저장하지 못했어요: ${error.message}`, true);
+    alState.rules.push(data); alState.prefill = null; alState.clearForm = true; track("alert_rule", { kind: "tr" });
+    return alSay(`저장했어요. 지금부터 ${sym} 최고가를 따라가다가, 최고가에서 ${pv}% 떨어지면 알려드릴게요. (지금 ${alPx(q.p, sym)} → 기준선 ${alPx(line, sym)}, 값이 오르면 기준선도 같이 올라가요)`);
+  }
   const kind = type === "tp" || type === "pa" ? "above" : "below";
   const price = type === "tp" ? base * (1 + v / 100) : type === "sl" ? base * (1 - v / 100) : v;
   if (kind === "above" ? q.p >= price : q.p <= price) return alSay(`지금 가격(${alPx(q.p, sym)})이 이미 ${alPx(price, sym)}${kind === "above" ? " 이상" : " 이하"}예요. 기준을 다시 정해 주세요.`, true);
@@ -3455,6 +3535,21 @@ async function alSave() {
   if (error) return alSay(/30개/.test(error.message) ? "규칙은 30개까지 만들 수 있어요." : `저장하지 못했어요: ${error.message}`, true);
   alState.rules.push(data); alState.prefill = null; alState.clearForm = true; track("alert_rule", { kind: type });
   alSay(`저장했어요. ${josa(sym, "이가")} ${alPx(price, sym)}${kind === "above" ? " 이상이" : " 이하가"} 되면 알려드릴게요. (지금 ${alPx(q.p, sym)}, 2분마다 확인)`);
+}
+async function alSavePrefs(digest, hour) {
+  const { error } = await sb.from("alert_prefs").upsert({ user_id: sbUser.id, digest, digest_hour: hour, updated_at: new Date().toISOString() });
+  if (error) return alSay(`설정을 저장하지 못했어요: ${error.message}`, true);
+  alState.prefs = { ...(alState.prefs || {}), digest, digest_hour: hour }; track("alert_digest", { on: digest, hour });
+  alSay(digest ? `매일 ${hour < 12 ? "오전 " + hour : hour === 12 ? "낮 12" : "오후 " + (hour - 12)}시에 요약 알림을 보내드릴게요.` : "아침 요약을 껐어요.");
+}
+async function alDigestNow() {
+  alSay("요약을 만드는 중…");
+  try {
+    const r = await withTimeout(fetch(AL_FN, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await alToken()}` }, body: JSON.stringify({ action: "digest_me" }) }), 30000);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.status);
+    alSay(j.empty ? "요약할 레버리지 ETF가 없어요. 레버리지 탭에 ETF를 넣고 로그인 상태로 저장되면 요약이 와요." : j.sent ? "요약 알림을 보냈어요." : "알림을 받을 기기가 없어요.", !j.sent);
+  } catch (e) { alSay(`요약을 보내지 못했어요: ${e.message || e}`, true); }
 }
 async function alDel(id) {
   const { error } = await sb.from("alert_rules").delete().eq("id", id);
@@ -3468,7 +3563,7 @@ async function alRearm(id) {
 }
 function alPrefill(sym) {
   alState.prefill = { sym, base: levAvgUsd[sym] ? +levAvgUsd[sym].toFixed(4) : "" };
-  renderAlerts();
+  alState.clearForm = true; renderAlerts();
   const el = document.getElementById("alertBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 function renderAlerts() {
@@ -3484,11 +3579,18 @@ function renderAlerts() {
     document.getElementById("alLogin").addEventListener("click", () => document.getElementById("acctBtn").click()); return; }
   let dev;
   if (!alPushOK()) dev = IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 포트핏을 <b>홈 화면에 추가</b>한 뒤 홈 화면 아이콘으로 열어야 알림을 받을 수 있어요. 사파리 아래 공유 버튼 → '홈 화면에 추가'를 눌러 주세요. (iOS 16.4 이상)</p>` : `<p class="note">이 브라우저는 알림을 지원하지 않아요. 폰에서는 홈 화면에 추가한 포트핏, PC에서는 크롬·엣지·사파리 최신 버전을 써 주세요.</p>`;
-  else if (alState.sub) dev = `<div class="al-dev"><span class="pill good">● 이 기기 알림 켜짐</span><button type="button" id="alTest" class="g-link">시험 알림 보내기</button></div>`;
+  else if (alState.sub) {
+    const pf = alState.prefs || { digest: false, digest_hour: 8 };
+    dev = `<div class="al-dev"><span class="pill good">● 이 기기 알림 켜짐</span><button type="button" id="alTest" class="g-link">시험 알림 보내기</button></div>
+      <div class="al-digest">${alState.prefsOK ? `<label><input type="checkbox" id="alDig"${pf.digest ? " checked" : ""}> ☀️ 매일 아침 요약 받기</label>
+        <select id="alDigH" aria-label="받을 시각">${[6, 7, 8, 9, 10, 12, 18, 21].map(h => `<option value="${h}"${h === pf.digest_hour ? " selected" : ""}>${h < 12 ? "오전 " + h : h === 12 ? "낮 12" : "오후 " + (h - 12)}시</option>`).join("")}</select>
+        <button type="button" id="alDigNow" class="g-link">지금 한 번 받아보기</button>
+        <small>어제 미국장에서 기초자산과 내 레버리지 ETF가 얼마나 움직였는지, 전체 손익을 알려줘요.</small>` : `<small>아침 요약은 알림 서버 업데이트 뒤에 쓸 수 있어요. (setup_alerts2.sql)</small>`}</div>`;
+  }
   else dev = `${IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 홈 화면에 추가한 포트핏에서만 알림이 와요.</p>` : ""}<div class="btns"><button type="button" id="alOn" class="primary"${alState.busy ? " disabled" : ""}>이 기기에서 알림 켜기</button></div><p class="fine">알림을 켜면 이 기기의 알림 주소와 내가 만든 규칙(종목, 기준 가격, 남긴 말)이 계정에 저장돼요. 자세한 내용은 <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>을 확인해 주세요.</p>`;
   const pf = alState.prefill || {}, syms = [...new Set(levPositions().map(p => p.sym))];
   const list = alState.rules.length ? `<ul class="al-list">${alState.rules.map(r => `<li class="${r.active ? "" : "off"}">
-      <div><b>${esc(r.sym)}</b> ${esc(r.label || "")} <span class="num">${r.kind === "above" ? "≥" : "≤"} ${alPx(+r.price, r.sym)}</span>
+      <div><b>${esc(r.sym)}</b> ${esc(r.label || "")} <span class="num">${r.kind === "trail" ? `최고 ${alPx(+r.peak, r.sym)} → 기준선 ${alPx(+r.price, r.sym)}` : `${r.kind === "above" ? "≥" : "≤"} ${alPx(+r.price, r.sym)}`}</span>
         <small>${r.active ? `지켜보는 중${r.last_price ? ` · 최근 ${alPx(+r.last_price, r.sym)}` : ""}` : `🔔 ${new Date(r.fired_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}에 울림 (${alPx(+r.fired_price, r.sym)})`}</small>
         ${r.note ? `<small class="al-note">“${esc(r.note)}”</small>` : ""}</div>
       <div class="al-act">${r.active ? "" : `<button type="button" data-re="${r.id}">다시 켜기</button>`}<button type="button" data-del="${r.id}" aria-label="규칙 지우기">×</button></div></li>`).join("")}</ul>` : `<p class="fine">아직 정한 규칙이 없어요.</p>`;
@@ -3506,14 +3608,17 @@ function renderAlerts() {
     </details>${msg}`;
   const on = document.getElementById("alOn"); if (on) on.addEventListener("click", alEnable);
   const te = document.getElementById("alTest"); if (te) te.addEventListener("click", alTest);
+  const dg = document.getElementById("alDig"), dh = document.getElementById("alDigH"), dn = document.getElementById("alDigNow");
+  if (dg) { const savePf = () => alSavePrefs(dg.checked, +dh.value); dg.addEventListener("change", savePf); dh.addEventListener("change", savePf); }
+  if (dn) dn.addEventListener("click", alDigestNow);
   box.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => alDel(b.dataset.del)));
   box.querySelectorAll("[data-re]").forEach(b => b.addEventListener("click", () => alRearm(b.dataset.re)));
   const kindSel = document.getElementById("alKind"), sync = () => {
-    const pct = kindSel.value === "tp" || kindSel.value === "sl";
-    document.getElementById("alValL").firstChild.textContent = pct ? "수익률" : "가격";
+    const k = kindSel.value, pct = k === "tp" || k === "sl" || k === "tr";
+    document.getElementById("alValL").firstChild.textContent = k === "tr" ? "최고가에서 떨어지는 비율" : pct ? "수익률" : "가격";
     document.getElementById("alUnit").textContent = pct ? "%" : "$/원";
-    document.getElementById("alVal").placeholder = pct ? (kindSel.value === "tp" ? "20" : "10") : "가격";
-    document.getElementById("alBaseL").hidden = !pct;
+    document.getElementById("alVal").placeholder = k === "tp" ? "20" : k === "tr" ? "15" : pct ? "10" : "가격";
+    document.getElementById("alBaseL").hidden = !(k === "tp" || k === "sl");
   };
   kindSel.addEventListener("change", sync); sync();
   const symIn = document.getElementById("alSym");
