@@ -2,7 +2,7 @@
 // - 화면(HTML)과 데이터(JSON)는 항상 인터넷에서 새로 받고, 실패할 때만 저장해 둔 것을 씀 (항상 최신 유지)
 // - 아이콘 같은 고정 파일은 저장해 둔 것을 먼저 씀
 // - 로그인·AI 서버(Supabase) 같은 다른 사이트 요청은 건드리지 않음
-const CACHE = "portfit-v10";
+const CACHE = "portfit-v11";
 const CORE = ["./", "./index.html", "./privacy.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 
 self.addEventListener("install", e => {
@@ -26,4 +26,21 @@ self.addEventListener("fetch", e => {
       return res;
     })));
   }
+});
+
+// 규칙 알림: 서버가 보낸 알림을 화면에 띄우고, 누르면 포트핏 레버리지 탭을 엶
+self.addEventListener("push", e => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch (_) { d = { body: e.data ? e.data.text() : "" }; }
+  e.waitUntil(self.registration.showNotification(d.title || "포트핏 알림", {
+    body: d.body || "", icon: "icon-192.png", badge: "icon-192.png", tag: d.tag || "portfit", renotify: true, data: { url: d.url || "./#lev" },
+  }));
+});
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const url = (e.notification.data && e.notification.data.url) || "./#lev";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(ws => {
+    for (const w of ws) if ("focus" in w) { if (w.navigate) w.navigate(url).catch(() => {}); return w.focus(); }
+    return self.clients.openWindow(url);
+  }));
 });

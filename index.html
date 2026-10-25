@@ -384,6 +384,25 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-sub { border-left: 2px solid var(--line); padding-left: 12px; margin: -2px 0 10px 4px; }
 .lev-sum { display: flex; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 8px; margin-top: 4px; font-size: 14px; font-weight: 700; }
 .lev-story { font-size: 14px; line-height: 1.65; margin: 12px 0; }
+.lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
+.al-box h2 { font-size: 16px; }
+.al-dev { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 0 0 12px; }
+.al-msg { font-size: 13px; background: var(--accent-soft); border-radius: 10px; padding: 8px 10px; margin: 10px 0 0; }
+.al-msg.bad { background: var(--bad-bg); color: var(--bad); }
+.al-list { list-style: none; padding: 0; margin: 0 0 12px; display: grid; gap: 8px; }
+.al-list li { display: flex; justify-content: space-between; gap: 8px; align-items: flex-start; background: var(--soft); border-radius: 12px; padding: 10px 12px; font-size: 13.5px; }
+.al-list li.off { opacity: .75; }
+.al-list small { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+.al-list .al-note { color: var(--ink); font-style: italic; }
+.al-act { display: flex; gap: 4px; flex-shrink: 0; }
+.al-act button { border: 0; background: var(--surface); border-radius: 8px; padding: 4px 8px; font-size: 12px; color: var(--muted); }
+.al-form summary { cursor: pointer; font-weight: 700; font-size: 14px; margin-bottom: 10px; }
+.al-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.al-grid label { display: grid; gap: 4px; font-size: 12px; color: var(--muted); min-width: 0; }
+.al-grid .al-wide { grid-column: 1 / -1; }
+.al-grid input, .al-grid select, .al-grid textarea { box-sizing: border-box; width: 100%; min-width: 0; border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.al-grid textarea { resize: vertical; }
 .lev-lots summary { cursor: pointer; font-size: 13.5px; font-weight: 600; margin: 10px 0 6px; }
 table.trades { width: 100%; border-collapse: collapse; font-size: 13px; }
 .trades th { text-align: left; font-size: 11.5px; color: var(--muted); font-weight: 500; padding: 6px 8px; border-bottom: 1px solid var(--line); white-space: nowrap; }
@@ -561,6 +580,7 @@ footer a { color: var(--accent); }
         <button type="button" class="primary" id="levAdd">+ 직접 추가</button>
         <button type="button" id="levClear">모두 지우기</button>
       </div>
+      <div class="al-box" id="alertBox" aria-labelledby="al-title"></div>
       <p class="example-note" id="levExampleNote">처음 보이는 건 예시예요. 약 3달 전에 BITX(비트코인 2배) 10주를 샀다고 가정했어요.</p>
     </section>
 
@@ -2442,6 +2462,7 @@ async function acctAuth(kind) {
   if (!data.session) { acctStatus("가입은 됐지만 이메일 인증이 켜져 있어요. Supabase에서 'Confirm email'을 꺼 주세요.", true); return; }
   sbUser = data.session.user; track(kind === "signup" ? "signup" : "login"); acctStatus("불러오는 중…"); await syncPull(); checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
+  if (!document.getElementById("view-lev").hidden) alInit();
 }
 function clearLocalAndReload(note) {
   syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
@@ -2527,6 +2548,7 @@ async function initAccount() {
   if (sbUser && !just) await syncPull();
   checkAiServer();
   if (!document.getElementById("view-home").hidden) renderHome();
+  if (!document.getElementById("view-lev").hidden) alInit();
 }
 
 function openNewPw(sub) {
@@ -3177,7 +3199,7 @@ function levCardHTML(g) {
     : `본전이 되려면 ${josa(uName, "이가")} ${beTxt}까지 ${g.beU >= now.Unow ? "올라야" : "내려야"} 해요.`;
   const back = Math.abs(g.UbAvg / now.Unow - 1) > 0.002 ? `${josa(uName, "이가")} 샀을 때 가격(${usd(g.UbAvg)})으로 돌아오면 ${josa(g.sym, "은는")} 약 <b class="${g.backRe >= 0 ? "pos" : "neg"}">${pctS(g.backRe)}</b>예요.` : "";
   return `<section class="panel lev-card" aria-label="${g.sym} 레버리지 분석">
-    <div class="lev-head"><h2>${g.sym} <small>${uName} ${inv ? "인버스 " + -L : L}배</small></h2>${tag}</div>
+    <div class="lev-head"><h2>${g.sym} <small>${uName} ${inv ? "인버스 " + -L : L}배</small></h2><span class="lev-tags">${tag}<button type="button" class="g-link" data-al="${g.sym}">🔔 규칙 알림</button></span></div>
     <p class="lev-px">${uName} <b class="num">${usd(now.Unow)}</b>${now.uLive ? "" : " (기록)"} · ${g.sym} <b class="num">${usd(now.Enow)}</b>${now.mode === "est" ? " (추정)" : ""} · 환율 <b class="num">${Math.round(now.FXnow).toLocaleString("ko-KR")}원</b>${now.fxLive ? "" : " (기록)"}</p>
     <div class="kpis">
       <div class="kpi"><span>지금 손익</span><b class="${g.total >= 0 ? "pos" : "neg"} lev-big">${wonS(g.total)}</b><small class="num">${pctS(g.total / g.cost)} · 산 금액 ${won(g.cost)}</small></div>
@@ -3210,6 +3232,7 @@ function renderLevResults() {
   const bySym = {};
   pos.forEach(p => { (bySym[p.sym] = bySym[p.sym] || []).push(p); });
   const groups = Object.entries(bySym).map(([s, ps]) => { const now = levNow(s, H, levLive, nowS); return levGroup(s, ps.map(p => levLot(p, H, now)), H, now); });
+  groups.forEach(g => { if (g.avgUsd) levAvgUsd[g.sym] = g.avgUsd; });
   const ok = groups.filter(g => g.ok.length), sum = k => ok.reduce((a, g) => a + g[k], 0);
   const anyEst = ok.some(g => g.now.mode === "est"), anyLive = ok.some(g => g.now.mode === "live");
   const t = new Date();
@@ -3226,6 +3249,154 @@ function renderLevResults() {
   box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
 }
 
+// ---------- 규칙 알림: 내가 정한 목표가·손절가에 닿으면 폰으로 알림 ----------
+// 포트핏이 사고팔 때를 정해 주지 않아요. 사용자가 미리 정한 규칙과 남긴 말을, 그 순간에 다시 보여줄 뿐이에요.
+const AL_FN = `${SB_URL}/functions/v1/alerts`;
+const alState = { rules: [], loaded: false, sub: null, busy: false, msg: "", bad: false, prefill: null };
+const levAvgUsd = {};                              // 레버리지 탭에서 계산한 평균단가(달러) → 규칙 기준가 자동 채우기
+const AL_KINDS = { tp: "목표 수익률에 닿으면 (익절)", sl: "손절 수익률에 닿으면 (손절)", pa: "이 가격 이상이 되면", pb: "이 가격 이하가 되면" };
+const alPushOK = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
+function b64u(s) { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); }
+const alSym = s => { s = String(s || "").toUpperCase().replace(/\s/g, ""); return /^([A-Z]{1,6}(\.[A-Z])?|\d{6})$/.test(s) ? s : null; };
+const alPx = (p, sym) => /^\d{6}$/.test(sym) ? `${Math.round(p).toLocaleString("ko-KR")}원` : usd(p);
+async function alReg() { return withTimeout(navigator.serviceWorker.ready, 5000); }
+async function alToken() { const { data } = await sb.auth.getSession(); return data.session ? data.session.access_token : null; }
+function alSay(msg, bad) { alState.msg = msg || ""; alState.bad = !!bad; renderAlerts(); }
+
+async function alInit() {
+  if (!document.getElementById("alertBox")) return;
+  if (sb && sbUser) {
+    const { data, error } = await sb.from("alert_rules").select("*").order("created_at", { ascending: true });
+    alState.loaded = true;
+    if (error) { alState.rules = []; alState.msg = /relation|does not exist|schema cache/i.test(error.message) ? "알림 서버 준비가 아직 안 됐어요. (Supabase에 setup_alerts.sql 실행 필요)" : `규칙을 못 불러왔어요: ${error.message}`; alState.bad = true; }
+    else alState.rules = data || [];
+    if (alPushOK() && Notification.permission === "granted") { try { alState.sub = await (await alReg()).pushManager.getSubscription(); } catch (_) { alState.sub = null; } }
+  }
+  renderAlerts();
+}
+async function alEnable() {
+  if (alState.busy) return;
+  alState.busy = true; alSay("알림 허락을 묻는 중…");
+  try {
+    const perm = await Notification.requestPermission();
+    if (perm !== "granted") { alState.busy = false; alSay(perm === "denied" ? "알림이 차단돼 있어요. 기기 설정 → 알림에서 포트핏(또는 사파리·크롬)을 허용해 주세요." : "알림을 허락해야 받을 수 있어요.", true); return; }
+    const kr = await withTimeout(fetch(`${AL_FN}?vapid=1`), 8000), { key } = await kr.json();
+    if (!key) throw new Error("알림 서버 열쇠를 못 받았어요");
+    const reg = await alReg();
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64u(key) });
+    const j = sub.toJSON();
+    const { error } = await sb.from("push_subs").upsert({ endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth, ua: navigator.userAgent.slice(0, 160), user_id: sbUser.id });
+    if (error) throw new Error(error.message);
+    alState.sub = sub; alState.busy = false; track("alert_enable");
+    alSay("이 기기에서 알림을 받을 수 있어요. '시험 알림'을 눌러 확인해 보세요.");
+  } catch (e) { alState.busy = false; alSay(`알림을 켜지 못했어요: ${e.message || e}`, true); }
+}
+async function alTest() {
+  alSay("시험 알림을 보내는 중…");
+  try {
+    const r = await withTimeout(fetch(AL_FN, { method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${await alToken()}` }, body: JSON.stringify({ action: "test" }) }), 15000);
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.error || r.status);
+    alSay(j.sent ? `시험 알림을 보냈어요. 몇 초 안에 안 오면 기기 알림 설정을 확인해 주세요.` : "알림을 받을 기기가 없어요. '이 기기에서 알림 켜기'를 다시 눌러 주세요.", !j.sent);
+  } catch (e) { alSay(`시험 알림 실패: ${e.message || e}`, true); }
+}
+function alHint(kind) {
+  const a = lastTrade && !lastTrade.isSample ? lastTrade.a : null;
+  if (!a) return null;
+  if (kind === "above" && a.winHold != null) return `지난 기록: 이익 난 종목은 평균 ${fmt(a.winHold, 0)}일 들고, 평균 ${signedPct(a.avgWin)}에 팔았어요.`;
+  if (kind === "below" && a.lossHold != null) return `지난 기록: 손실 종목은 평균 ${fmt(a.lossHold, 0)}일 버텼고, 평균 ${signedPct(a.avgLoss)}에 팔았어요.`;
+  return null;
+}
+async function alSave() {
+  const f = id => document.getElementById(id);
+  const sym = alSym(f("alSym").value), type = f("alKind").value, v = Number(f("alVal").value), base = Number(f("alBase").value), note = f("alNote").value.trim().slice(0, 200);
+  if (!sym) return alSay("종목 티커를 확인해 주세요. 예: SOXL, BITX, BTC, 005930", true);
+  if (!(v > 0)) return alSay(type === "tp" || type === "sl" ? "수익률(%)을 넣어 주세요." : "가격을 넣어 주세요.", true);
+  if ((type === "tp" || type === "sl") && !(base > 0)) return alSay("수익률로 정하려면 평균단가를 넣어 주세요.", true);
+  if (type === "sl" && v >= 100) return alSay("손절 수익률은 100%보다 작아야 해요.", true);
+  alSay("지금 가격을 확인하는 중…");
+  let q = null;
+  try { const r = await withTimeout(fetch(`${AL_FN}?quote=${encodeURIComponent(sym)}`), 10000); if (r.ok) q = (await r.json()).q; } catch (_) {}
+  if (!q) return alSay(`${sym} 시세를 찾지 못했어요. 미국은 티커(예: SOXL), 국내는 6자리 종목코드, 코인은 BTC·ETH처럼 넣어 주세요.`, true);
+  const kind = type === "tp" || type === "pa" ? "above" : "below";
+  const price = type === "tp" ? base * (1 + v / 100) : type === "sl" ? base * (1 - v / 100) : v;
+  if (kind === "above" ? q.p >= price : q.p <= price) return alSay(`지금 가격(${alPx(q.p, sym)})이 이미 ${alPx(price, sym)}${kind === "above" ? " 이상" : " 이하"}예요. 기준을 다시 정해 주세요.`, true);
+  const label = type === "tp" ? `+${fmt(v, v % 1 ? 1 : 0)}% 익절 규칙` : type === "sl" ? `-${fmt(v, v % 1 ? 1 : 0)}% 손절 규칙` : kind === "above" ? "목표가 도달" : "손절가 도달";
+  const row = { sym, kind, price: +price.toPrecision(8), base: base > 0 ? base : null, label, note: note || null, hint: alHint(kind) };
+  const { data, error } = await sb.from("alert_rules").insert(row).select("*").single();
+  if (error) return alSay(/30개/.test(error.message) ? "규칙은 30개까지 만들 수 있어요." : `저장하지 못했어요: ${error.message}`, true);
+  alState.rules.push(data); alState.prefill = null; alState.clearForm = true; track("alert_rule", { kind: type });
+  alSay(`저장했어요. ${josa(sym, "이가")} ${alPx(price, sym)}${kind === "above" ? " 이상이" : " 이하가"} 되면 알려드릴게요. (지금 ${alPx(q.p, sym)}, 2분마다 확인)`);
+}
+async function alDel(id) {
+  const { error } = await sb.from("alert_rules").delete().eq("id", id);
+  if (error) return alSay(`지우지 못했어요: ${error.message}`, true);
+  alState.rules = alState.rules.filter(r => r.id !== id); alSay("규칙을 지웠어요.");
+}
+async function alRearm(id) {
+  const { data, error } = await sb.from("alert_rules").update({ active: true, fired_at: null, fired_price: null }).eq("id", id).select("*").single();
+  if (error) return alSay(`다시 켜지 못했어요: ${error.message}`, true);
+  alState.rules = alState.rules.map(r => r.id === id ? data : r); alSay("규칙을 다시 켰어요.");
+}
+function alPrefill(sym) {
+  alState.prefill = { sym, base: levAvgUsd[sym] ? +levAvgUsd[sym].toFixed(4) : "" };
+  renderAlerts();
+  const el = document.getElementById("alertBox"); if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+function renderAlerts() {
+  const box = document.getElementById("alertBox"); if (!box) return;
+  const keep = {};
+  if (!alState.clearForm) ["alSym", "alKind", "alVal", "alBase", "alNote"].forEach(id => { const el = document.getElementById(id); if (el) keep[id] = el.value; });
+  const wasOpen = !!box.querySelector("details.al-form[open]");
+  alState.clearForm = false;
+  const head = `<h2 id="al-title">🔔 내 규칙 알림</h2><p class="sub">익절·손절 기준을 미리 정해 두면, 가격이 닿는 순간 폰으로 알려드려요. 그때 내가 남긴 말도 같이 보여줘서, 욕심이나 공포에 흔들리지 않게 도와줘요.</p>`;
+  const msg = alState.msg ? `<p class="al-msg${alState.bad ? " bad" : ""}" role="status">${esc(alState.msg)}</p>` : "";
+  if (!sb) { box.innerHTML = head + `<p class="fine">알림은 포트핏 사이트(qkrwnsghd.github.io/portfit)에서 로그인하면 쓸 수 있어요.</p>`; return; }
+  if (!sbUser) { box.innerHTML = head + `<p class="fine">알림은 로그인해야 쓸 수 있어요. 규칙이 계정에 저장돼서 폰이 꺼져 있어도 서버가 대신 지켜봐요.</p><div class="btns"><button type="button" id="alLogin" class="primary">로그인하고 알림 쓰기</button></div>`;
+    document.getElementById("alLogin").addEventListener("click", () => document.getElementById("acctBtn").click()); return; }
+  let dev;
+  if (!alPushOK()) dev = IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 포트핏을 <b>홈 화면에 추가</b>한 뒤 홈 화면 아이콘으로 열어야 알림을 받을 수 있어요. 사파리 아래 공유 버튼 → '홈 화면에 추가'를 눌러 주세요. (iOS 16.4 이상)</p>` : `<p class="note">이 브라우저는 알림을 지원하지 않아요. 폰에서는 홈 화면에 추가한 포트핏, PC에서는 크롬·엣지·사파리 최신 버전을 써 주세요.</p>`;
+  else if (alState.sub) dev = `<div class="al-dev"><span class="pill good">● 이 기기 알림 켜짐</span><button type="button" id="alTest" class="g-link">시험 알림 보내기</button></div>`;
+  else dev = `${IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 홈 화면에 추가한 포트핏에서만 알림이 와요.</p>` : ""}<div class="btns"><button type="button" id="alOn" class="primary"${alState.busy ? " disabled" : ""}>이 기기에서 알림 켜기</button></div>`;
+  const pf = alState.prefill || {}, syms = [...new Set(levPositions().map(p => p.sym))];
+  const list = alState.rules.length ? `<ul class="al-list">${alState.rules.map(r => `<li class="${r.active ? "" : "off"}">
+      <div><b>${esc(r.sym)}</b> ${esc(r.label || "")} <span class="num">${r.kind === "above" ? "≥" : "≤"} ${alPx(+r.price, r.sym)}</span>
+        <small>${r.active ? `지켜보는 중${r.last_price ? ` · 최근 ${alPx(+r.last_price, r.sym)}` : ""}` : `🔔 ${new Date(r.fired_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}에 울림 (${alPx(+r.fired_price, r.sym)})`}</small>
+        ${r.note ? `<small class="al-note">“${esc(r.note)}”</small>` : ""}</div>
+      <div class="al-act">${r.active ? "" : `<button type="button" data-re="${r.id}">다시 켜기</button>`}<button type="button" data-del="${r.id}" aria-label="규칙 지우기">×</button></div></li>`).join("")}</ul>` : `<p class="fine">아직 정한 규칙이 없어요.</p>`;
+  box.innerHTML = head + dev + list + `
+    <details class="al-form"${alState.prefill || !alState.rules.length ? " open" : ""}><summary>+ 새 규칙 만들기</summary>
+      <div class="al-grid">
+        <label>종목<input id="alSym" list="alSyms" value="${esc(pf.sym || syms[0] || "")}" placeholder="SOXL, BTC, 005930" autocapitalize="characters" autocomplete="off"><datalist id="alSyms">${syms.map(s => `<option value="${s}">`).join("")}</datalist></label>
+        <label>조건<select id="alKind">${Object.entries(AL_KINDS).map(([k, t]) => `<option value="${k}">${t}</option>`).join("")}</select></label>
+        <label id="alValL">수익률<span class="g-in"><input id="alVal" type="number" inputmode="decimal" min="0" step="any" placeholder="20"><span id="alUnit">%</span></span></label>
+        <label id="alBaseL">평균단가<span class="g-in"><input id="alBase" type="number" inputmode="decimal" min="0" step="any" value="${pf.base ?? ""}" placeholder="달러 (국내는 원)"><span>$/원</span></span></label>
+        <label class="al-wide">그때의 나에게 남길 말 (알림에 같이 떠요)<textarea id="alNote" maxlength="200" rows="2" placeholder="예: +20%면 절반 판다. 더 오를 것 같아도 욕심내지 말자."></textarea></label>
+      </div>
+      <div class="btns"><button type="button" class="primary" id="alSave">규칙 저장</button></div>
+      <p class="fine">미국 주식·ETF는 달러, 국내는 원, 코인(BTC·ETH)은 달러 기준이에요. 서버가 2분마다 가격을 확인해서, 처음 닿았을 때 한 번 알려요. 프리·애프터장 가격도 포함해요. 포트핏은 사고팔 때를 정해 주지 않고, 내가 정한 규칙만 알려드려요.</p>
+    </details>${msg}`;
+  const on = document.getElementById("alOn"); if (on) on.addEventListener("click", alEnable);
+  const te = document.getElementById("alTest"); if (te) te.addEventListener("click", alTest);
+  box.querySelectorAll("[data-del]").forEach(b => b.addEventListener("click", () => alDel(b.dataset.del)));
+  box.querySelectorAll("[data-re]").forEach(b => b.addEventListener("click", () => alRearm(b.dataset.re)));
+  const kindSel = document.getElementById("alKind"), sync = () => {
+    const pct = kindSel.value === "tp" || kindSel.value === "sl";
+    document.getElementById("alValL").firstChild.textContent = pct ? "수익률" : "가격";
+    document.getElementById("alUnit").textContent = pct ? "%" : "$/원";
+    document.getElementById("alVal").placeholder = pct ? (kindSel.value === "tp" ? "20" : "10") : "가격";
+    document.getElementById("alBaseL").hidden = !pct;
+  };
+  kindSel.addEventListener("change", sync); sync();
+  const symIn = document.getElementById("alSym");
+  symIn.addEventListener("change", () => { const s = alSym(symIn.value); if (s && levAvgUsd[s] && !document.getElementById("alBase").value) document.getElementById("alBase").value = +levAvgUsd[s].toFixed(4); });
+  Object.entries(keep).forEach(([id, v]) => { const el = document.getElementById(id); if (el && v !== "") el.value = v; });
+  if (wasOpen) box.querySelector("details.al-form").open = true;
+  sync();
+  document.getElementById("alSave").addEventListener("click", alSave);
+}
+
 // ---------- 탭 ----------
 function showTab(name) {
   const t = ["etf", "trades", "goal", "lev"].includes(name) ? name : "home";
@@ -3235,7 +3406,7 @@ function showTab(name) {
   });
   if (t === "goal") renderGoal();
   if (t === "home") renderHome();
-  if (t === "lev") { renderLev(); levLoadHist(); }
+  if (t === "lev") { renderLev(); levLoadHist(); alInit(); }
   levLoop(t === "lev");
   track("tab_" + t);
 }
@@ -3246,6 +3417,8 @@ document.getElementById("tab-etf").addEventListener("click", () => { showTab("et
 document.getElementById("tab-trades").addEventListener("click", () => { showTab("trades"); try { history.replaceState(null, "", "#trades"); } catch (_) {} });
 document.getElementById("tab-lev").addEventListener("click", () => { showTab("lev"); try { history.replaceState(null, "", "#lev"); } catch (_) {} });
 document.getElementById("levAdd").addEventListener("click", levAdd);
+document.getElementById("levResults").addEventListener("click", e => { const b = e.target.closest("[data-al]"); if (b) alPrefill(b.dataset.al); });
+window.addEventListener("hashchange", () => { const h = location.hash.slice(1); if (["home", "etf", "trades", "lev", "goal"].includes(h)) showTab(h); });
 document.getElementById("levClear").addEventListener("click", () => { levState.pos = []; levSave(); renderLev(); });
 document.addEventListener("visibilitychange", () => { if (!document.hidden && !document.getElementById("view-lev").hidden) levRefresh(true); });
 
