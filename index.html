@@ -395,6 +395,7 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .h-lev-list { list-style: none; padding: 0; margin: 0 0 4px; display: grid; gap: 6px; }
 .h-lev-list li { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: center; font-size: 14px; background: var(--soft); border-radius: 12px; padding: 9px 12px; }
 .h-lev-list li span { color: var(--muted); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lev-amt { display: inline-flex; align-items: center; gap: 6px; margin: 4px 0 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -704,7 +705,7 @@ footer a { color: var(--accent); }
         <p class="fine">로그아웃하면 이 기기에 남은 기록도 지워요. 기록은 계정에 저장되어 있어서 다시 로그인하면 돌아와요.</p>
         <div class="acct-danger">
           <div class="btns" style="margin-top:0"><button type="button" id="acctWipe">내 기록 모두 삭제</button><button type="button" id="acctDelete">회원 탈퇴</button></div>
-          <p class="fine" style="margin-top:6px">'내 기록 모두 삭제'는 계정은 두고 저장된 기록만 지워요. '회원 탈퇴'는 계정(이메일)과 기록을 서버에서 완전히 지우고, 되돌릴 수 없어요.</p>
+          <p class="fine" style="margin-top:6px">'내 기록 모두 삭제'는 계정은 두고 저장된 기록(규칙 알림 포함)만 지워요. '회원 탈퇴'는 계정(이메일)과 기록을 서버에서 완전히 지우고, 되돌릴 수 없어요.</p>
         </div>
       </div>
       <p class="fine" id="acctMsg" role="status"></p>
@@ -2545,6 +2546,8 @@ async function initAccount() {
     clearTimeout(syncTimer);
     const { error } = await sb.from("user_data").delete().eq("user_id", sbUser.id);
     if (error) { acctStatus(`지우지 못했어요: ${error.message}`, true); return; }
+    await sb.from("alert_rules").delete().eq("user_id", sbUser.id);     // 규칙 알림 표가 아직 없으면 그냥 넘어감
+    await sb.from("push_subs").delete().eq("user_id", sbUser.id);
     await sb.auth.signOut(); sbUser = null;
     syncApplying = true; syncKeys().concat([SYNC_META]).forEach(k => { try { localStorage.removeItem(k); } catch (_) {} }); syncApplying = false;
     location.reload();
@@ -2850,7 +2853,8 @@ function levCardData(g) {
   const u = LEV_U[g.m.u].ko, L = g.m.L, pp = v => `${v >= 0 ? "+" : ""}${fmt(v * 100)}%p`;
   return { kind: "lev", draw: drawLevCard, sym: g.sym, uName: u, L, title: `${g.sym} · ${u} ${L > 0 ? L + "배" : "인버스 " + -L + "배"}`,
     ru: g.ru, re: g.re, lev: g.lev / g.cost, decay: g.decay / g.cost, exact: g.exact / g.cost, Ub: g.UbAvg, Un: g.now.Unow,
-    be: g.beU > 0 ? g.beU / g.now.Unow - 1 : null, pp, shareText: "포트핏으로 내 레버리지 ETF 손익을 계산해 봤어요" };
+    be: g.beU > 0 ? g.beU / g.now.Unow - 1 : null, pp, shareText: "포트핏으로 내 레버리지 ETF 손익을 계산해 봤어요",
+    amt: levShareAmt ? { lev: g.lev, one: g.one, exact: g.exact, actual: g.actual0, decay: g.decay, total: g.total, cost: g.cost } : null };
 }
 async function drawLevCard(c) {
   try { await document.fonts.ready; } catch (_) {}
@@ -2877,6 +2881,7 @@ async function drawLevCard(c) {
   g.textBaseline = "alphabetic"; g.fillStyle = col(c.lev); g.font = font(700, 150);
   g.shadowColor = c.lev >= 0 ? "rgba(95,227,161,.45)" : "rgba(255,138,107,.45)"; g.shadowBlur = 30; g.fillText(c.pp(c.lev), P - 6, 462); g.shadowBlur = 0;
   g.fillStyle = "#fff"; g.font = font(700, 40); g.fillText(c.lev >= 0 ? "더 벌었어요" : "더 잃었어요", P, 530);
+  if (c.amt) { const tw = g.measureText(c.lev >= 0 ? "더 벌었어요" : "더 잃었어요").width; g.fillStyle = col(c.lev); g.font = font(700, 40); g.fillText(`(${wonS(c.amt.lev)})`, P + tw + 16, 530); }
   // 산 시점 → 지금
   let y = 586;
   g.fillStyle = "rgba(255,255,255,.08)"; g.beginPath(); g.roundRect(P, y, W - 2 * P, 150, 22); g.fill();
@@ -2891,23 +2896,24 @@ async function drawLevCard(c) {
   cell(1, `지금 ${c.uName}`, usd0(c.Un), pctS(c.ru), col(c.ru));
   cell(2, `내 ${c.sym}`, pctS(c.re), `${Math.abs(c.L)}배 ${c.L < 0 ? "인버스" : "레버리지"}`, null);
   g.textAlign = "left"; y += 180;
-  const rows = [[`${c.uName} 1배였다면`, pctS(c.ru * Math.sign(c.L)), "비교"], [`정확히 ${Math.abs(c.L)}배였다면`, pctS(c.exact), "이론"],
-    [`내 ${c.sym} 실제`, pctS(c.re), "실제"], ["음의 복리·비용으로 녹은 몫", c.pp(c.decay), c.decay < 0 ? "녹음" : "추세 덕분"]];
+  const A = c.amt, rows = [[`${c.uName} 1배였다면`, pctS(c.ru * Math.sign(c.L)), A ? wonS(A.one) : "비교"], [`정확히 ${Math.abs(c.L)}배였다면`, pctS(c.exact), A ? wonS(A.exact) : "이론"],
+    [`내 ${c.sym} 실제`, pctS(c.re), A ? wonS(A.actual) : "실제"], ["음의 복리·비용으로 녹은 몫", c.pp(c.decay), A ? wonS(A.decay) : c.decay < 0 ? "녹음" : "추세 덕분"]];
   if (c.be != null && c.re < 0) rows.push([`본전까지 ${c.uName}`, pctS(c.be), "필요"]);
   rows.forEach(([k, v, tag], i) => {
     g.fillStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.roundRect(P, y, W - 2 * P, 70, 18); g.fill();
     const mid = y + 37; g.textBaseline = "middle";
     g.fillStyle = "#fff"; g.font = font(600, 29); g.fillText(k, P + 28, mid);
-    g.font = font(700, 22); const tw = g.measureText(tag).width + 32;
-    g.fillStyle = "rgba(184,194,232,.14)"; g.beginPath(); g.roundRect(W - P - 24 - tw, mid - 20, tw, 40, 20); g.fill();
-    g.fillStyle = "#B8C2E8"; g.textAlign = "center"; g.fillText(tag, W - P - 24 - tw / 2, mid + 1);
+    const isMoney = /원$/.test(tag); g.font = font(700, isMoney ? 27 : 22); const tw = g.measureText(tag).width + 32;
+    const money = /원$/.test(tag), tc = !money ? "#B8C2E8" : /^-/.test(tag) ? BAD : GOOD;
+    g.fillStyle = !money ? "rgba(184,194,232,.14)" : /^-/.test(tag) ? "rgba(255,138,107,.16)" : "rgba(95,227,161,.16)"; g.beginPath(); g.roundRect(W - P - 24 - tw, mid - 20, tw, 40, 20); g.fill();
+    g.fillStyle = tc; g.textAlign = "center"; g.fillText(tag, W - P - 24 - tw / 2, mid + 1);
     g.fillStyle = /^[-]/.test(v) ? BAD : /^\+/.test(v) ? GOOD : "#fff"; g.font = font(700, 32); g.textAlign = "right"; g.fillText(v, W - P - 44 - tw, mid); g.textAlign = "left";
     y += 82;
   });
   g.textBaseline = "alphabetic";
   g.fillStyle = "rgba(255,255,255,.12)"; g.fillRect(P, H - 150, W - 2 * P, 2);
   g.fillStyle = "#3CF2D0"; g.font = font(700, 30); g.fillText("내 레버리지도 계산해 보기 → qkrwnsghd.github.io/portfit", P, H - 96);
-  g.fillStyle = "rgba(255,255,255,.45)"; g.font = font(500, 21); g.fillText("금액은 넣지 않고 수익률만 보여줘요. 계산만 할 뿐, 사고팔라는 권유가 아니에요.", P, H - 56);
+  g.fillStyle = "rgba(255,255,255,.45)"; g.font = font(500, 21); g.fillText(A ? `산 금액 ${won(A.cost)} 기준 · 계산만 할 뿐, 사고팔라는 권유가 아니에요.` : "금액은 넣지 않고 수익률만 보여줘요. 계산만 할 뿐, 사고팔라는 권유가 아니에요.", P, H - 56);
   return cv;
 }
 async function shareCard(c, filename, msgEl) {
@@ -3318,6 +3324,8 @@ function levCompute(pos) {
   return { groups, ok: groups.filter(g => g.ok.length) };
 }
 let levShareGroups = {};
+const LEV_SHARE_AMT = "portfit-lev-share-amt-v1";            // 공유 이미지에 금액 넣기 (이 기기에만 저장)
+let levShareAmt = loadJSON(LEV_SHARE_AMT, true) !== false;
 function renderHomeLev() {
   const box = document.getElementById("homeLev"); if (!box || document.getElementById("view-home").hidden) return;
   const go = `<button type="button" class="primary" data-golev>레버리지 계산하기 →</button>`;
@@ -3360,9 +3368,12 @@ function renderLevResults() {
   box.innerHTML = `<p class="al-msg" id="levShareMsg" role="status" style="margin:0 0 10px" hidden></p>${levSample ? `<p class="example-note" style="margin:0 0 10px">예시: ${H.dates[Math.max(0, H.dates.length - 61)]}에 BITX 10주를 그날 종가로 샀다고 가정했어요.</p>` : ""}
     ${total}${groups.map(levCardHTML).join("")}
     <p class="fine">${t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} 기준 · ${anyLive ? "미국 장이 열려 있는 동안은 ETF 가격을 실시간(야후 파이낸스)으로 받아요. " : ""}${anyEst ? "미국 장이 닫힌 동안 코인 레버리지 ETF는 마지막 거래 가격에 코인이 그 뒤 움직인 만큼 × 배율을 곱해 <b>추정</b>했어요. 토스증권 주간거래 가격과는 다를 수 있어요. " : ""}${levLive.err === "edge" ? "실시간 ETF 시세 서버에 연결하지 못해 마지막 종가를 썼어요. " : ""}${ok.some(g => LEV_U[g.m.u].crypto) ? `코인 시세는 ${Object.values(levLive.crypto)[0] ? esc(Object.values(levLive.crypto)[0].src) : "거래소"}, ` : ""}지난 시세는 야후 파이낸스(${H.asof}까지)예요.
+    <label class="lev-amt"><input type="checkbox" id="levShareAmt"${levShareAmt ? " checked" : ""}> 📷 공유 이미지에 금액(원)도 넣기</label><br>
     산 순간의 기초자산 가격은 산 날 종가와 산 가격 차이로 거꾸로 추정했어요. 토스증권이 실제로 쓴 환율과 수수료·세금은 반영하지 않아서 앱 숫자와 조금 다를 수 있어요. 계산만 보여드리고, 사고팔라는 권유가 아니에요.</p>`;
   box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
   levShareGroups = Object.fromEntries(ok.map(g => [g.sym, g]));
+  const amtBox = document.getElementById("levShareAmt");
+  if (amtBox) amtBox.addEventListener("change", () => { levShareAmt = amtBox.checked; try { localStorage.setItem(LEV_SHARE_AMT, JSON.stringify(levShareAmt)); } catch (_) {} });
 }
 
 // ---------- 규칙 알림: 내가 정한 목표가·손절가에 닿으면 폰으로 알림 ----------
@@ -3474,7 +3485,7 @@ function renderAlerts() {
   let dev;
   if (!alPushOK()) dev = IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 포트핏을 <b>홈 화면에 추가</b>한 뒤 홈 화면 아이콘으로 열어야 알림을 받을 수 있어요. 사파리 아래 공유 버튼 → '홈 화면에 추가'를 눌러 주세요. (iOS 16.4 이상)</p>` : `<p class="note">이 브라우저는 알림을 지원하지 않아요. 폰에서는 홈 화면에 추가한 포트핏, PC에서는 크롬·엣지·사파리 최신 버전을 써 주세요.</p>`;
   else if (alState.sub) dev = `<div class="al-dev"><span class="pill good">● 이 기기 알림 켜짐</span><button type="button" id="alTest" class="g-link">시험 알림 보내기</button></div>`;
-  else dev = `${IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 홈 화면에 추가한 포트핏에서만 알림이 와요.</p>` : ""}<div class="btns"><button type="button" id="alOn" class="primary"${alState.busy ? " disabled" : ""}>이 기기에서 알림 켜기</button></div>`;
+  else dev = `${IS_IOS && !IS_STANDALONE ? `<p class="note">아이폰은 홈 화면에 추가한 포트핏에서만 알림이 와요.</p>` : ""}<div class="btns"><button type="button" id="alOn" class="primary"${alState.busy ? " disabled" : ""}>이 기기에서 알림 켜기</button></div><p class="fine">알림을 켜면 이 기기의 알림 주소와 내가 만든 규칙(종목, 기준 가격, 남긴 말)이 계정에 저장돼요. 자세한 내용은 <a href="privacy.html" target="_blank" rel="noopener">개인정보처리방침</a>을 확인해 주세요.</p>`;
   const pf = alState.prefill || {}, syms = [...new Set(levPositions().map(p => p.sym))];
   const list = alState.rules.length ? `<ul class="al-list">${alState.rules.map(r => `<li class="${r.active ? "" : "off"}">
       <div><b>${esc(r.sym)}</b> ${esc(r.label || "")} <span class="num">${r.kind === "above" ? "≥" : "≤"} ${alPx(+r.price, r.sym)}</span>
