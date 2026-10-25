@@ -2663,8 +2663,9 @@ function renderHome() {
   if (g) parts.push(`목표 진행률 ${fmt(gProg, 0)}%`);
   const heroLine = levSample ? "BITX·SOXL·TQQQ 같은 레버리지 ETF를 샀다면, 산 가격만 넣어 보세요. 1배로 샀을 때보다 얼마를 더 벌고 잃었는지, 음의 복리로 얼마가 녹았는지 실시간으로 보여드려요."
     : parts.length ? `레버리지 ETF ${new Set(levState.pos.map(p => p.sym)).size}개를 지켜보는 중이에요. ${parts.join(", ")}이에요.` : `레버리지 ETF ${new Set(levState.pos.map(p => p.sym)).size}개를 지켜보는 중이에요.`;
-  const next = levSample || !todo[0] || todo[0][2] === "lev" ? todo[0] : ["📈", "레버리지 자세히 보기", "lev"];
-  const heroAsk = next && next[2] === "lev" && !levSample && next[1] === "레버리지 자세히 보기" ? "" : null;
+  const next = levSample || !todo[0] || todo[0][2] === "lev" ? (todo[0] ? [...todo[0]] : null) : ["📈", "레버리지 자세히 보기", "lev"];
+  const heroAsk = next && next[2] === "lev" ? "" : null;
+  if (next && next[2] === "lev" && levSample) next[1] = "내 레버리지 ETF 넣어 보기";
 
   box.innerHTML = `
     <section class="hero">
@@ -3054,7 +3055,7 @@ function levNow(sym, H, live, nowSec) {
     if (q && q.p > 0 && q.t > tsT + 60) { Ea = q.p; ta = q.t; }
     const Ba = ta === tsT ? BT : live.kline[`${uc}:${ta}`];
     if (nowSec - ta > 120 && B && Ba) { Enow = Ea * Math.max(0, 1 + m.L * (B.p / Ba - 1)); mode = "est"; at = B.t; }
-    else { Enow = Ea; mode = ta === tsT ? "close" : "live"; at = ta; }
+    else { Enow = Ea; mode = ta === tsT ? "close" : nowSec - ta < 900 ? "live" : "last"; at = ta; }
   } else {
     const qu = live.quotes[m.u];
     if (q && q.p > 0 && qu && qu.p > 0 && q.t > tsT + 60) {
@@ -3241,9 +3242,9 @@ function renderLev() {
       <div class="lev-row1"><select data-f="sym" aria-label="ETF">${LEV_ETFS.map(([s, u, L]) => `<option value="${s}"${s === p.sym ? " selected" : ""}>${s} · ${LEV_U[u].ko} ${L > 0 ? L + "배" : "인버스 " + -L + "배"}</option>`).join("")}</select>
         <button type="button" class="x" data-del="${k}" aria-label="삭제">×</button></div>
       <div class="lev-row2">
-        <label>산 날<input data-f="date" type="date" value="${p.date}" min="${minD}" max="${maxD}"></label>
-        <label>수량<input data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="${p.qty}"></label>
-        <label>평균단가<span class="g-in"><input data-f="price" type="number" inputmode="decimal" min="0" step="any" value="${p.price}"><select data-f="cur" aria-label="통화"><option value="KRW"${p.cur === "KRW" ? " selected" : ""}>원</option><option value="USD"${p.cur === "USD" ? " selected" : ""}>달러</option></select></span></label>
+        <label>산 날<input data-f="date" type="date" value="${esc(p.date)}" min="${minD}" max="${maxD}"></label>
+        <label>수량<input data-f="qty" type="number" inputmode="decimal" min="0" step="any" value="${+p.qty || ""}"></label>
+        <label>평균단가<span class="g-in"><input data-f="price" type="number" inputmode="decimal" min="0" step="any" value="${+p.price || ""}"><select data-f="cur" aria-label="통화"><option value="KRW"${p.cur === "KRW" ? " selected" : ""}>원</option><option value="USD"${p.cur === "USD" ? " selected" : ""}>달러</option></select></span></label>
       </div>${p.src ? `<small class="src">습관 탭 '${esc(p.src)}'에서 불러옴</small>` : ""}</li>`).join("") || `<li class="fine" style="list-style:none">아직 넣은 ETF가 없어요. '직접 추가'를 누르거나 습관 탭에서 불러오세요.</li>`;
   list.querySelectorAll(".lev-item").forEach(li => {
     const k = +li.dataset.k;
@@ -3458,6 +3459,10 @@ const alSym = s => { s = String(s || "").toUpperCase().replace(/\s/g, ""); retur
 const alPx = (p, sym) => /^\d{6}$/.test(sym) ? `${Math.round(p).toLocaleString("ko-KR")}원` : usd(p);
 async function alReg() { return withTimeout(navigator.serviceWorker.ready, 5000); }
 async function alToken() { const { data } = await sb.auth.getSession(); return data.session ? data.session.access_token : null; }
+function alAgo(t) {
+  const m = Math.max(0, Math.round((Date.now() - Date.parse(t)) / 60000));
+  return m < 1 ? "방금" : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.round(m / 60)}시간 전` : `${Math.round(m / 1440)}일 전`;
+}
 function alSay(msg, bad) { alState.msg = msg || ""; alState.bad = !!bad; renderAlerts(); }
 
 async function alInit() {
@@ -3591,7 +3596,7 @@ function renderAlerts() {
   const pf = alState.prefill || {}, syms = [...new Set(levPositions().map(p => p.sym))];
   const list = alState.rules.length ? `<ul class="al-list">${alState.rules.map(r => `<li class="${r.active ? "" : "off"}">
       <div><b>${esc(r.sym)}</b> ${esc(r.label || "")} <span class="num">${r.kind === "trail" ? `최고 ${alPx(+r.peak, r.sym)} → 기준선 ${alPx(+r.price, r.sym)}` : `${r.kind === "above" ? "≥" : "≤"} ${alPx(+r.price, r.sym)}`}</span>
-        <small>${r.active ? `지켜보는 중${r.last_price ? ` · 최근 ${alPx(+r.last_price, r.sym)}` : ""}` : `🔔 ${new Date(r.fired_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}에 울림 (${alPx(+r.fired_price, r.sym)})`}</small>
+        <small>${r.active ? `지켜보는 중${r.last_price ? ` · 최근 ${alPx(+r.last_price, r.sym)}` : ""}${r.checked_at ? ` · ${alAgo(r.checked_at)} 확인` : " · 서버 확인 전"}` : `🔔 ${new Date(r.fired_at).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit" })}에 울림 (${alPx(+r.fired_price, r.sym)})`}</small>
         ${r.note ? `<small class="al-note">“${esc(r.note)}”</small>` : ""}</div>
       <div class="al-act">${r.active ? "" : `<button type="button" data-re="${r.id}">다시 켜기</button>`}<button type="button" data-del="${r.id}" aria-label="규칙 지우기">×</button></div></li>`).join("")}</ul>` : `<p class="fine">아직 정한 규칙이 없어요.</p>`;
   box.innerHTML = head + dev + list + `
