@@ -406,6 +406,10 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-fut-t td, .lev-fut-t th { padding: 5px 6px; font-size: 13px; }
 .sc-pre { margin: 10px 0; flex-wrap: wrap; }
 .sc-kpi { margin: 6px 0 0; }
+.lev-src { background: var(--surface); border-radius: 16px; padding: 12px 14px; box-shadow: var(--shadow); }
+.lev-src summary { cursor: pointer; font-weight: 700; font-size: 14px; }
+.lev-src td, .lev-src th { font-size: 12.5px; padding: 6px; vertical-align: top; }
+.lev-src td small { color: var(--muted); }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -3061,22 +3065,27 @@ function levNow(sym, H, live, nowSec) {
   const kr = m.kr, fxq = kr ? null : live.quotes["KRW=X"], FXnow = kr ? 1 : fxq && fxq.p > 0 ? fxq.p : FX_T;
   const q = live.quotes[sym];
   let Enow = E_T, Unow = U_T, mode = "close", at = tsT, uLive = false;
+  // 시세 출처 기록 (시세 확인 칸에 보여줌)
+  const src = { e: { how: `기록 종가 (${H.dates[T]})`, t: tsT }, u: { how: `기록 종가 (${H.dates[T]})`, t: tsT }, fx: kr ? null : fxq && fxq.p > 0 ? { how: "야후 파이낸스 (KRW=X)", t: fxq.t } : { how: `기록 (${H.dates[T]})`, t: tsT } };
   if (uc) {
     const B = live.crypto[uc], BT = live.kline[`${uc}:${tsT}`];
-    if (B && BT) { Unow = U_T * B.p / BT; uLive = true; }
+    if (B && BT) { Unow = U_T * B.p / BT; uLive = true; src.u = { how: `${B.src} 실시간 (거래소 가격 ${usd(B.p)}을 야후 기준으로 이어 붙임)`, t: B.t }; }
     let Ea = E_T, ta = tsT;
     if (q && q.p > 0 && q.t > tsT + 60) { Ea = q.p; ta = q.t; }
     const Ba = ta === tsT ? BT : live.kline[`${uc}:${ta}`];
-    if (nowSec - ta > 120 && B && Ba) { Enow = Ea * Math.max(0, 1 + m.L * (B.p / Ba - 1)); mode = "est"; at = B.t; }
-    else { Enow = Ea; mode = ta === tsT ? "close" : nowSec - ta < 900 ? "live" : "last"; at = ta; }
+    if (nowSec - ta > 120 && B && Ba) { Enow = Ea * Math.max(0, 1 + m.L * (B.p / Ba - 1)); mode = "est"; at = B.t; src.e = { how: `추정: 마지막 거래 ${usd(Ea)} × (1 + ${m.L} × 그 뒤 ${uc} ${pctS(B.p / Ba - 1)})`, t: ta, base: true }; }
+    else { Enow = Ea; mode = ta === tsT ? "close" : nowSec - ta < 900 ? "live" : "last"; at = ta; if (ta !== tsT) src.e = { how: `야후 파이낸스 ${mode === "live" ? "실시간" : "마지막 거래"}${q && q.state ? ` (${q.state === "REGULAR" ? "정규장" : q.state === "PRE" ? "프리장" : q.state === "POST" ? "애프터장" : "장 마감"})` : ""}`, t: ta }; }
   } else {
     const qu = live.quotes[m.u];
     if (q && q.p > 0 && qu && qu.p > 0 && q.t > tsT + 60) {
       Enow = q.p; Unow = qu.p; at = q.t; uLive = true;
       mode = /REGULAR|PRE|POST/.test(q.state) && nowSec - q.t < 900 ? "live" : "last";
+      const st = { REGULAR: "정규장", PRE: "프리장", POST: "애프터장" }[q.state] || "장 마감";
+      src.e = { how: `야후 파이낸스 (${st}${kr ? ", 약 20분 지연" : ""})`, t: q.t };
+      src.u = { how: `야후 파이낸스${LEV_U[m.u].proxy ? ` (${LEV_U[m.u].proxy})` : ""}`, t: qu.t };
     }
   }
-  return { Enow, Unow, FXnow, fxLive: !!(fxq && fxq.p > 0), mode, at, T, uLive, state: q ? q.state : null };
+  return { Enow, Unow, FXnow, fxLive: !!(fxq && fxq.p > 0), mode, at, T, uLive, state: q ? q.state : null, src };
 }
 // 산 묶음 하나 계산
 function levLot(p, H, now) {
@@ -3450,12 +3459,23 @@ function renderLevResults() {
       <div class="kpi"><span>음의 복리·비용</span><b class="${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</b></div>
       <div class="kpi"><span>환율</span><b class="${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</b></div></div></section>` : "";
   const openSet = new Set([...box.querySelectorAll("details.lev-lots[open]")].map(d => d.dataset.sym));
+  const srcOpen = !!box.querySelector("#levSrc[open]");
+  const kst = t => new Date(t * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
+  const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 1 ? "방금" : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.round(m / 60)}시간 전` : `${Math.round(m / 1440)}일 전`; };
+  const srcRow = (k, v, x) => x ? `<tr><td>${k}</td><td class="r num">${v}</td><td>${esc(x.how)}</td><td class="num">${kst(x.t)}<small> · ${ago(x.t)}</small></td></tr>` : "";
+  const srcHTML = ok.length ? `<details class="lev-src" id="levSrc"><summary>🔍 시세 출처 확인 (토스와 비교할 때)</summary>
+    <div class="table-scroll"><table class="trades"><thead><tr><th>항목</th><th class="r">가격</th><th>어디서</th><th>언제 (한국 시간)</th></tr></thead><tbody>
+    ${ok.map(g => srcRow(g.name, levPx(g.sym, g.now.Enow), g.now.src.e) + srcRow(LEV_U[g.m.u].ko + (LEV_U[g.m.u].proxy ? `(${LEV_U[g.m.u].proxy})` : ""), levPx(g.sym, g.now.Unow), g.now.src.u)).join("")}
+    ${ok.some(g => !g.m.kr) ? srcRow("원·달러 환율", `${fmt(ok.find(g => !g.m.kr).now.FXnow, 2)}원`, ok.find(g => !g.m.kr).now.src.fx) : ""}
+    </tbody></table></div>
+    <p class="fine">토스와 다를 수 있는 이유: ① 토스 주간거래(낮 시간) 가격은 야후에 없어서, 장이 닫힌 동안 코인 ETF는 추정가를 써요. ② 토스는 자체 환율(환전 수수료 포함)을 써서 원화 금액이 조금 달라요. ③ 국내 시세는 약 20분 늦어요. ④ 산 순간의 기초자산 가격은 그날 종가로 거꾸로 추정해요.</p></details>` : "";
   box.innerHTML = `<p class="al-msg" id="levShareMsg" role="status" style="margin:0 0 10px" hidden></p>${levSample ? `<p class="example-note" style="margin:0 0 10px">예시: ${H.dates[Math.max(0, H.dates.length - 61)]}에 BITX 10주를 그날 종가로 샀다고 가정했어요.</p>` : ""}
-    ${total}${groups.map(levCardHTML).join("")}
+    ${total}${groups.map(levCardHTML).join("")}${srcHTML}
     <p class="fine">${t.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} 기준 · ${anyLive ? "미국 장이 열려 있는 동안은 ETF 가격을 실시간(야후 파이낸스)으로 받아요. " : ""}${anyEst ? "미국 장이 닫힌 동안 코인 레버리지 ETF는 마지막 거래 가격에 코인이 그 뒤 움직인 만큼 × 배율을 곱해 <b>추정</b>했어요. 토스증권 주간거래 가격과는 다를 수 있어요. " : ""}${levLive.err === "edge" ? "실시간 ETF 시세 서버에 연결하지 못해 마지막 종가를 썼어요. " : ""}${ok.some(g => LEV_U[g.m.u].crypto) ? `코인 시세는 ${Object.values(levLive.crypto)[0] ? esc(Object.values(levLive.crypto)[0].src) : "거래소"}, ` : ""}지난 시세는 야후 파이낸스(${H.asof}까지)예요.
     <label class="lev-amt"><input type="checkbox" id="levShareAmt"${levShareAmt ? " checked" : ""}> 📷 공유 이미지에 금액(원)도 넣기</label><br>
     산 순간의 기초자산 가격은 산 날 종가와 산 가격 차이로 거꾸로 추정했어요. 토스증권이 실제로 쓴 환율과 수수료·세금은 반영하지 않아서 앱 숫자와 조금 다를 수 있어요. 계산만 보여드리고, 사고팔라는 권유가 아니에요.</p>`;
   box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
+  if (srcOpen && document.getElementById("levSrc")) document.getElementById("levSrc").open = true;
   levShareGroups = Object.fromEntries(ok.map(g => [g.sym, g]));
   const amtBox = document.getElementById("levShareAmt");
   if (amtBox) amtBox.addEventListener("change", () => { levShareAmt = amtBox.checked; try { localStorage.setItem(LEV_SHARE_AMT, JSON.stringify(levShareAmt)); } catch (_) {} });
