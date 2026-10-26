@@ -91,9 +91,46 @@ async function quote(sym: string): Promise<Quote | null> {
   return q;
 }
 
+// ----- 기초자산 뉴스 (구글 뉴스 RSS 제목·링크만, 10분 저장) -----
+const NEWS_Q: Record<string, string> = {
+  BTC: "비트코인", ETH: "이더리움", SOL: "솔라나 코인", XRP: "리플 XRP", QQQ: "나스닥", SPY: "S&P500 뉴욕증시", SOXX: "필라델피아 반도체지수",
+  XLK: "미국 기술주", IWM: "러셀2000", XBI: "미국 바이오주", TLT: "미국 국채 금리", TSLA: "테슬라 주가", NVDA: "엔비디아 주가", COIN: "코인베이스 주가",
+  MSTR: "스트래티지 MSTR", AAPL: "애플 주가", AMZN: "아마존 주가", GOOGL: "알파벳 구글 주가", "069500": "코스피", "229200": "코스닥",
+};
+type News = { title: string; link: string; source: string; t: number };
+const ncache = new Map<string, { at: number; v: News[] }>();
+const unesc = (x: string) => x.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&quot;/g, '"').replace(/&#39;/g, "'").trim();
+async function news(key: string): Promise<News[]> {
+  const c = ncache.get(key);
+  if (c && Date.now() - c.at < 600_000) return c.v;
+  let v: News[] = [];
+  try {
+    const q = encodeURIComponent(`${NEWS_Q[key]} when:3d`);
+    const r = await fetch(`https://news.google.com/rss/search?q=${q}&hl=ko&gl=KR&ceid=KR:ko`, { headers: { "User-Agent": UA } });
+    if (r.ok) {
+      const xml = await r.text();
+      v = [...xml.matchAll(/<item>([\s\S]*?)<\/item>/g)].slice(0, 10).map((m) => {
+        const it = m[1], get = (t: string) => unesc((it.match(new RegExp(`<${t}[^>]*>([\\s\\S]*?)</${t}>`)) ?? [])[1] ?? "");
+        const source = get("source");
+        let title = get("title");
+        if (source && title.endsWith(` - ${source}`)) title = title.slice(0, -(source.length + 3));
+        return { title, link: get("link"), source, t: Math.floor((Date.parse(get("pubDate")) || Date.now()) / 1000) };
+      }).filter((n) => n.title && /^https?:\/\//.test(n.link));
+    }
+  } catch (_) { v = []; }
+  ncache.set(key, { at: Date.now(), v });
+  return v;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "GET") return json({ error: "method" }, 405);
+  const nk = new URL(req.url).searchParams.get("news");
+  if (nk) {
+    const key = nk.toUpperCase();
+    if (!NEWS_Q[key]) return json({ error: "news" }, 400);
+    return json({ ok: true, key, items: await news(key) });
+  }
   const syms = [...new Set((new URL(req.url).searchParams.get("s") ?? "").toUpperCase().split(",").map((s) => s.trim()))]
     .filter((s) => ALLOW.has(s)).slice(0, 16);
   if (!syms.length) return json({ error: "symbols" }, 400);

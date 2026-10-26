@@ -419,6 +419,18 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-cap { display: inline-flex; margin-bottom: 4px; }
 .lev-fxbox { background: var(--soft); border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 13.5px; }
 .lev-fxbox p { margin: 6px 0 0; }
+.lev-news { border-top: 1px solid var(--line); margin-top: 10px; padding-top: 10px; }
+.ln-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.ln-head b { font-size: 14px; } .ln-head small { font-size: 11.5px; color: var(--muted); }
+.ln-sum { font-size: 12.5px; color: var(--muted); margin: 4px 0 6px; }
+.ln-list { list-style: none; padding: 0; margin: 0; }
+.ln-list li { display: grid; grid-template-columns: auto 1fr; gap: 2px 8px; padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13.5px; line-height: 1.45; }
+.ln-list li a { color: var(--ink); text-decoration: none; } .ln-list li a:hover { color: var(--accent); }
+.ln-list li small { grid-column: 2; font-size: 11.5px; color: var(--muted); }
+.nt { align-self: start; font-family: var(--font-num); font-size: 11px; font-weight: 600; padding: 1px 6px; border-radius: 5px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; margin-top: 1px; }
+.nt.up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, transparent); }
+.nt.down { color: var(--down); border-color: color-mix(in srgb, var(--down) 45%, transparent); }
+.ln-more summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding: 8px 0 2px; }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -639,7 +651,7 @@ footer a { color: var(--accent); }
   <div id="view-lev" role="tabpanel" aria-labelledby="tab-lev" hidden>
   <div class="view-intro">
     <h1>레버리지 때문에 얼마를 벌고, 얼마를 잃었을까?</h1>
-    <p class="lead">산 가격만 넣으면, 같은 돈으로 1배를 샀을 때보다 얼마를 더 벌고 잃었는지, 음의 복리로 얼마가 녹았는지 실시간으로 보여드려요.</p>
+    <p class="lead">산 가격만 넣으면, 같은 돈으로 1배를 샀을 때보다 얼마를 더 벌고 잃었는지(레버리지 효과), 매일 배율을 다시 맞추며 생긴 변동성 손실이 얼마인지 실시간으로 보여드려요.</p>
   </div>
   <div class="layout">
     <section class="panel inputs" aria-labelledby="lev-in-title">
@@ -726,7 +738,7 @@ footer a { color: var(--accent); }
         <div class="wel-art" aria-hidden="true"><span class="wel-logo"></span></div>
         <h2 id="wel-title">레버리지 ETF, 1배보다 얼마나 더 벌고 잃었을까?</h2>
         <p>BITX·SOXL·TQQQ 같은 2~3배 ETF를 샀다면, 산 가격만 넣어 보세요. 비트코인·반도체 같은 기초자산 시세와 실시간으로 이어서 보여드려요.</p>
-        <ul class="wel-list"><li><b>📈 레버리지 효과</b> 같은 돈으로 1배를 샀을 때보다 얼마를 더 벌고 잃었을까?</li><li><b>🫠 음의 복리</b> 매일 다시 맞추는 구조와 비용 때문에 얼마가 녹았을까?</li><li><b>🔔 규칙 알림</b> 내가 정한 익절·손절 가격에 닿으면 폰으로 알려줘요.</li></ul>
+        <ul class="wel-list"><li><b>📈 레버리지 효과</b> 같은 돈으로 1배를 샀을 때보다 얼마를 더 벌고 잃었을까?</li><li><b>🫠 변동성 손실</b> 매일 배율을 다시 맞추는 구조(음의 복리)와 비용 때문에 얼마가 빠졌을까?</li><li><b>🔔 규칙 알림</b> 내가 정한 익절·손절 가격에 닿으면 폰으로 알려줘요.</li></ul>
       </div>
       <div class="wel-slide" data-s="1" hidden>
         <div class="wel-art" aria-hidden="true">①→②→③</div>
@@ -2717,7 +2729,7 @@ function renderHome() {
   if (etfHome && !etfHome.isExample) parts.push(`분산 건강 점수 ${etfHome.score}점`);
   if (habit) parts.push(`습관 점수 ${habit.score}점`);
   if (g) parts.push(`목표 진행률 ${fmt(gProg, 0)}%`);
-  const heroLine = levSample ? "BITX·SOXL·KODEX 레버리지를 샀다면 산 가격만 넣어 보세요. 1배보다 얼마를 더 벌고 잃었는지, 얼마가 녹았는지 바로 보여드려요."
+  const heroLine = levSample ? "BITX·SOXL·KODEX 레버리지를 샀다면 산 가격만 넣어 보세요. 1배보다 얼마를 더 벌고 잃었는지, 변동성 손실이 얼마인지 바로 보여드려요."
     : parts.length ? `레버리지 ETF ${new Set(levState.pos.map(p => p.sym)).size}개를 지켜보는 중이에요. ${parts.join(", ")}이에요.` : `레버리지 ETF ${new Set(levState.pos.map(p => p.sym)).size}개를 지켜보는 중이에요.`;
   const next = levSample || !todo[0] || todo[0][2] === "lev" ? (todo[0] ? [...todo[0]] : null) : ["📈", "레버리지 자세히 보기", "lev"];
   const heroAsk = next && next[2] === "lev" ? "" : null;
@@ -2769,7 +2781,7 @@ function renderHome() {
     <section class="panel" aria-labelledby="how-title">
       <h2 id="how-title">포트핏으로 할 수 있는 것</h2>
       <div class="how">
-        <div><b>📈 레버리지 분석</b>레버리지 ETF가 1배보다 얼마를 더 벌거나 잃게 했는지, 음의 복리로 얼마가 녹았는지 실시간으로 보여줘요.</div>
+        <div><b>📈 레버리지 분석</b>레버리지 ETF가 1배보다 얼마를 더 벌거나 잃게 했는지(레버리지 효과), 변동성 손실이 얼마인지 실시간으로 보여줘요.</div>
         <div><b>🔔 규칙 알림</b>내가 정한 익절·손절 가격에 닿으면 폰으로 알려주고, 그때 내가 남긴 말을 다시 보여줘요.</div>
         <div><b>📊 ETF 검진</b>ETF 안의 종목까지 풀어서, 한 종목이나 반도체에 얼마나 쏠렸는지 봐요.</div>
         <div><b>🧾 습관 진단</b>거래내역으로 손실을 오래 버티는지, 물타기와 잦은 거래가 있는지 보고 고치는 방법을 알려줘요.</div>
@@ -2949,7 +2961,7 @@ async function drawLevCard(c) {
   g.fillStyle = "rgba(255,255,255,.55)"; g.textAlign = "right"; g.fillText(today().replace(/-/g, "."), W - P, 106); g.textAlign = "left";
   const GOOD = "#FF6B74", BAD = "#6EA2FF", col = v => v >= 0 ? GOOD : BAD;     // 오르면 빨강, 내리면 파랑
   g.fillStyle = "#3CF2D0"; g.font = font(700, 34); g.fillText(c.title, P, 232);
-  g.fillStyle = "rgba(255,255,255,.75)"; g.font = font(600, 34); g.fillText(`레버리지 때문에 1배보다`, P, 300);
+  g.fillStyle = "rgba(255,255,255,.75)"; g.font = font(600, 34); g.fillText(`레버리지 효과 (1배 대비)`, P, 300);
   g.textBaseline = "alphabetic"; g.fillStyle = col(c.lev); g.font = font(700, 150);
   g.shadowColor = c.lev >= 0 ? "rgba(255,107,116,.45)" : "rgba(110,162,255,.45)"; g.shadowBlur = 30; g.fillText(c.pp(c.lev), P - 6, 462); g.shadowBlur = 0;
   g.fillStyle = "#fff"; g.font = font(700, 40); g.fillText(c.lev >= 0 ? "더 벌었어요" : "더 잃었어요", P, 530);
@@ -2969,7 +2981,7 @@ async function drawLevCard(c) {
   cell(2, `내 ${c.sym}`, pctS(c.re), `${Math.abs(c.L)}배 ${c.L < 0 ? "인버스" : "레버리지"}`, null);
   g.textAlign = "left"; y += 180;
   const A = c.amt, rows = [[`${c.uName} 1배였다면`, pctS(c.ru * Math.sign(c.L)), A ? wonS(A.one) : "비교"], [`정확히 ${Math.abs(c.L)}배였다면`, pctS(c.exact), A ? wonS(A.exact) : "이론"],
-    [`내 ${c.sym} 실제`, pctS(c.re), A ? wonS(A.actual) : "실제"], ["음의 복리·비용으로 녹은 몫", c.pp(c.decay), A ? wonS(A.decay) : c.decay < 0 ? "녹음" : "추세 덕분"]];
+    [`내 ${c.sym} 실제`, pctS(c.re), A ? wonS(A.actual) : "실제"], [c.decay < 0 ? "변동성 손실 (음의 복리)" : "추세 이득", c.pp(c.decay), A ? wonS(A.decay) : c.decay < 0 ? "손실" : "이득"]];
   if (c.be != null && c.re < 0) rows.push([`본전까지 ${c.uName}`, pctS(c.be), "필요"]);
   rows.forEach(([k, v, tag], i) => {
     g.fillStyle = "rgba(255,255,255,.06)"; g.beginPath(); g.roundRect(P, y, W - 2 * P, 70, 18); g.fill();
@@ -3270,8 +3282,46 @@ async function levRefresh(force) {
     ts.forEach(t => { const k = `${c}:${t}`; if (!(k in levLive.kline)) { levLive.kline[k] = null; kj.push(cryptoAt(c, t).then(v => { if (v) levLive.kline[k] = v; else delete levLive.kline[k]; })); } });
   });
   await Promise.all(kj);
+  [...new Set(syms.map(s => LEV_MAP[s].u))].forEach(u => levNewsFetch(u));
   renderLevResults();
   renderHomeLev();
+}
+// ----- 기초자산 뉴스: 구글 뉴스 제목(시세 서버가 대신 받아옴) + 제목 단어로 호재/악재 자동 분류 -----
+const levNews = {};             // 기초자산 → { at, items, err }
+const NEWS_POS = /(상승|급등|강세|반등|돌파|최고치|신고가|사상\s*최고|최고가|호재|매수세|순매수|자금\s*유입|유입|승인|호조|상향|랠리|껑충|훨훨|치솟|회복|기대감|흑자|역대\s*최대|수혜|오름세|불기둥|폭등)/g;
+const NEWS_NEG = /(하락|급락|약세|폭락|추락|붕괴|최저|악재|매도세|순매도|유출|규제|우려|부진|하향|경고|소송|해킹|파산|적자|공포|쇼크|급감|위기|조사|금지|불안|털썩|곤두박질|내림세|청산|손실|리스크|경기\s*침체)/g;
+function newsTone(title) {
+  const p = (title.match(NEWS_POS) || []).length, n = (title.match(NEWS_NEG) || []).length;
+  return p > n ? 1 : n > p ? -1 : 0;
+}
+async function levNewsFetch(u) {
+  const c = levNews[u];
+  if (c && (c.loading || Date.now() - c.at < 600000)) return;
+  levNews[u] = { ...(c || {}), loading: true };
+  try {
+    const j = await getJSON(`${SB_URL}/functions/v1/market?news=${encodeURIComponent(u)}`);
+    levNews[u] = { at: Date.now(), items: ((j && j.items) || []).filter(n => n && typeof n.title === "string" && /^https?:\/\//.test(n.link || "")) };
+  } catch (e) { levNews[u] = { at: Date.now(), items: (c && c.items) || [], err: true }; }
+  renderLevResults();
+}
+function levNewsHTML(g) {
+  const u = g.m.u, c = levNews[u], uName = LEV_U[u].ko, inv = g.m.L < 0;
+  const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 60 ? `${Math.max(1, m)}분 전` : m < 1440 ? `${Math.round(m / 60)}시간 전` : `${Math.round(m / 1440)}일 전`; };
+  let body;
+  if (!c || c.loading && !c.items) body = `<p class="fine">뉴스를 불러오는 중이에요…</p>`;
+  else if (!c.items || !c.items.length) body = `<p class="fine">${c.err ? "뉴스를 불러오지 못했어요. (시세 서버 업데이트가 필요할 수 있어요)" : "최근 3일 뉴스가 없어요."}</p>`;
+  else {
+    const rows = c.items.slice(0, 10).map(n => {
+      let tone = newsTone(n.title); if (inv) tone = -tone;            // 인버스는 기초자산 호재가 내 ETF엔 악재
+      const tag = tone > 0 ? `<span class="nt up">호재</span>` : tone < 0 ? `<span class="nt down">악재</span>` : `<span class="nt">중립</span>`;
+      return `<li>${tag}<a href="${esc(n.link)}" target="_blank" rel="noopener noreferrer">${esc(n.title)}</a><small>${esc(n.source || "")} · ${ago(n.t)}</small></li>`;
+    });
+    const cnt = c.items.slice(0, 10).reduce((a, n) => { let t = newsTone(n.title); if (inv) t = -t; a[t]++; return a; }, { "1": 0, "-1": 0, "0": 0 });
+    body = `<p class="ln-sum num">호재 <b class="pos">${cnt[1]}</b> · 악재 <b class="neg">${cnt[-1]}</b> · 중립 ${cnt[0]}</p>
+      <ul class="ln-list">${rows.slice(0, 4).join("")}</ul>${rows.length > 4 ? `<details class="ln-more" data-sym="${g.sym}"><summary>뉴스 ${rows.length - 4}개 더 보기</summary><ul class="ln-list">${rows.slice(4).join("")}</ul></details>` : ""}`;
+  }
+  return `<div class="lev-news"><div class="ln-head"><b>${uName} 뉴스</b><small>제목으로 자동 분류${inv ? " · 인버스라 내 ETF 기준으로 뒤집어 표시" : ""}</small></div>${body}
+    <p class="fine">뉴스 제목의 단어로만 나눈 참고용이에요. 기사를 직접 확인하고 판단하세요. 매수·매도 권유가 아니에요.</p></div>`;
 }
 let levTimer = null;
 function levLoop(on) {
@@ -3365,7 +3415,7 @@ function renderScen() {
   let val = 1e6, mine = false;
   if (levHist && !levSample) { const g = levCompute(levState.pos).ok.find(x => x.sym === sym); if (g && g.val > 0) { val = g.val; mine = true; } }
   box.innerHTML = `<h2>🧮 시나리오 계산기</h2>
-    <p class="sub">${josa(uName, "이가")} 이렇게 움직이면 내 ${josa(nm, "은는")} 어떻게 될까? 오르내리기만 해도 레버리지는 녹아요.</p>
+    <p class="sub">${josa(uName, "이가")} 이렇게 움직이면 내 ${josa(nm, "은는")} 어떻게 될까? 오르내리기만 해도 레버리지는 변동성 손실이 생겨요.</p>
     <div class="al-grid">
       <label>ETF<select id="scSym">${LEV_ETFS.map(([s, u, l]) => `<option value="${s}"${s === sym ? " selected" : ""}>${levOpt(s, u, l)}</option>`).join("")}</select></label>
       <label>날마다 움직임 (%, 쉼표로)<input id="scMoves" value="${esc(scenState.moves)}" inputmode="text" placeholder="10, -10"></label>
@@ -3376,7 +3426,7 @@ function renderScen() {
       <div class="kpi"><span>정확히 ${Math.abs(L)}배였다면</span><b class="${r.exact >= 0 ? "pos" : "neg"}">${pctS(r.exact)}</b></div>
       <div class="kpi"><span>실제 ${nm}</span><b class="${r.e >= 0 ? "pos" : "neg"}">${pctS(r.e)}</b></div>
     </div>
-    <p class="lev-story" style="margin:6px 0">${mine ? `지금 내 ${nm} ${won(val)}어치` : `${nm} 100만 원어치`}라면 <b class="${r.e >= 0 ? "pos" : "neg"}">${wonS(val * r.e)}</b>. 정확히 ${Math.abs(L)}배보다 <b class="${r.e - r.exact >= 0 ? "pos" : "neg"}">${wonS(val * (r.e - r.exact))}</b>${r.e - r.exact < 0 ? "이 녹아요" : " 더 생겨요 (한 방향으로 쭉 갈 때)"}.${Math.abs(r.u) < 0.005 && r.e < -0.001 ? ` ${josa(uName, "은는")} 제자리인데 ${josa(nm, "은는")} ${pctS(r.e)}예요. 이게 음의 복리예요.` : ""}</p>` : `<p class="fine">움직임을 숫자로 넣어 주세요. 예: 10, -10</p>`}
+    <p class="lev-story" style="margin:6px 0">${mine ? `지금 내 ${nm} ${won(val)}어치` : `${nm} 100만 원어치`}라면 <b class="${r.e >= 0 ? "pos" : "neg"}">${wonS(val * r.e)}</b>. 정확히 ${Math.abs(L)}배보다 <b class="${r.e - r.exact >= 0 ? "pos" : "neg"}">${wonS(val * (r.e - r.exact))}</b>${r.e - r.exact < 0 ? " 변동성 손실이 생겨요" : " 더 생겨요 (한 방향으로 쭉 갈 때)"}.${Math.abs(r.u) < 0.005 && r.e < -0.001 ? ` ${josa(uName, "은는")} 제자리인데 ${josa(nm, "은는")} ${pctS(r.e)}예요. 이게 음의 복리예요.` : ""}</p>` : `<p class="fine">움직임을 숫자로 넣어 주세요. 예: 10, -10</p>`}
     <p class="fine">하루 단위로 매일 ${Math.abs(L)}배씩 다시 맞추는 구조만 계산했어요(보수·환율 제외).</p>`;
   document.getElementById("scSym").addEventListener("change", e => { scenState.sym = e.target.value; renderScen(); });
   const mv = document.getElementById("scMoves");
@@ -3435,10 +3485,10 @@ function levFxHTML(g) {
 function levFutureHTML(g) {
   const sd = levVol(levH(g.sym), g.m.u); if (!sd || !(g.val > 0)) return "";
   const uName = LEV_U[g.m.u].ko, rows = [["1주", 5], ["1달", 21], ["3달", 63]].map(([k, n]) => { const d = levDrag(g.m.L, sd, n); return `<tr><td>${k} 뒤</td><td class="r num neg">-${fmt(d * 100)}%</td><td class="r num neg">-${won(g.val * d).replace("-", "")}</td></tr>`; }).join("");
-  return `<details class="lev-fut" open><summary>📉 앞으로 녹을 돈 미리보기</summary>
-    <p class="fine" style="margin:4px 0 6px">요즘 ${josa(uName, "은는")} 하루에 평균 ±${fmt(sd * 100)}%씩 출렁여요. 이 출렁임이 이어지고 ${josa(uName, "이가")} 그 기간 뒤 <b>지금 가격 그대로</b>라면, 지금 ${won(g.val)}어치 ${josa(g.name, "은는")} 이만큼 녹아 있어요.</p>
-    <table class="trades lev-fut-t"><thead><tr><th>기간</th><th class="r">녹는 비율</th><th class="r">녹는 돈</th></tr></thead><tbody>${rows}</tbody></table>
-    <p class="fine" style="margin-top:4px">평균적인 경우이고 보수 연 1%를 넣었어요. 출렁임이 커지면 더 녹고, 한 방향으로 쭉 가면 덜 녹거나 오히려 더 벌 수 있어요. 예측이 아니라 '지금 출렁임이 이어진다면'의 계산이에요.</p></details>`;
+  return `<details class="lev-fut" open><summary>📉 앞으로의 변동성 손실 미리보기</summary>
+    <p class="fine" style="margin:4px 0 6px">요즘 ${josa(uName, "은는")} 하루에 평균 ±${fmt(sd * 100)}%씩 출렁여요. 이 출렁임이 이어지고 ${josa(uName, "이가")} 그 기간 뒤 <b>지금 가격 그대로</b>라면, 지금 ${won(g.val)}어치 ${josa(g.name, "은는")} 이만큼 줄어 있어요.</p>
+    <table class="trades lev-fut-t"><thead><tr><th>기간</th><th class="r">예상 손실률</th><th class="r">예상 손실액</th></tr></thead><tbody>${rows}</tbody></table>
+    <p class="fine" style="margin-top:4px">평균적인 경우이고 보수 연 1%를 넣었어요. 출렁임이 커지면 손실이 커지고, 한 방향으로 쭉 가면 줄거나 오히려 이득이 될 수 있어요. 예측이 아니라 '지금 출렁임이 이어진다면'의 계산이에요.</p></details>`;
 }
 function levBar(label, v, max, cls, sub) {
   const w = max > 0 ? Math.min(100, Math.abs(v) / max * 100) : 0;
@@ -3452,11 +3502,11 @@ function levCardHTML(g) {
   const tag = now.mode === "live" ? `<span class="pill good">● 실시간</span>` : now.mode === "est" ? `<span class="pill warn" title="ETF 마지막 거래 가격 × 그 뒤 코인 움직임 × 배율">추정가</span>` : now.mode === "last" ? `<span class="pill info">마지막 거래가${g.m.kr ? "" : " (애프터장 포함)"}</span>` : `<span class="pill info">${levH(g.sym).dates[now.T].slice(5).replace("-", "/")} 종가 기준</span>`;
   const up = g.ru >= 0, levTxt = g.lev >= 0 ? "레버리지 덕분에 더 번 돈" : "레버리지 때문에 더 잃은 돈";
   const max = Math.max(...[g.one, g.lev, g.amp, g.decay, g.fx].map(Math.abs));
-  const decayTxt = g.decay <= 0 ? "음의 복리·비용으로 녹은 돈" : "출렁임 덕분에 오히려 더 생긴 돈";
+  const decayTxt = g.decay <= 0 ? "변동성 손실 (음의 복리·비용)" : "추세 이득 (한 방향으로 움직여 생긴 이득)";
   const story = `${josa(uName, "이가")} 산 뒤로 <b>${pctS(g.ru)}</b> 움직이는 동안 ${josa(g.name, "은는")} <b>${pctS(g.re)}</b> 움직였어요${g.m.kr ? "" : "(환율 영향 뺀 값)"}. `
     + (inv ? `${josa(g.name, "은는")} ${josa(uName, "과와")} 반대로 ${-L}배 움직이는 인버스예요. ` : "")
     + `같은 돈으로 ${josa(uName, "을를")} ${inv ? "1배로 공매도했다면" : "그냥 1배로 샀다면"} ${wonS(g.one)}이었을 텐데, 레버리지 때문에 <b class="${g.lev >= 0 ? "pos" : "neg"}">${won(Math.abs(g.lev))} ${g.lev >= 0 ? "더 벌었어요" : "더 잃었어요"}</b>. `
-    + (Math.abs(g.decay) >= 1 ? (g.decay < 0 ? `정확히 ${Math.abs(L)}배였다면 ${wonS(g.exact)}이었을 텐데, 매일 다시 맞추는 구조(음의 복리)와 보수·비용 때문에 <b class="neg">${won(-g.decay)}</b>이 녹았어요.` : `한 방향으로 꾸준히 움직여서 정확히 ${Math.abs(L)}배(${wonS(g.exact)})보다 <b class="pos">${won(g.decay)}</b> 더 나왔어요. 추세가 꺾이고 오르내리면 반대로 녹기 시작해요.`) : "");
+    + (Math.abs(g.decay) >= 1 ? (g.decay < 0 ? `정확히 ${Math.abs(L)}배였다면 ${wonS(g.exact)}이었을 텐데, 매일 배율을 다시 맞추는 구조(음의 복리)와 보수·비용 때문에 <b class="neg">${won(-g.decay)}</b>의 변동성 손실이 생겼어요.` : `한 방향으로 꾸준히 움직여서 정확히 ${Math.abs(L)}배(${wonS(g.exact)})보다 <b class="pos">${won(g.decay)}</b> 더 나왔어요. 추세가 꺾이고 오르내리면 반대로 변동성 손실이 생기기 시작해요.`) : "");
   const beTxt = `<b>${levPx(g.sym, g.beU)}</b>(지금보다 ${pctS(g.beU / now.Unow - 1)})`;
   const be = !(g.beU > 0) ? "" : g.actual0 >= 0 ? `${josa(uName, "이가")} ${beTxt}${g.beU >= now.Unow ? "보다 오르면" : "보다 내려가면"} 손실로 바뀌어요.`
     : `본전이 되려면 ${josa(uName, "이가")} ${beTxt}까지 ${g.beU >= now.Unow ? "올라야" : "내려야"} 해요.`;
@@ -3466,14 +3516,15 @@ function levCardHTML(g) {
         <div class="lev-quote num"><span class="q-px">${levPx(g.sym, now.Enow)}</span><span class="${g.re >= 0 ? "pos" : "neg"}">${pctS(g.re)}</span><span class="q-sub">산 뒤 · ${uName} <b class="${g.ru >= 0 ? "pos" : "neg"}">${pctS(g.ru)}</b> (${levPx(g.sym, g.UbAvg)} → ${levPx(g.sym, now.Unow)})</span></div>
     <div class="lev-hero"><span>지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b><small class="num">${pctS(g.total / g.cost)} · 산 금액 ${won(g.cost)}</small></div>
     <dl class="lev-rows">
-      <div><dt>${g.lev >= 0 ? "레버리지로 더 번 돈" : "레버리지로 더 잃은 돈"} <small>${uName} 1배 대비</small></dt><dd class="num ${g.lev >= 0 ? "pos" : "neg"}">${wonS(g.lev)}</dd></div>
-      <div><dt>${g.decay <= 0 ? "음의 복리로 녹은 돈" : "추세 덕분에 더 생긴 돈"} <small>정확히 ${Math.abs(L)}배 대비</small></dt><dd class="num ${g.decay >= 0 ? "pos" : "neg"}">${wonS(g.decay)}</dd></div>
+      <div><dt>레버리지 효과 <small>${uName} 1배였다면 ${wonS(g.one)}</small></dt><dd class="num ${g.lev >= 0 ? "pos" : "neg"}">${wonS(g.lev)}</dd></div>
+      <div><dt>${g.decay <= 0 ? "변동성 손실" : "추세 이득"} <small>정확히 ${Math.abs(L)}배였다면 ${wonS(g.exact)}</small></dt><dd class="num ${g.decay >= 0 ? "pos" : "neg"}">${wonS(g.decay)}</dd></div>
       ${g.m.kr ? "" : `<div><dt>${g.fx >= 0 ? "환율로 번 돈 (환차익)" : "환율로 잃은 돈 (환차손)"} <small>산 날 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원</small></dt><dd class="num ${g.fx >= 0 ? "pos" : "neg"}">${wonS(g.fx)}</dd></div>`}
       ${g.beU > 0 ? `<div><dt>${g.actual0 >= 0 ? "손실로 바뀌는 선" : "본전까지"} <small>${uName}</small></dt><dd class="num">${levPx(g.sym, g.beU)} <small>${pctS(g.beU / now.Unow - 1)}</small></dd></div>` : ""}
     </dl>
     ${levChart(g)}
+    ${levNewsHTML(g)}
     ${g.ok.some(r => r.warn) ? `<p class="note">산 가격이 그날 시세와 30% 넘게 달라요. 날짜·단가·통화(원/달러)를 확인해 주세요.</p>` : ""}
-    <details class="lev-more" data-sym="${g.sym}"><summary>자세히 · 왜 이만큼일까, 앞으로 녹을 돈</summary>
+    <details class="lev-more" data-sym="${g.sym}"><summary>자세히 · 왜 이만큼일까, 환율, 앞으로의 변동성 손실</summary>
     <p class="lev-px">${uName}${LEV_U[g.m.u].proxy ? `(${LEV_U[g.m.u].proxy})` : ""} <b class="num">${levPx(g.sym, now.Unow)}</b>${now.uLive ? "" : " (기록)"} · ${g.name} <b class="num">${levPx(g.sym, now.Enow)}</b>${now.mode === "est" ? " (추정)" : ""} ${g.m.kr ? "" : `· 환율 <b class="num">${Math.round(now.FXnow).toLocaleString("ko-KR")}원</b>${now.fxLive ? "" : " (기록)"}`}</p>
     <h3 class="lev-h3">왜 이만큼일까?</h3>
     ${levBar(`${uName} 1배 몫`, g.one, max, "", `${uName} ${pctS(g.ru)}${inv ? " (반대로)" : ""}`)}
@@ -3485,10 +3536,10 @@ function levCardHTML(g) {
     ${g.m.kr ? "" : levBar("환율로 생긴 손익", g.fx, max, "", `산 날 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원`)}
     <div class="lev-sum"><span>합계 = 지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></div>
     <p class="lev-story">${story}</p>
-    ${be || back ? `<p class="note">${be} ${back} <small>(${josa(uName, "이가")} 지금부터 곧장 그 가격으로 간다고 가정, ${g.m.kr ? "" : "환율 변화 제외. "}오르내리며 가면 더 녹아요.)</small></p>` : ""}
+    ${be || back ? `<p class="note">${be} ${back} <small>(${josa(uName, "이가")} 지금부터 곧장 그 가격으로 간다고 가정, ${g.m.kr ? "" : "환율 변화 제외. "}오르내리며 가면 변동성 손실이 더 생겨요.)</small></p>` : ""}
     ${levFxHTML(g)}
     ${levFutureHTML(g)}
-    ${g.ok.length > 1 || errs.length ? `<details class="lev-lots" data-sym="${g.sym}"><summary>산 날짜별로 보기 (${g.lots.length}번)</summary><div class="table-scroll"><table class="trades"><thead><tr><th>산 날</th><th class="r">수량</th><th class="r">산 금액</th><th class="r">${uName}</th><th class="r">지금 손익</th><th class="r">녹은 돈</th></tr></thead><tbody>
+    ${g.ok.length > 1 || errs.length ? `<details class="lev-lots" data-sym="${g.sym}"><summary>산 날짜별로 보기 (${g.lots.length}번)</summary><div class="table-scroll"><table class="trades"><thead><tr><th>산 날</th><th class="r">수량</th><th class="r">산 금액</th><th class="r">${uName}</th><th class="r">지금 손익</th><th class="r">변동성 손실</th></tr></thead><tbody>
       ${g.lots.map(r => r.err ? `<tr><td>${esc(r.p.date)}</td><td colspan="5" class="neg">${esc(r.err)}</td></tr>` : `<tr><td>${r.p.date}</td><td class="r num">${r.qty.toLocaleString("ko-KR")}</td><td class="r num">${won(r.cost)}</td><td class="r num">${pctS(r.ru)}</td><td class="r num ${r.total >= 0 ? "pos" : "neg"}">${wonS(r.total)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${wonS(r.decay)}</td></tr>`).join("")}
       </tbody></table></div></details>` : ""}
     ${LEV_U[g.m.u].proxy ? `<p class="fine">${uName} 가격은 같은 지수를 1배로 따라가는 ${LEV_U[g.m.u].proxy}의 가격으로 보여주고 계산해요. ${now.src && /20분/.test(now.src.e.how) ? " 국내 시세는 약 20분 늦게 들어와요." : ""}</p>` : ""}
@@ -3520,8 +3571,8 @@ function renderHomeLev() {
       box.innerHTML = `<div class="lev-head"><h2>내 레버리지 ETF</h2>${live}</div>
         <div class="lev-hero"><span>지금 손익 (레버리지 ETF ${ok.length}개)</span><b class="num ${sum("total") >= 0 ? "pos" : "neg"}">${wonS(sum("total"))}</b></div>
         <dl class="lev-rows">
-          <div><dt>레버리지로 1배보다</dt><dd class="num ${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</dd></div>
-          <div><dt>음의 복리·비용</dt><dd class="num ${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</dd></div>
+          <div><dt>레버리지 효과 (1배 대비)</dt><dd class="num ${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</dd></div>
+          <div><dt>변동성 손실·비용</dt><dd class="num ${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</dd></div>
           ${ok.some(g => !g.m.kr) ? `<div><dt>환율로 생긴 손익</dt><dd class="num ${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</dd></div>` : ""}
         </dl>
         <ul class="h-lev-list">${ok.map(g => `<li><b>${g.name}</b><span>${LEV_U[g.m.u].ko} ${pctS(g.ru)} → ${pctS(g.re)}</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></li>`).join("")}</ul>
@@ -3542,11 +3593,12 @@ function renderLevResults() {
   const t = new Date();
   const total = ok.length > 1 ? `<section class="panel lev-total"><h2>전체 레버리지 ETF ${ok.length}개</h2><div class="kpis">
       <div class="kpi"><span>지금 손익</span><b class="${sum("total") >= 0 ? "pos" : "neg"}">${wonS(sum("total"))}</b></div>
-      <div class="kpi"><span>레버리지 효과(1배 대비)</span><b class="${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</b></div>
-      <div class="kpi"><span>음의 복리·비용</span><b class="${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</b></div>
+      <div class="kpi"><span>레버리지 효과 (1배 대비)</span><b class="${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</b></div>
+      <div class="kpi"><span>변동성 손실·비용</span><b class="${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</b></div>
       <div class="kpi"><span>환율</span><b class="${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</b></div></div></section>` : "";
   const openSet = new Set([...box.querySelectorAll("details.lev-lots[open]")].map(d => d.dataset.sym));
   const moreSet = new Set([...box.querySelectorAll("details.lev-more[open]")].map(d => d.dataset.sym));
+  const newsSet = new Set([...box.querySelectorAll("details.ln-more[open]")].map(d => d.dataset.sym));
   const srcOpen = !!box.querySelector("#levSrc[open]");
   const kst = t => new Date(t * 1000).toLocaleString("ko-KR", { month: "numeric", day: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false });
   const ago = t => { const m = Math.round((Date.now() / 1000 - t) / 60); return m < 1 ? "방금" : m < 60 ? `${m}분 전` : m < 1440 ? `${Math.round(m / 60)}시간 전` : `${Math.round(m / 1440)}일 전`; };
@@ -3564,6 +3616,7 @@ function renderLevResults() {
     산 순간의 기초자산 가격은 산 날 종가와 산 가격 차이로 거꾸로 추정했어요. 토스증권이 실제로 쓴 환율과 수수료·세금은 반영하지 않아서 앱 숫자와 조금 다를 수 있어요. 계산만 보여드리고, 사고팔라는 권유가 아니에요.</p>`;
   box.querySelectorAll("details.lev-lots").forEach(d => { if (openSet.has(d.dataset.sym)) d.open = true; });
   box.querySelectorAll("details.lev-more").forEach(d => { if (moreSet.has(d.dataset.sym)) d.open = true; });
+  box.querySelectorAll("details.ln-more").forEach(d => { if (newsSet.has(d.dataset.sym)) d.open = true; });
   if (srcOpen && document.getElementById("levSrc")) document.getElementById("levSrc").open = true;
   levShareGroups = Object.fromEntries(ok.map(g => [g.sym, g]));
   const amtBox = document.getElementById("levShareAmt");
