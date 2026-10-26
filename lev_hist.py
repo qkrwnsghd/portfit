@@ -35,6 +35,16 @@ LEV = {
     "AAPU": ("AAPL", 2), "AMZU": ("AMZN", 2), "GGLL": ("GOOGL", 2),
 }
 CRYPTO = {"BTC": "BTC-USD", "ETH": "ETH-USD", "SOL": "SOL-USD", "XRP": "XRP-USD"}
+# 국내 레버리지 ETF: 종목코드 → (기초 1배 ETF 종목코드, 배율). 한국거래소 날짜로 따로 저장 (명절 휴장일이 미국과 달라서)
+# 기초자산 지수 대신 같은 지수를 1배로 따라가는 ETF(KODEX 200, KODEX 코스닥150)의 종가를 써요.
+KR = {
+    "122630": ("069500", 2),    # KODEX 레버리지 (코스피200 2배)
+    "123320": ("069500", 2),    # TIGER 레버리지
+    "252670": ("069500", -2),   # KODEX 200선물인버스2X
+    "114800": ("069500", -1),   # KODEX 인버스
+    "233740": ("229200", 2),    # KODEX 코스닥150레버리지
+    "251340": ("229200", -1),   # KODEX 코스닥150선물인버스
+}
 
 
 def r6(x):
@@ -55,6 +65,51 @@ def closes(df, sym):
         return None
     s = s.dropna()
     return s if len(s) else None
+
+
+def collect_kr(yf, pd, start, end):
+    syms = sorted(set(KR) | {u for u, _ in KR.values()})
+    ys = [s + ".KS" for s in syms]
+    print(f"국내 일봉 받는 중: {len(ys)}개")
+    df = yf.download(ys, start=start.isoformat(), end=end.isoformat(), interval="1d", auto_adjust=False, progress=False, group_by="column", threads=True)
+    base = closes(df, "069500.KS")
+    if base is None or len(base) < 100:
+        print("KODEX 200 종가가 부족해서 국내는 건너뛰어요.")
+        return None
+    dates = [d.date() for d in base.index]
+
+    def aligned(sym):
+        s = closes(df, sym + ".KS")
+        if s is None:
+            return [None] * len(dates)
+        m = {d.date(): float(v) for d, v in s.items()}
+        return [r6(m.get(d)) for d in dates]
+
+    under = {u: aligned(u) for u in {u for u, _ in KR.values()}}
+    etf, check = {}, {}
+    for e, (u, L) in sorted(KR.items()):
+        c = aligned(e)
+        if sum(1 for v in c if v) < 20:
+            print(f"  {e}: 데이터 부족, 건너뜀")
+            continue
+        etf[e] = {"u": u, "L": L, "c": c}
+        xs, ys2 = [], []
+        uc = under[u]
+        for i in range(max(1, len(dates) - 250), len(dates)):
+            if c[i] and c[i - 1] and uc[i] and uc[i - 1]:
+                xs.append(uc[i] / uc[i - 1] - 1)
+                ys2.append(c[i] / c[i - 1] - 1)
+        if len(xs) > 30:
+            mx, my = sum(xs) / len(xs), sum(ys2) / len(ys2)
+            vx = sum((x - mx) ** 2 for x in xs)
+            beta = sum((x - mx) * (y - my) for x, y in zip(xs, ys2)) / vx if vx else None
+            check[e] = {"beta": r6(beta), "n": len(xs)}
+            flag = "" if beta is not None and abs(beta - L) < 0.25 else "  ← 배율 확인 필요"
+            print(f"  {e}: 기초 {u} × {L}배, 실제 기울기 {beta:.2f} ({len(xs)}일){flag}")
+    ds = [d.isoformat() for d in dates]
+    close_ts = [int(pd.Timestamp(f"{d} 15:30", tz="Asia/Seoul").timestamp()) for d in ds]
+    print(f"국내: ETF {len(etf)}개, {len(ds)}일, 마지막 날 {ds[-1]}")
+    return {"asof": ds[-1], "dates": ds, "closeTs": close_ts, "fx": [1] * len(ds), "etf": etf, "under": under, "splits": {}, "check": check}
 
 
 def main():
@@ -152,7 +207,14 @@ def main():
         except Exception as ex:                # noqa: BLE001
             print(f"  {e} 분할 기록 실패: {ex}")
 
+    kr = None
+    try:
+        kr = collect_kr(yf, pd, start, end)
+    except Exception as ex:                    # noqa: BLE001
+        print(f"국내 레버리지 실패: {ex}")
+
     data = {
+        "kr": kr,
         "asof": ds[-1],
         "source": "Yahoo Finance (yfinance) 일봉 · 코인은 뉴욕 16시 1시간 봉",
         "dates": ds, "closeTs": close_ts, "fx": fx,
