@@ -255,7 +255,12 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 .fb-fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 20px; z-index: 40; border-radius: 999px; padding: 10px 16px; font-weight: 700; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(11, 18, 48, .18); }
 .fb-fab:hover { box-shadow: 0 0 0 3px var(--btn-glow), 0 6px 20px rgba(11, 18, 48, .18); }
 @media (max-width: 720px) { .fb-fab { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); padding: 8px 13px; font-size: 13px; } }
-dialog#fbDlg, dialog#welcomeDlg { border: 0; border-radius: 22px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
+dialog#levTradeDlg::backdrop { background: rgba(6, 10, 24, .55); }
+.lt-side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 12px; }
+.lt-side button { border: 1px solid var(--line); background: var(--soft); color: var(--muted); border-radius: 10px; padding: 9px; font-weight: 700; }
+.lt-side button[data-side="buy"][aria-pressed="true"] { background: var(--up); border-color: var(--up); color: #fff; }
+.lt-side button[data-side="sell"][aria-pressed="true"] { background: var(--down); border-color: var(--down); color: #fff; }
+dialog#levTradeDlg, dialog#fbDlg, dialog#welcomeDlg { border: 0; border-radius: 22px; padding: 0; width: min(440px, calc(100vw - 32px)); background: var(--surface); color: var(--ink); box-shadow: 0 20px 60px rgba(0,0,0,.25); }
 dialog#fbDlg::backdrop, dialog#welcomeDlg::backdrop { background: rgba(6, 10, 24, .55); }
 .fb-rate { display: flex; gap: 8px; margin: 2px 0 4px; }
 .fb-rate button { font-size: 26px; padding: 6px 12px; border-radius: 14px; background: var(--soft); border: 2px solid transparent; }
@@ -415,6 +420,7 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-be { margin: 0 0 6px; font-size: 13.5px; background: var(--soft); border-radius: 10px; padding: 8px 10px; }
 .lev-more { margin-top: 6px; }
 .lev-more > summary { cursor: pointer; font-weight: 700; font-size: 13.5px; color: var(--accent); padding: 6px 0; }
+.lev-adv { margin: 0 0 10px; } .lev-adv summary { cursor: pointer; font-size: 12.5px; color: var(--muted); margin-bottom: 6px; }
 .lev-fx { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); margin: 0 0 10px; }
 .lev-cap { display: inline-flex; margin-bottom: 4px; }
 .lev-fxbox { background: var(--soft); border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 13.5px; }
@@ -549,6 +555,7 @@ footer a { color: var(--accent); }
 .theme-btn + .acct-btn { margin-left: 8px; }
 .ic { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .ic-btn { display: inline-flex; align-items: center; gap: 4px; border: 1px solid var(--line); background: transparent; color: var(--muted); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; }
+.ic-btn.ic-buy { color: var(--accent); border-color: color-mix(in srgb, var(--accent) 50%, transparent); }
 .ic-btn:hover { color: var(--accent); border-color: var(--accent); }
 .lev-head h2 { font-size: 18px; letter-spacing: -.01em; }
 .lev-head h2 small { font-family: var(--font-num); font-size: 12px; }
@@ -656,10 +663,13 @@ footer a { color: var(--accent); }
   <div class="layout">
     <section class="panel inputs" aria-labelledby="lev-in-title">
       <h2 id="lev-in-title">내 레버리지 ETF</h2>
-      <p class="sub">매수일, 수량, 매수 단가(원)를 넣으세요. 저장돼요.</p>
+      <p class="sub">처음 한 번만 넣고, 그 뒤로는 카드의 <b>+ 매수 / − 매도</b>로 수량과 단가만 기록하면 돼요.</p>
       <div id="levImport"></div>
       <ul class="lev-list" id="levList"></ul>
-      <label class="lev-fx">💱 토스 환율로 맞추기 <span class="g-in"><input id="levFx" type="number" inputmode="decimal" min="500" max="3000" step="any" placeholder="비우면 실시간"><span>원</span></span></label>
+      <details class="lev-adv"><summary>고급 설정</summary>
+        <label class="lev-fx">토스 환율로 맞추기 (선택) <span class="g-in"><input id="levFx" type="number" inputmode="decimal" min="500" max="3000" step="any" placeholder="비우면 실시간 환율"><span>원</span></span></label>
+        <p class="fine">매수할 때의 환율은 매수일로 자동 계산돼요. 이 칸은 지금 환율을 토스와 똑같이 맞추고 싶을 때만 쓰세요.</p>
+      </details>
       <div class="btns">
         <button type="button" class="primary" id="levAdd">+ 직접 추가</button>
         <button type="button" id="levClear">모두 지우기</button>
@@ -715,6 +725,20 @@ footer a { color: var(--accent); }
   </div>
 
   <button type="button" class="fb-fab" id="fbFab" aria-label="의견 보내기">💬 의견</button>
+
+  <dialog id="levTradeDlg" aria-labelledby="lt-title">
+    <form method="dialog" class="acct" id="ltForm" novalidate>
+      <div class="acct-head"><h2 id="lt-title">추가 매수</h2><button type="button" class="x" id="ltClose" aria-label="닫기">×</button></div>
+      <p class="sub" id="ltSub"></p>
+      <div class="lt-side" role="group" aria-label="매수 또는 매도"><button type="button" data-side="buy" aria-pressed="true">매수</button><button type="button" data-side="sell" aria-pressed="false">매도</button></div>
+      <label>수량<input id="ltQty" type="number" inputmode="decimal" min="0" step="any" placeholder="몇 주"></label>
+      <label id="ltPriceL">단가 (1주 가격, 원)<input id="ltPrice" type="number" inputmode="decimal" min="0" step="any"></label>
+      <label><span id="ltDateL">매수일</span><input id="ltDate" type="date"></label>
+      <p class="fine" id="ltHint">단가는 지금 시세로 미리 채워 뒀어요. 토스에서 체결된 가격으로 고치면 더 정확해요. 매수일은 오늘이 기본이에요.</p>
+      <p class="al-msg bad" id="ltMsg" hidden></p>
+      <div class="btns"><button type="button" class="primary" id="ltSave">기록하기</button></div>
+    </form>
+  </dialog>
 
   <dialog id="fbDlg" aria-labelledby="fb-title">
     <form method="dialog" class="acct" id="fbForm" novalidate>
@@ -3433,12 +3457,57 @@ function renderScen() {
   mv.addEventListener("change", () => { scenState.moves = mv.value; renderScen(); });
   box.querySelectorAll("[data-mv]").forEach(b => b.addEventListener("click", () => { scenState.moves = b.dataset.mv; scenState.sym = sym; renderScen(); track("lev_scenario"); }));
 }
+// 지금 1주 가격(원): 실시간·추정 시세 × 환율
+function levNowKrw(sym) {
+  const H = levH(sym); if (!H || !H.etf[sym]) return null;
+  const n = levNow(sym, H, levLive, Date.now() / 1000);
+  return n.Enow > 0 ? Math.round(n.Enow * n.FXnow * (LEV_MAP[sym].kr ? 1 : 1)) : null;
+}
 function levAdd() {
   if (levSample) levState.pos = [];
-  const H = levHist, d = H ? H.dates[Math.max(0, H.dates.length - 21)] : today();
-  const e = H && H.etf.BITX ? H.etf.BITX.c[levIdx(H, d)] : null;
-  levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym: "BITX", date: d, qty: 1, price: e ? Math.round(e * H.fx[levIdx(H, d)]) : 10000, cur: "KRW" });
+  levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym: "BITX", date: today(), qty: 1, price: levNowKrw("BITX") || 10000, cur: "KRW" });
   levSave(); renderLev(); levRefresh(true); track("lev_add");
+}
+// ----- 매매일지처럼: 카드에서 + 매수 / − 매도 -----
+let ltState = { sym: "", side: "buy" };
+function openLevTrade(sym, side) {
+  ltState = { sym, side };
+  const d = document.getElementById("levTradeDlg"), px = levNowKrw(sym);
+  const held = (levSample ? [] : levState.pos).filter(p => p.sym === sym).reduce((a, p) => a + p.qty, 0);
+  document.getElementById("ltSub").textContent = `${levName(sym)} · 지금 들고 있는 ${+held.toFixed(6)}주${px ? ` · 지금 시세 약 ${px.toLocaleString("ko-KR")}원` : ""}`;
+  document.getElementById("ltQty").value = "";
+  document.getElementById("ltPrice").value = px || "";
+  document.getElementById("ltDate").value = today(); document.getElementById("ltDate").max = today();
+  document.getElementById("ltMsg").hidden = true;
+  setSide(side);
+  if (!d.open) d.showModal();
+  setTimeout(() => document.getElementById("ltQty").focus(), 50);
+}
+function setSide(side) {
+  ltState.side = side;
+  document.querySelectorAll(".lt-side button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.side === side)));
+  document.getElementById("lt-title").textContent = side === "buy" ? "추가 매수 기록" : "매도 기록";
+  document.getElementById("ltPriceL").hidden = side === "sell";
+  document.getElementById("ltDateL").textContent = side === "buy" ? "매수일" : "매도일";
+  document.getElementById("ltHint").textContent = side === "buy" ? "단가는 지금 시세로 미리 채워 뒀어요. 토스에서 체결된 가격으로 고치면 더 정확해요. 매수일은 오늘이 기본이에요." : "먼저 산 것부터 판 것으로 보고 수량을 줄여요. (토스 등 국내 증권사와 같은 방식은 평균단가가 그대로예요)";
+}
+function saveLevTrade() {
+  const msg = t => { const m = document.getElementById("ltMsg"); m.textContent = t; m.hidden = !t; };
+  const qty = Number(document.getElementById("ltQty").value), price = Number(document.getElementById("ltPrice").value), date = toDate(document.getElementById("ltDate").value) || today();
+  if (!(qty > 0)) return msg("수량을 넣어 주세요.");
+  if (levSample) levState.pos = levSampleList().map(x => ({ ...x }));
+  if (ltState.side === "buy") {
+    if (!(price > 0)) return msg("단가를 넣어 주세요.");
+    levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym: ltState.sym, date, qty, price, cur: "KRW" });
+  } else {
+    const lots = levState.pos.filter(p => p.sym === ltState.sym).sort((a, b) => a.date.localeCompare(b.date));
+    const held = lots.reduce((a, p) => a + p.qty, 0);
+    if (qty > held + 1e-9) return msg(`들고 있는 수량(${+held.toFixed(6)}주)보다 많이 팔 수 없어요.`);
+    let need = qty;
+    for (const l of lots) { const q = Math.min(need, l.qty); l.qty = Math.round((l.qty - q) * 1e8) / 1e8; need -= q; if (need <= 1e-9) break; }
+    levState.pos = levState.pos.filter(p => p.qty > 1e-9);
+  }
+  levSave(); document.getElementById("levTradeDlg").close(); renderLev(); levRefresh(true); track("lev_trade", { side: ltState.side });
 }
 
 function levChart(g) {
@@ -3512,7 +3581,7 @@ function levCardHTML(g) {
     : `본전이 되려면 ${josa(uName, "이가")} ${beTxt}까지 ${g.beU >= now.Unow ? "올라야" : "내려야"} 해요.`;
   const back = Math.abs(g.UbAvg / now.Unow - 1) > 0.002 ? `${josa(uName, "이가")} 매수 시점 가격(${levPx(g.sym, g.UbAvg)})으로 돌아오면 ${josa(g.name, "은는")} 약 <b class="${g.backRe >= 0 ? "pos" : "neg"}">${pctS(g.backRe)}</b>예요.` : "";
   return `<section class="panel lev-card" aria-label="${g.name} 레버리지 분석">
-    <div class="lev-head"><h2>${g.name} <small>${uName} ${inv ? "인버스 " + -L : L}x</small></h2><span class="lev-tags">${tag}<button type="button" class="ic-btn" data-al="${g.sym}" aria-label="${g.name} 규칙 알림">${ICON.bell}<span>알림</span></button><button type="button" class="ic-btn" data-share="${g.sym}" aria-label="${g.name} 공유 이미지">${ICON.share}<span>공유</span></button></span></div>
+    <div class="lev-head"><h2>${g.name} <small>${uName} ${inv ? "인버스 " + -L : L}x</small></h2><span class="lev-tags">${tag}<button type="button" class="ic-btn ic-buy" data-buy="${g.sym}" aria-label="${g.name} 추가 매수">+ 매수</button><button type="button" class="ic-btn" data-sell="${g.sym}" aria-label="${g.name} 매도">− 매도</button><button type="button" class="ic-btn" data-al="${g.sym}" aria-label="${g.name} 규칙 알림">${ICON.bell}<span>알림</span></button><button type="button" class="ic-btn" data-share="${g.sym}" aria-label="${g.name} 공유 이미지">${ICON.share}<span>공유</span></button></span></div>
         <div class="lev-quote num"><span class="q-px">${levPx(g.sym, now.Enow)}</span><span class="${g.re >= 0 ? "pos" : "neg"}">${pctS(g.re)}</span><span class="q-sub">매수 후 · ${uName} <b class="${g.ru >= 0 ? "pos" : "neg"}">${pctS(g.ru)}</b> (${levPx(g.sym, g.UbAvg)} → ${levPx(g.sym, now.Unow)})</span></div>
     <div class="lev-hero"><span>지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b><small class="num">${pctS(g.total / g.cost)} · 매수금액 ${won(g.cost)}</small></div>
     <dl class="lev-rows">
@@ -3845,6 +3914,9 @@ document.getElementById("tab-etf").addEventListener("click", () => { showTab("et
 document.getElementById("tab-trades").addEventListener("click", () => { showTab("trades"); try { history.replaceState(null, "", "#trades"); } catch (_) {} });
 document.getElementById("tab-lev").addEventListener("click", () => { showTab("lev"); try { history.replaceState(null, "", "#lev"); } catch (_) {} });
 document.getElementById("levAdd").addEventListener("click", levAdd);
+document.querySelectorAll(".lt-side button").forEach(b => b.addEventListener("click", () => setSide(b.dataset.side)));
+document.getElementById("ltSave").addEventListener("click", saveLevTrade);
+document.getElementById("ltClose").addEventListener("click", () => document.getElementById("levTradeDlg").close());
 (() => {
   const fx = document.getElementById("levFx"), v = loadJSON(LEV_FX_KEY, null);
   if (v && v.v) fx.value = v.v;
@@ -3856,6 +3928,8 @@ document.getElementById("levAdd").addEventListener("click", levAdd);
 })();
 document.getElementById("levResults").addEventListener("click", e => {
   const b = e.target.closest("[data-al]"); if (b) alPrefill(b.dataset.al);
+  const by = e.target.closest("[data-buy]"); if (by) openLevTrade(by.dataset.buy, "buy");
+  const se = e.target.closest("[data-sell]"); if (se) openLevTrade(se.dataset.sell, "sell");
   const sh = e.target.closest("[data-share]");
   if (sh && levShareGroups[sh.dataset.share]) shareCard(levCardData(levShareGroups[sh.dataset.share]), `portfit-${sh.dataset.share}.png`, document.getElementById("levShareMsg"));
 });
