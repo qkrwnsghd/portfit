@@ -417,6 +417,8 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .lev-more > summary { cursor: pointer; font-weight: 700; font-size: 13.5px; color: var(--accent); padding: 6px 0; }
 .lev-fx { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); margin: 0 0 10px; }
 .lev-cap { display: inline-flex; margin-bottom: 4px; }
+.lev-fxbox { background: var(--soft); border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 13.5px; }
+.lev-fxbox p { margin: 6px 0 0; }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -3420,6 +3422,16 @@ function levChart(g) {
   </svg>
   <p class="fine" style="margin-top:6px"><span style="color:var(--accent)">━</span> 내 ${g.name} 실제 · <span style="color:var(--c2)">╍</span> 정확히 ${g.m.L}배였다면 · <span style="color:var(--muted)">┅</span> ${LEV_U[g.m.u].ko} 1배 ${g.m.kr ? "" : "(환율 영향 뺀 수익률)"}</p>`;
 }
+function levFxHTML(g) {
+  if (g.m.kr || !(g.val > 0)) return "";
+  const H = levH(g.sym), fx = H.fx, r = [];
+  for (let i = fx.length - 1; i > 0 && r.length < 21; i--) if (fx[i] && fx[i - 1]) r.push(fx[i] - fx[i - 1]);
+  const sd = r.length > 10 ? Math.sqrt(r.reduce((a, b) => a + b * b, 0) / r.length) : null;      // 하루 환율 변화(원)의 크기
+  const usdVal = g.val / g.now.FXnow, per10 = usdVal * 10;
+  return `<div class="lev-fxbox"><b>💱 환율 영향</b>
+    <p>지금 ${josa(g.name, "은는")} 약 <b class="num">${usd(usdVal)}</b>어치라, 환율이 <b>10원</b> 오르면 원화로 <b class="num pos">+${won(per10)}</b>, 10원 내리면 <b class="num neg">-${won(per10).replace("-", "")}</b>이 바뀌어요.${sd ? ` 요즘 환율은 하루에 평균 ±${fmt(sd, 1)}원씩 움직여서, 환율 때문에만 하루 ±${won(usdVal * sd)} 정도 출렁여요.` : ""}</p>
+    <p class="fine">달러 자산이라 ETF 가격이 그대로여도 환율이 오르면 이익, 내리면 손실이 생겨요. 토스 환율로 맞추려면 왼쪽 '토스 환율로 맞추기'에 넣으세요.</p></div>`;
+}
 function levFutureHTML(g) {
   const sd = levVol(levH(g.sym), g.m.u); if (!sd || !(g.val > 0)) return "";
   const uName = LEV_U[g.m.u].ko, rows = [["1주", 5], ["1달", 21], ["3달", 63]].map(([k, n]) => { const d = levDrag(g.m.L, sd, n); return `<tr><td>${k} 뒤</td><td class="r num neg">-${fmt(d * 100)}%</td><td class="r num neg">-${won(g.val * d).replace("-", "")}</td></tr>`; }).join("");
@@ -3456,6 +3468,7 @@ function levCardHTML(g) {
     <dl class="lev-rows">
       <div><dt>${g.lev >= 0 ? "레버리지로 더 번 돈" : "레버리지로 더 잃은 돈"} <small>${uName} 1배 대비</small></dt><dd class="num ${g.lev >= 0 ? "pos" : "neg"}">${wonS(g.lev)}</dd></div>
       <div><dt>${g.decay <= 0 ? "음의 복리로 녹은 돈" : "추세 덕분에 더 생긴 돈"} <small>정확히 ${Math.abs(L)}배 대비</small></dt><dd class="num ${g.decay >= 0 ? "pos" : "neg"}">${wonS(g.decay)}</dd></div>
+      ${g.m.kr ? "" : `<div><dt>${g.fx >= 0 ? "환율로 번 돈 (환차익)" : "환율로 잃은 돈 (환차손)"} <small>산 날 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원</small></dt><dd class="num ${g.fx >= 0 ? "pos" : "neg"}">${wonS(g.fx)}</dd></div>`}
       ${g.beU > 0 ? `<div><dt>${g.actual0 >= 0 ? "손실로 바뀌는 선" : "본전까지"} <small>${uName}</small></dt><dd class="num">${levPx(g.sym, g.beU)} <small>${pctS(g.beU / now.Unow - 1)}</small></dd></div>` : ""}
     </dl>
     ${levChart(g)}
@@ -3473,6 +3486,7 @@ function levCardHTML(g) {
     <div class="lev-sum"><span>합계 = 지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></div>
     <p class="lev-story">${story}</p>
     ${be || back ? `<p class="note">${be} ${back} <small>(${josa(uName, "이가")} 지금부터 곧장 그 가격으로 간다고 가정, ${g.m.kr ? "" : "환율 변화 제외. "}오르내리며 가면 더 녹아요.)</small></p>` : ""}
+    ${levFxHTML(g)}
     ${levFutureHTML(g)}
     ${g.ok.length > 1 || errs.length ? `<details class="lev-lots" data-sym="${g.sym}"><summary>산 날짜별로 보기 (${g.lots.length}번)</summary><div class="table-scroll"><table class="trades"><thead><tr><th>산 날</th><th class="r">수량</th><th class="r">산 금액</th><th class="r">${uName}</th><th class="r">지금 손익</th><th class="r">녹은 돈</th></tr></thead><tbody>
       ${g.lots.map(r => r.err ? `<tr><td>${esc(r.p.date)}</td><td colspan="5" class="neg">${esc(r.err)}</td></tr>` : `<tr><td>${r.p.date}</td><td class="r num">${r.qty.toLocaleString("ko-KR")}</td><td class="r num">${won(r.cost)}</td><td class="r num">${pctS(r.ru)}</td><td class="r num ${r.total >= 0 ? "pos" : "neg"}">${wonS(r.total)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${wonS(r.decay)}</td></tr>`).join("")}
@@ -3508,6 +3522,7 @@ function renderHomeLev() {
         <dl class="lev-rows">
           <div><dt>레버리지로 1배보다</dt><dd class="num ${sum("lev") >= 0 ? "pos" : "neg"}">${wonS(sum("lev"))}</dd></div>
           <div><dt>음의 복리·비용</dt><dd class="num ${sum("decay") >= 0 ? "pos" : "neg"}">${wonS(sum("decay"))}</dd></div>
+          ${ok.some(g => !g.m.kr) ? `<div><dt>환율로 생긴 손익</dt><dd class="num ${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</dd></div>` : ""}
         </dl>
         <ul class="h-lev-list">${ok.map(g => `<li><b>${g.name}</b><span>${LEV_U[g.m.u].ko} ${pctS(g.ru)} → ${pctS(g.re)}</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></li>`).join("")}</ul>
         <div class="btns">${go}${act != null ? `<span class="fine" style="align-self:center">🔔 지켜보는 규칙 ${act}개</span>` : ""}</div>`;
