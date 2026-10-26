@@ -116,7 +116,7 @@ async function check(db: ReturnType<typeof admin>) {
     if (r.kind === "trail") lines.push(`규칙을 만든 뒤 최고가 ${fmtP(Number(extra.peak), q.cur)}에서 ${r.trail_pct}% 넘게 떨어졌어요.`);
     if (r.note) lines.push(`내가 정한 규칙: ${r.note}`);
     if (r.hint) lines.push(r.hint);
-    await pushTo(db, r.user_id, { title: `🔔 ${r.sym} ${r.label || (r.kind === "above" ? "목표가 도달" : r.kind === "trail" ? "고점 대비 하락" : "손절가 도달")}`, body: lines.join("\n"), url: SITE + "#lev", tag: `rule-${r.id}` });
+    await pushTo(db, r.user_id, { title: `🔔 ${LEV_NAME[r.sym] ?? r.sym} ${r.label || (r.kind === "above" ? "목표가 도달" : r.kind === "trail" ? "고점 대비 하락" : "손절가 도달")}`, body: lines.join("\n"), url: SITE + "#lev", tag: `rule-${r.id}` });
     fired++;
   }
   return { rules: (rules ?? []).length, syms: syms.length, fired };
@@ -131,7 +131,11 @@ const LEV: Record<string, [string, number, string]> = {
   TECL: ["XLK", 3, "기술주"], TNA: ["IWM", 3, "러셀2000"], LABU: ["XBI", 3, "바이오"], TMF: ["TLT", 3, "장기국채"], TSLL: ["TSLA", 2, "테슬라"], NVDL: ["NVDA", 2, "엔비디아"],
   NVDU: ["NVDA", 2, "엔비디아"], CONL: ["COIN", 2, "코인베이스"], MSTU: ["MSTR", 2, "스트래티지"], MSTX: ["MSTR", 2, "스트래티지"], AAPU: ["AAPL", 2, "애플"],
   AMZU: ["AMZN", 2, "아마존"], GGLL: ["GOOGL", 2, "알파벳"],
+  // 국내: 기초자산은 같은 지수를 1배로 따라가는 ETF
+  "122630": ["069500.KS", 2, "코스피200"], "123320": ["069500.KS", 2, "코스피200"], "252670": ["069500.KS", -2, "코스피200"], "114800": ["069500.KS", -1, "코스피200"],
+  "233740": ["229200.KS", 2, "코스닥150"], "251340": ["229200.KS", -1, "코스닥150"],
 };
+const LEV_NAME: Record<string, string> = { "122630": "KODEX 레버리지", "123320": "TIGER 레버리지", "252670": "KODEX 200선물인버스2X", "114800": "KODEX 인버스", "233740": "KODEX 코스닥150레버리지", "251340": "KODEX 코스닥150선물인버스" };
 type Daily = { ts: number[]; c: number[]; splits: { d: number; r: number }[]; last: number };
 const dcache = new Map<string, { at: number; v: Daily | null }>();
 async function daily(ysym: string, interval = "1d", range = "2y"): Promise<Daily | null> {
@@ -166,8 +170,8 @@ async function digestFor(db: ReturnType<typeof admin>, userId: string) {
   const lines: string[] = [];
   let totalPnl = 0, totalCost = 0, n = 0;
   for (const sym of [...new Set(pos.map((p) => p.sym))]) {
-    const [usym, L, uko] = LEV[sym];
-    const e = await daily(sym);
+    const [usym, L, uko] = LEV[sym], kr = /^\d{6}$/.test(sym);
+    const e = await daily(kr ? `${sym}.KS` : sym);
     if (!e || e.c.length < 2) continue;
     const k = e.c.length - 1, eRet = e.c[k] / e.c[k - 1] - 1;
     // 기초자산의 같은 기간 움직임: 주식은 일봉, 코인은 미국 장 마감 시각(시작 시각 + 6.5시간)의 1시간 봉
@@ -187,14 +191,15 @@ async function digestFor(db: ReturnType<typeof admin>, userId: string) {
       if (u && u.c.length >= 2) uRet = u.c[u.c.length - 1] / u.c[u.c.length - 2] - 1;
     }
     let pnl = 0, cost = 0;
-    if (fx) for (const p of pos.filter((x) => x.sym === sym)) {
+    const rate = kr ? 1 : fx;
+    if (rate) for (const p of pos.filter((x) => x.sym === sym)) {
       const t0 = Date.parse(p.date + "T00:00:00+09:00") / 1000;
       const ratio = e.splits.filter((s) => s.d > t0).reduce((r, s) => r * s.r, 1);     // 산 뒤 분할·병합 반영
-      const c = p.cur === "USD" ? p.qty * p.price * fx : p.qty * p.price;
-      cost += c; pnl += p.qty * ratio * e.last * fx - c;
+      const c = p.cur === "USD" ? p.qty * p.price * rate : p.qty * p.price;
+      cost += c; pnl += p.qty * ratio * e.last * rate - c;
     }
     totalPnl += pnl; totalCost += cost; n++;
-    if (lines.length < 3) lines.push(`${sym}: ${uko} ${uRet == null ? "?" : pctS(uRet)} → ${pctS(eRet)}${uRet == null ? "" : ` (딱 ${L}배면 ${pctS(L * uRet)})`}${cost ? ` · 손익 ${wonS(pnl)}` : ""}`);
+    if (lines.length < 3) lines.push(`${LEV_NAME[sym] ?? sym}: ${uko} ${uRet == null ? "?" : pctS(uRet)} → ${pctS(eRet)}${uRet == null ? "" : ` (딱 ${L}배면 ${pctS(L * uRet)})`}${cost ? ` · 손익 ${wonS(pnl)}` : ""}`);
   }
   const { data: rules } = await db.from("alert_rules").select("sym, kind, price, last_price").eq("user_id", userId).eq("active", true);
   if (!n && !(rules ?? []).length) return null;

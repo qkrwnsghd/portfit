@@ -17,6 +17,8 @@ const ALLOW = new Set([
   "TSLL", "NVDL", "NVDU", "CONL", "MSTU", "MSTX", "AAPU", "AMZU", "GGLL",
   "QQQ", "SPY", "SOXX", "XLK", "IWM", "XBI", "TLT", "TSLA", "NVDA", "COIN", "MSTR", "AAPL", "AMZN", "GOOGL",
   "KRW=X",
+  // 국내 레버리지 ETF와 기초 1배 ETF (종목코드 → 야후는 코드.KS)
+  "122630", "123320", "252670", "114800", "233740", "251340", "069500", "229200",
 ]);
 const TTL = 20_000;
 type Quote = { p: number; t: number; reg: number | null; regT: number | null; prev: number | null; state: string; src: string };
@@ -26,7 +28,8 @@ const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (K
 async function yahoo(sym: string): Promise<Quote | null> {
   for (const host of ["query1", "query2"]) {
     try {
-      const u = `https://${host}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?range=1d&interval=1m&includePrePost=true`;
+      const ysym = /^\d{6}$/.test(sym) ? `${sym}.KS` : sym;
+      const u = `https://${host}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=1d&interval=1m&includePrePost=true`;
       const r = await fetch(u, { headers: { "User-Agent": UA, Accept: "application/json" } });
       if (!r.ok) continue;
       const j = await r.json();
@@ -51,6 +54,7 @@ async function yahoo(sym: string): Promise<Quote | null> {
 // 야후가 막히면 스투크(stooq, 약 15분 지연)로 대신
 async function stooq(sym: string): Promise<Quote | null> {
   try {
+    if (/^\d{6}$/.test(sym)) return null;              // 국내 종목은 스투크 대신 야후만
     const s = sym === "KRW=X" ? "usdkrw" : sym.toLowerCase() + ".us";
     const r = await fetch(`https://stooq.com/q/l/?s=${s}&f=sd2t2c&h&e=csv`, { headers: { "User-Agent": UA } });
     if (!r.ok) return null;
