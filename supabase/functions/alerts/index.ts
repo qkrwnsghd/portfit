@@ -60,12 +60,34 @@ async function yahoo(ysym: string): Promise<Omit<Quote, "sym"> | null> {
   }
   return null;
 }
+// 야후가 안 될 때 대신 쓰는 곳: 국내는 네이버 증권, 코인은 코인베이스, 미국은 스투크(약 15분 지연)
+async function backup(sym: string): Promise<Omit<Quote, "sym"> | null> {
+  try {
+    if (/^\d{6}$/.test(sym)) {
+      const r = await fetch(`https://polling.finance.naver.com/api/realtime/domestic/stock/${sym}`, { headers: { "User-Agent": UA, Referer: "https://m.stock.naver.com/" } });
+      const d = r.ok ? (await r.json())?.datas?.[0] : null, p = Number(String(d?.closePrice ?? "").replace(/,/g, ""));
+      return p > 0 ? { p, t: Math.floor((Date.parse(d.localTradedAt ?? "") || Date.now()) / 1000), cur: "KRW", state: d.marketStatus === "OPEN" ? "REGULAR" : "CLOSED", name: d.stockName } : null;
+    }
+    if (CRYPTO.has(sym)) {
+      const r = await fetch(`https://api.exchange.coinbase.com/products/${sym}-USD/ticker`, { headers: { "User-Agent": UA } });
+      const p = r.ok ? Number((await r.json())?.price) : 0;
+      return p > 0 ? { p, t: Math.floor(Date.now() / 1000), cur: "USD", state: "REGULAR" } : null;
+    }
+    if (sym === "KRW") return null;
+    const r = await fetch(`https://stooq.com/q/l/?s=${sym.toLowerCase().replace(".", "-")}.us&f=sd2t2c&h&e=csv`, { headers: { "User-Agent": UA } });
+    const c = r.ok ? Number((await r.text()).trim().split("\n")[1]?.split(",")[3]) : 0;
+    return c > 0 ? { p: c, t: Math.floor(Date.now() / 1000), cur: "USD", state: "UNKNOWN" } : null;
+  } catch (_) { return null; }
+}
 async function quote(sym: string): Promise<Quote | null> {
   const c = qcache.get(sym);
   if (c && Date.now() - c.at < 30_000) return c.q;
   const tries = sym === "KRW" ? ["KRW=X"] : CRYPTO.has(sym) ? [`${sym}-USD`] : /^\d{6}$/.test(sym) ? [`${sym}.KS`, `${sym}.KQ`] : [sym.replace(".", "-")];
   let q: Quote | null = null;
-  for (const y of tries) { const v = await yahoo(y); if (v) { q = { sym, ...v }; break; } }
+  // 국내는 네이버(실시간)를 먼저, 나머지는 야후를 먼저
+  if (/^\d{6}$/.test(sym)) { const b = await backup(sym); if (b) q = { sym, ...b }; }
+  if (!q) for (const y of tries) { const v = await yahoo(y); if (v) { q = { sym, ...v }; break; } }
+  if (!q) { const b = await backup(sym); if (b) q = { sym, ...b }; }
   qcache.set(sym, { at: Date.now(), q });
   return q;
 }

@@ -51,6 +51,19 @@ async function yahoo(sym: string): Promise<Quote | null> {
   return null;
 }
 
+// 국내 종목: 네이버 증권 실시간 시세를 먼저 쓰고(지연 없음), 안 되면 야후(약 20분 지연)
+async function naver(code: string): Promise<Quote | null> {
+  try {
+    const r = await fetch(`https://polling.finance.naver.com/api/realtime/domestic/stock/${code}`, { headers: { "User-Agent": UA, Referer: "https://m.stock.naver.com/" } });
+    if (!r.ok) return null;
+    const d = (await r.json())?.datas?.[0];
+    const p = Number(String(d?.closePrice ?? "").replace(/,/g, ""));
+    if (!(p > 0)) return null;
+    const t = Math.floor((Date.parse(d.localTradedAt ?? "") || Date.now()) / 1000);
+    return { p, t, reg: p, regT: t, prev: null, state: d.marketStatus === "OPEN" ? "REGULAR" : "CLOSED", src: "naver" };
+  } catch (_) { return null; }
+}
+
 // 야후가 막히면 스투크(stooq, 약 15분 지연)로 대신
 async function stooq(sym: string): Promise<Quote | null> {
   try {
@@ -73,7 +86,7 @@ async function stooq(sym: string): Promise<Quote | null> {
 async function quote(sym: string): Promise<Quote | null> {
   const c = cache.get(sym);
   if (c && Date.now() - c.at < TTL) return c.q;
-  const q = (await yahoo(sym)) ?? (await stooq(sym));
+  const q = /^\d{6}$/.test(sym) ? ((await naver(sym)) ?? (await yahoo(sym))) : ((await yahoo(sym)) ?? (await stooq(sym)));
   cache.set(sym, { at: Date.now(), q });
   return q;
 }
