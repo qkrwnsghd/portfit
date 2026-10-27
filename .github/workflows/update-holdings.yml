@@ -59,6 +59,10 @@ jobs:
           pip install yfinance
           python lev_hist.py
 
+      - name: ETF별 공유·검색 페이지 만들기
+        continue-on-error: true
+        run: python make_pages.py
+
       - name: 바뀐 데이터가 있으면 저장
         run: |
           git config user.name "portfit-bot"
@@ -67,6 +71,7 @@ jobs:
           [ -f prices.json ] && git add prices.json
           [ -f us_symbols.json ] && git add us_symbols.json
           [ -f lev_hist.json ] && git add lev_hist.json
+          [ -d etf ] && git add etf sitemap.xml robots.txt
           if git diff --cached --quiet; then
             echo "바뀐 내용이 없어요."
           else

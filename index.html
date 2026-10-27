@@ -7,6 +7,14 @@
 <meta name="theme-color" content="#07090D">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="description" content="레버리지 ETF, 1배보다 얼마나 더 벌고 잃었을까? 매수가만 넣으면 레버리지 효과·변동성 손실(음의 복리)·환차손익을 실시간으로 계산해요. BITX·SOXL·TQQQ·KODEX 레버리지·삼성전자·SK하이닉스 단일종목 레버리지 지원.">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="포트핏">
+<meta property="og:title" content="포트핏 · 레버리지 손익 계산기">
+<meta property="og:description" content="레버리지 ETF, 1배보다 얼마나 더 벌고 잃었을까? 레버리지 효과·변동성 손실을 실시간으로 계산해요.">
+<meta property="og:url" content="https://qkrwnsghd.github.io/portfit/">
+<meta property="og:image" content="https://qkrwnsghd.github.io/portfit/og.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="포트핏">
@@ -437,6 +445,16 @@ textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; 
 .nt.up { color: var(--up); border-color: color-mix(in srgb, var(--up) 45%, transparent); }
 .nt.down { color: var(--down); border-color: color-mix(in srgb, var(--down) 45%, transparent); }
 .ln-more summary { cursor: pointer; font-size: 12.5px; color: var(--muted); padding: 8px 0 2px; }
+.rep-ctl { display: grid; gap: 8px; margin: 8px 0 10px; }
+.rep-ctl select { border: 1px solid var(--line); border-radius: 10px; padding: 9px 10px; background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+.rep-per button.on { color: var(--btn-ink); background: var(--accent); border-color: var(--accent); }
+.rep-line { font-size: 14px; margin: 0 0 6px; }
+.rank { margin-bottom: 14px; } .rank > b { font-size: 16px; } .rank > small { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+.rank-t tr[data-rep] { cursor: pointer; } .rank-t tr[data-rep]:hover td { background: var(--soft); }
+.rank-t td small { display: block; font-size: 11px; color: var(--muted); }
+.rank-t { width: 100%; table-layout: fixed; } .rank-t th, .rank-t td { padding: 7px 4px; font-size: 12.5px; }
+.rank-t th:first-child, .rank-t td:first-child { width: 40%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-t td.num { font-size: 12.5px; }
 .lev-tags { display: inline-flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .al-box { border-top: 1px solid var(--line); margin-top: 18px; padding-top: 16px; }
 .al-box h2 { font-size: 16px; }
@@ -678,6 +696,7 @@ footer a { color: var(--accent); }
     </section>
 
     <div class="results">
+      <section class="panel lev-rep" id="levReport" aria-label="레버리지 ETF 성적표"></section>
       <div class="results" id="levResults"></div>
       <section class="panel" id="alertBox" aria-labelledby="al-title"></section>
       <section class="panel" id="scenBox"></section>
@@ -3103,6 +3122,7 @@ const LEV_U = {
   IWM: { ko: "러셀2000(IWM)" }, XBI: { ko: "미국 바이오(XBI)" }, TLT: { ko: "미국 장기국채(TLT)" }, TSLA: { ko: "테슬라" },
   NVDA: { ko: "엔비디아" }, COIN: { ko: "코인베이스" }, MSTR: { ko: "스트래티지(MSTR)" }, AAPL: { ko: "애플" }, AMZN: { ko: "아마존" }, GOOGL: { ko: "알파벳" },
   "069500": { ko: "코스피200", proxy: "KODEX 200" }, "229200": { ko: "코스닥150", proxy: "KODEX 코스닥150" },
+  "005930": { ko: "삼성전자" }, "000660": { ko: "SK하이닉스" },
 };
 // 국내 레버리지 ETF: 종목코드 → 이름 (기초자산은 같은 지수를 1배로 따라가는 KODEX 200·KODEX 코스닥150 가격으로 계산)
 const LEV_NAME = { "122630": "KODEX 레버리지", "123320": "TIGER 레버리지", "252670": "KODEX 200선물인버스2X", "114800": "KODEX 인버스", "233740": "KODEX 코스닥150레버리지", "251340": "KODEX 코스닥150선물인버스" };
@@ -3255,6 +3275,21 @@ function levGroup(sym, lots, H, now) {
   return g;
 }
 
+// 시세 기록(kr)에 있는데 앱 목록에 없는 국내 상품을 자동으로 추가 (삼성전자·SK하이닉스 단일종목 레버리지 등, 새 상품도 자동)
+function levRegisterKr(H) {
+  if (!H || !H.kr || !H.kr.etf) return;
+  let added = 0;
+  for (const [code, e] of Object.entries(H.kr.etf)) {
+    if (LEV_MAP[code] || !LEV_U[e.u]) continue;
+    const name = e.name || code, flat = name.replace(/\s/g, "");
+    const re = { test: n => { const x = String(n).replace(/\s/g, ""); return x === flat || x.includes(code); } };
+    LEV_MAP[code] = { u: e.u, L: e.L, re, kr: true };
+    LEV_NAME[code] = name;
+    LEV_ETFS.push([code, e.u, e.L, re, true]);
+    added++;
+  }
+  if (added) { renderLev(); }
+}
 async function levLoadHist() {
   if (levHist || levHistErr === "loading") return;
   levHistErr = "loading";
@@ -3264,6 +3299,8 @@ async function levLoadHist() {
     const j = await r.json();
     if (!j || !j.dates || !j.etf) throw new Error("형식");
     levHist = j; levHistErr = null;
+    levRegisterKr(j);
+    setTimeout(renderReport, 0);
     const la = document.getElementById("levAsof"); if (la) la.textContent = `미국 ${j.asof}${j.kr ? ` · 국내 ${j.kr.asof}` : ""}`;
     setTimeout(() => levRefresh(true), 0);
   } catch (e) { levHistErr = "시세 기록(lev_hist.json)을 아직 못 받았어요. GitHub 자동 수집이 한 번 돌고 나면 나와요."; }
@@ -3442,7 +3479,7 @@ const SCEN_PRESETS = [["+10% → −10%", "10,-10"], ["−10% → +10%", "-10,10
 let scenState = { sym: "", moves: "10,-10" };
 function renderScen() {
   const box = document.getElementById("scenBox"); if (!box) return;
-  const syms = [...new Set(levPositions().map(p => p.sym))], sym = LEV_MAP[scenState.sym] ? scenState.sym : syms[0] || "BITX";
+  const syms = [...new Set(levPositions().map(p => p.sym))].filter(x => LEV_MAP[x]), sym = LEV_MAP[scenState.sym] ? scenState.sym : syms[0] || "BITX";
   const m = LEV_MAP[sym], uName = LEV_U[m.u].ko, L = m.L, nm = levName(sym);
   const moves = String(scenState.moves).split(/[,\s]+/).map(Number).filter(x => isFinite(x) && x > -100 && x !== 0).slice(0, 60).map(x => x / 100);
   const r = moves.length ? levScenario(L, moves) : null;
@@ -3636,11 +3673,85 @@ function levCompute(pos) {
 let levShareGroups = {};
 const LEV_SHARE_AMT = "portfit-lev-share-amt-v1";            // 공유 이미지에 금액 넣기 (이 기기에만 저장)
 let levShareAmt = loadJSON(LEV_SHARE_AMT, true) !== false;
+// ----- 레버리지 ETF 성적표: 입력 없이, 최근 기간 동안 기초자산 vs ETF vs 정확히 L배 -----
+const REP_PERIODS = [["1주", 5], ["1달", 21], ["3달", 63], ["6달", 126], ["1년", 252]];
+let repState = { sym: "", n: 21 };
+function levReport(sym, n) {
+  const H = levH(sym); if (!H || !H.etf[sym]) return null;
+  const m = LEV_MAP[sym], e = H.etf[sym].c, U = H.under[m.u];
+  let T = e.length - 1; while (T > 0 && !(e[T] && U[T])) T--;
+  let i0 = Math.max(0, T - n); while (i0 < T && !(e[i0] && U[i0])) i0++;
+  if (T - i0 < 2) return null;
+  const pts = [];
+  for (let j = i0; j <= T; j++) if (e[j] && U[j]) pts.push({ d: H.dates[j], e: e[j] / e[i0] - 1, u: U[j] / U[i0] - 1, x: Math.max(-1, m.L * (U[j] / U[i0] - 1)) });
+  const u = U[T] / U[i0] - 1, er = e[T] / e[i0] - 1, exact = Math.max(-1, m.L * u);
+  return { sym, L: m.L, u, e: er, exact, decay: er - exact, d0: H.dates[i0], d1: H.dates[T], pts, short: T - i0 < n * 0.8 };
+}
+function repChart(r) {
+  const W = 640, Ht = 200, Lm = 44, R = 10, T = 12, B = 22, P = r.pts;
+  const vals = P.flatMap(p => [p.e, p.u, p.x]), lo = Math.min(0, ...vals), hi = Math.max(0, ...vals), pad = (hi - lo) * 0.08 || 0.01, y0 = lo - pad, y1 = hi + pad;
+  const X = i => Lm + i / Math.max(1, P.length - 1) * (W - Lm - R), Y = v => T + (1 - (v - y0) / (y1 - y0)) * (Ht - T - B);
+  const line = f => P.map((p, i) => `${X(i).toFixed(1)},${Y(f(p)).toFixed(1)}`).join(" ");
+  return `<svg class="g-chart" viewBox="0 0 ${W} ${Ht}" role="img" aria-label="기간 수익률 비교">
+    <line x1="${Lm}" x2="${W - R}" y1="${Y(0)}" y2="${Y(0)}" stroke="var(--line)" stroke-width="1.5"/>
+    <text x="${Lm - 6}" y="${Y(hi) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmt(hi * 100, 0)}%</text><text x="${Lm - 6}" y="${Y(lo) + 4}" text-anchor="end" font-size="11" fill="var(--muted)">${fmt(lo * 100, 0)}%</text>
+    <polyline points="${line(p => p.u)}" fill="none" stroke="var(--muted)" stroke-width="1.5" stroke-dasharray="2 3"/>
+    <polyline points="${line(p => p.x)}" fill="none" stroke="var(--c2)" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <polyline points="${line(p => p.e)}" fill="none" stroke="var(--accent)" stroke-width="2.25"/>
+    <text x="${Lm}" y="${Ht - 6}" font-size="11" fill="var(--muted)">${r.d0.slice(2).replace(/-/g, ".")}</text><text x="${W - R}" y="${Ht - 6}" text-anchor="end" font-size="11" fill="var(--muted)">${r.d1.slice(2).replace(/-/g, ".")}</text>
+  </svg>`;
+}
+const repUrl = sym => `https://qkrwnsghd.github.io/portfit/etf/${encodeURIComponent(sym)}/`;
+function renderReport() {
+  const box = document.getElementById("levReport"); if (!box) return;
+  if (!levHist) { box.innerHTML = `<p class="sub" style="margin:0">성적표를 불러오는 중이에요…</p>`; return; }
+  const mine = [...new Set(levPositions().map(p => p.sym))].filter(levHas);
+  const sym = levHas(repState.sym) ? repState.sym : mine[0] || "BITX";
+  const r = levReport(sym, repState.n), m = LEV_MAP[sym], uName = LEV_U[m.u].ko, nm = levName(sym);
+  box.innerHTML = `<h2>레버리지 ETF 성적표</h2><p class="sub" style="margin:0">아무것도 넣지 않아도, 그 기간에 샀다면 어땠는지 보여줘요.</p>
+    <div class="rep-ctl"><select id="repSym" aria-label="ETF 고르기">${LEV_ETFS.filter(([s]) => levHas(s)).map(([s, u, L]) => `<option value="${s}"${s === sym ? " selected" : ""}>${levOpt(s, u, L)}</option>`).join("")}</select>
+      <div class="g-quick rep-per" role="group" aria-label="기간">${REP_PERIODS.map(([t, n]) => `<button type="button" data-n="${n}"${n === repState.n ? ' class="on" aria-pressed="true"' : ' aria-pressed="false"'}>${t}</button>`).join("")}</div></div>
+    ${r ? `<p class="rep-line">${r.d0.slice(5).replace("-", "/")}에 샀다면 · ${josa(uName, "은는")} <b class="num ${r.u >= 0 ? "pos" : "neg"}">${pctS(r.u)}</b>, ${josa(nm, "은는")} <b class="num ${r.e >= 0 ? "pos" : "neg"}">${pctS(r.e)}</b></p>
+    <dl class="lev-rows">
+      <div><dt>정확히 ${Math.abs(r.L)}배였다면</dt><dd class="num ${r.exact >= 0 ? "pos" : "neg"}">${pctS(r.exact)}</dd></div>
+      <div><dt>${r.decay < 0 ? "변동성 손실" : "추세 이득"} <small>실제 − 정확히 ${Math.abs(r.L)}배</small></dt><dd class="num ${r.decay >= 0 ? "pos" : "neg"}">${r.decay >= 0 ? "+" : ""}${fmt(r.decay * 100)}%p</dd></div>
+      <div><dt>100만 원이었다면</dt><dd class="num ${r.e >= 0 ? "pos" : "neg"}">${wonS(1e6 * r.e)} <small>${r.decay < 0 ? `그중 ${won(-1e6 * r.decay)} 변동성 손실` : ""}</small></dd></div>
+    </dl>${repChart(r)}
+    <p class="fine"><span style="color:var(--accent)">━</span> ${nm} · <span style="color:var(--c2)">╍</span> 정확히 ${Math.abs(r.L)}배 · <span style="color:var(--muted)">┅</span> ${uName}${r.short ? " · 상장한 지 얼마 안 돼서 기간이 짧아요" : ""} · 보수·추종오차 포함, 환율 제외</p>` : `<p class="fine">이 기간의 시세 기록이 부족해요.</p>`}
+    <div class="btns"><button type="button" id="repMine" class="primary">내 매수가로 계산하기</button><button type="button" id="repShare">링크 공유</button></div><p class="al-msg" id="repMsg" hidden></p>`;
+  document.getElementById("repSym").addEventListener("change", e => { repState.sym = e.target.value; renderReport(); track("rep_sym", { s: e.target.value }); });
+  box.querySelectorAll("[data-n]").forEach(b => b.addEventListener("click", () => { repState.n = +b.dataset.n; repState.sym = sym; renderReport(); }));
+  document.getElementById("repMine").addEventListener("click", () => {
+    if (levSample) levState.pos = [];
+    if (!levState.pos.some(p => p.sym === sym)) levState.pos.push({ id: Math.random().toString(36).slice(2, 9), sym, date: today(), qty: 1, price: levNowKrw(sym) || 10000, cur: "KRW" });
+    levSave(); renderLev(); levRefresh(true);
+    document.querySelector("#levList .lev-item:last-child")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    track("rep_mine", { s: sym });
+  });
+  document.getElementById("repShare").addEventListener("click", async () => {
+    const url = repUrl(sym), text = r ? `${nm}: ${r.d0.slice(5).replace("-", "/")} 이후 ${uName} ${pctS(r.u)}, ${nm} ${pctS(r.e)} (변동성 손실 ${fmt(r.decay * 100)}%p) — 포트핏` : nm;
+    const say = t => { const el = document.getElementById("repMsg"); el.textContent = t; el.hidden = !t; };
+    try { if (navigator.share) { await navigator.share({ title: `${nm} 레버리지 성적표`, text, url }); return; } } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(`${text}\n${url}`); say("링크를 복사했어요. 카톡이나 커뮤니티에 붙여넣으세요."); } catch (_) { say(url); }
+    track("rep_share", { s: sym });
+  });
+}
+// 홈: 처음 온 사람에게 보여줄 이번 달 레버리지 성적 순위
+function levRankHTML(n = 21) {
+  const pick = ["BITX", "SOXL", "TQQQ", "TSLL", "NVDL", "ETHU", "MSTU", "SQQQ", "122630", "252670", "233740"].concat(LEV_ETFS.filter(([s]) => /단일종목/.test(LEV_NAME[s] || "")).map(([s]) => s));
+  const rows = [...new Set(pick)].filter(levHas).map(s => levReport(s, n)).filter(Boolean).sort((a, b) => a.decay - b.decay).slice(0, 8);
+  if (!rows.length) return "";
+  return `<div class="rank"><b>최근 1달 레버리지 성적표</b><small>변동성 손실이 큰 순서 · 누르면 자세히</small>
+    <table class="trades rank-t"><thead><tr><th>ETF</th><th class="r">기초자산</th><th class="r">ETF</th><th class="r">변동성 손실</th></tr></thead><tbody>
+    ${rows.map(r => `<tr data-rep="${r.sym}"><td>${esc(levName(r.sym))}<small>${LEV_U[LEV_MAP[r.sym].u].ko} ${r.L > 0 ? r.L + "배" : "인버스 " + -r.L + "배"}</small></td><td class="r num ${r.u >= 0 ? "pos" : "neg"}">${pctS(r.u)}</td><td class="r num ${r.e >= 0 ? "pos" : "neg"}">${pctS(r.e)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${r.decay >= 0 ? "+" : ""}${fmt(r.decay * 100)}%p</td></tr>`).join("")}
+    </tbody></table></div>`;
+}
+function openReport(sym) { repState.sym = sym; goTab("lev"); setTimeout(() => { renderReport(); document.getElementById("levReport").scrollIntoView({ behavior: "smooth", block: "start" }); }, 50); }
 function renderHomeLev() {
   const box = document.getElementById("homeLev"); if (!box || document.getElementById("view-home").hidden) return;
   const go = `<button type="button" class="primary" data-golev>레버리지 계산하기 →</button>`;
   if (levSample || !levHist) {
-    box.innerHTML = `<div class="h-lev-empty"><b>📈 내 레버리지 ETF 계산해 보기</b><p>토스에서 매수일과 매수 단가(원)만 넣으면 돼요. 습관 탭에 토스 거래내역을 넣었다면 한 번에 불러올 수도 있어요.</p><div class="btns">${go}</div></div>`;
+    box.innerHTML = `${levHist ? levRankHTML() : ""}<div class="h-lev-empty"><b>내 레버리지 ETF도 계산해 보기</b><p>매수일과 매수 단가(원)만 넣거나, 토스 주문내역 캡처로 불러오면 돼요.</p><div class="btns">${go}</div></div>`;
   } else {
     const { ok } = levCompute(levState.pos), sum = k => ok.reduce((a, g) => a + g[k], 0);
     if (!ok.length) { box.innerHTML = `<div class="h-lev-empty"><b>📈 레버리지</b><p>넣은 ETF를 계산하지 못했어요. 레버리지 탭에서 날짜와 단가를 확인해 주세요.</p><div class="btns">${go}</div></div>`; }
@@ -3659,6 +3770,7 @@ function renderHomeLev() {
     }
   }
   box.querySelectorAll("[data-golev]").forEach(b => b.addEventListener("click", () => goTab("lev")));
+  box.querySelectorAll("[data-rep]").forEach(tr => tr.addEventListener("click", () => openReport(tr.dataset.rep)));
 }
 function renderLevResults() {
   renderHomeLev();
@@ -3710,8 +3822,8 @@ const levAvgUsd = {};                              // 레버리지 탭에서 계
 const AL_KINDS = { tp: "목표 수익률에 닿으면 (익절)", sl: "손절 수익률에 닿으면 (손절)", tr: "최고가에서 N% 떨어지면 (번 돈 지키기)", pa: "이 가격 이상이 되면", pb: "이 가격 이하가 되면" };
 const alPushOK = () => "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 function b64u(s) { const p = "=".repeat((4 - s.length % 4) % 4), b = atob((s + p).replace(/-/g, "+").replace(/_/g, "/")); return Uint8Array.from(b, c => c.charCodeAt(0)); }
-const alSym = s => { s = String(s || "").toUpperCase().replace(/\s/g, ""); return /^([A-Z]{1,6}(\.[A-Z])?|\d{6})$/.test(s) ? s : null; };
-const alPx = (p, sym) => /^\d{6}$/.test(sym) ? `${Math.round(p).toLocaleString("ko-KR")}원` : usd(p);
+const alSym = s => { s = String(s || "").toUpperCase().replace(/\s/g, ""); return /^([A-Z]{1,6}(\.[A-Z])?|[0-9][0-9A-Z]{5})$/.test(s) ? s : null; };
+const alPx = (p, sym) => /^[0-9][0-9A-Z]{5}$/.test(sym) ? `${Math.round(p).toLocaleString("ko-KR")}원` : usd(p);
 async function alReg() { return withTimeout(navigator.serviceWorker.ready, 5000); }
 async function alToken() { const { data } = await sb.auth.getSession(); return data.session ? data.session.access_token : null; }
 function alAgo(t) {
@@ -3913,7 +4025,7 @@ function showTab(name) {
   });
   if (t === "goal") renderGoal();
   if (t === "home") renderHome();
-  if (t === "lev") { renderLev(); levLoadHist(); alInit(); }
+  if (t === "lev") { renderLev(); levLoadHist(); alInit(); renderReport(); }
   levLoop(t === "lev" || (t === "home" && !levSample));
   track("tab_" + t);
 }
@@ -3950,6 +4062,10 @@ document.addEventListener("visibilitychange", () => { if (!document.hidden && !d
 tradeText.value = SAMPLE_TRADES;
 runTrades();
 showTab(location.hash.slice(1));
+(() => {
+  const e = new URLSearchParams(location.search).get("etf");
+  if (e) { repState.sym = e.toUpperCase(); goTab("lev"); track("rep_open", { s: repState.sym }); }
+})();
 initAccount().then(() => flushTrack());
 trackVisit();
 if (!location.hash || location.hash === "#home") setTimeout(() => openWelcome(false), 400);

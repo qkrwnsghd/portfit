@@ -28,7 +28,7 @@ const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (K
 async function yahoo(sym: string): Promise<Quote | null> {
   for (const host of ["query1", "query2"]) {
     try {
-      const ysym = /^\d{6}$/.test(sym) ? `${sym}.KS` : sym;
+      const ysym = /^[0-9][0-9A-Z]{5}$/.test(sym) ? `${sym}.KS` : sym;
       const u = `https://${host}.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ysym)}?range=1d&interval=1m&includePrePost=true`;
       const r = await fetch(u, { headers: { "User-Agent": UA, Accept: "application/json" } });
       if (!r.ok) continue;
@@ -67,7 +67,7 @@ async function naver(code: string): Promise<Quote | null> {
 // 야후가 막히면 스투크(stooq, 약 15분 지연)로 대신
 async function stooq(sym: string): Promise<Quote | null> {
   try {
-    if (/^\d{6}$/.test(sym)) return null;              // 국내 종목은 스투크 대신 야후만
+    if (/^[0-9][0-9A-Z]{5}$/.test(sym)) return null;              // 국내 종목은 스투크 대신 야후만
     const s = sym === "KRW=X" ? "usdkrw" : sym.toLowerCase() + ".us";
     const r = await fetch(`https://stooq.com/q/l/?s=${s}&f=sd2t2c&h&e=csv`, { headers: { "User-Agent": UA } });
     if (!r.ok) return null;
@@ -86,7 +86,7 @@ async function stooq(sym: string): Promise<Quote | null> {
 async function quote(sym: string): Promise<Quote | null> {
   const c = cache.get(sym);
   if (c && Date.now() - c.at < TTL) return c.q;
-  const q = /^\d{6}$/.test(sym) ? ((await naver(sym)) ?? (await yahoo(sym))) : ((await yahoo(sym)) ?? (await stooq(sym)));
+  const q = /^[0-9][0-9A-Z]{5}$/.test(sym) ? ((await naver(sym)) ?? (await yahoo(sym))) : ((await yahoo(sym)) ?? (await stooq(sym)));
   cache.set(sym, { at: Date.now(), q });
   return q;
 }
@@ -95,7 +95,7 @@ async function quote(sym: string): Promise<Quote | null> {
 const NEWS_Q: Record<string, string> = {
   BTC: "비트코인", ETH: "이더리움", SOL: "솔라나 코인", XRP: "리플 XRP", QQQ: "나스닥", SPY: "S&P500 뉴욕증시", SOXX: "필라델피아 반도체지수",
   XLK: "미국 기술주", IWM: "러셀2000", XBI: "미국 바이오주", TLT: "미국 국채 금리", TSLA: "테슬라 주가", NVDA: "엔비디아 주가", COIN: "코인베이스 주가",
-  MSTR: "스트래티지 MSTR", AAPL: "애플 주가", AMZN: "아마존 주가", GOOGL: "알파벳 구글 주가", "069500": "코스피", "229200": "코스닥",
+  MSTR: "스트래티지 MSTR", AAPL: "애플 주가", AMZN: "아마존 주가", GOOGL: "알파벳 구글 주가", "069500": "코스피", "229200": "코스닥", "005930": "삼성전자 주가", "000660": "SK하이닉스 주가",
 };
 type News = { title: string; link: string; source: string; t: number };
 const ncache = new Map<string, { at: number; v: News[] }>();
@@ -132,7 +132,7 @@ Deno.serve(async (req) => {
     return json({ ok: true, key, items: await news(key) });
   }
   const syms = [...new Set((new URL(req.url).searchParams.get("s") ?? "").toUpperCase().split(",").map((s) => s.trim()))]
-    .filter((s) => ALLOW.has(s)).slice(0, 16);
+    .filter((s) => ALLOW.has(s) || /^[0-9][0-9A-Z]{5}$/.test(s)).slice(0, 16);      // 국내 종목코드(6자리)는 모두 허용 (단일종목 레버리지 등 새 상품)
   if (!syms.length) return json({ error: "symbols" }, 400);
   const out: Record<string, Quote | null> = {};
   await Promise.all(syms.map(async (s) => { out[s] = await quote(s); }));

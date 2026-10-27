@@ -6,7 +6,7 @@
 create table if not exists public.alert_rules (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
-  sym text not null check (sym ~ '^([A-Z]{1,6}(\.[A-Z])?|[0-9]{6})$'),
+  sym text not null check (sym ~ '^([A-Z]{1,6}(\.[A-Z])?|[0-9][0-9A-Z]{5})$'),
   kind text not null check (kind in ('above', 'below')),
   price numeric not null check (price > 0),
   base numeric check (base is null or base > 0),

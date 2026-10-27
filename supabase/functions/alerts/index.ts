@@ -19,7 +19,7 @@ const json = (b: unknown, status = 200) =>
 const admin = () => createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 const SITE = "https://qkrwnsghd.github.io/portfit/";
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Safari/605.1.15";
-const SYM_OK = /^([A-Z]{1,6}(\.[A-Z])?|\d{6})$/;
+const SYM_OK = /^([A-Z]{1,6}(\.[A-Z])?|[0-9][0-9A-Z]{5})$/;
 const CRYPTO = new Set(["BTC", "ETH", "SOL", "XRP", "DOGE"]);
 
 // ----- 알림 열쇠 -----
@@ -63,7 +63,7 @@ async function yahoo(ysym: string): Promise<Omit<Quote, "sym"> | null> {
 // 야후가 안 될 때 대신 쓰는 곳: 국내는 네이버 증권, 코인은 코인베이스, 미국은 스투크(약 15분 지연)
 async function backup(sym: string): Promise<Omit<Quote, "sym"> | null> {
   try {
-    if (/^\d{6}$/.test(sym)) {
+    if (/^[0-9][0-9A-Z]{5}$/.test(sym)) {
       const r = await fetch(`https://polling.finance.naver.com/api/realtime/domestic/stock/${sym}`, { headers: { "User-Agent": UA, Referer: "https://m.stock.naver.com/" } });
       const d = r.ok ? (await r.json())?.datas?.[0] : null, p = Number(String(d?.closePrice ?? "").replace(/,/g, ""));
       return p > 0 ? { p, t: Math.floor((Date.parse(d.localTradedAt ?? "") || Date.now()) / 1000), cur: "KRW", state: d.marketStatus === "OPEN" ? "REGULAR" : "CLOSED", name: d.stockName } : null;
@@ -82,10 +82,10 @@ async function backup(sym: string): Promise<Omit<Quote, "sym"> | null> {
 async function quote(sym: string): Promise<Quote | null> {
   const c = qcache.get(sym);
   if (c && Date.now() - c.at < 30_000) return c.q;
-  const tries = sym === "KRW" ? ["KRW=X"] : CRYPTO.has(sym) ? [`${sym}-USD`] : /^\d{6}$/.test(sym) ? [`${sym}.KS`, `${sym}.KQ`] : [sym.replace(".", "-")];
+  const tries = sym === "KRW" ? ["KRW=X"] : CRYPTO.has(sym) ? [`${sym}-USD`] : /^[0-9][0-9A-Z]{5}$/.test(sym) ? [`${sym}.KS`, `${sym}.KQ`] : [sym.replace(".", "-")];
   let q: Quote | null = null;
   // 국내는 네이버(실시간)를 먼저, 나머지는 야후를 먼저
-  if (/^\d{6}$/.test(sym)) { const b = await backup(sym); if (b) q = { sym, ...b }; }
+  if (/^[0-9][0-9A-Z]{5}$/.test(sym)) { const b = await backup(sym); if (b) q = { sym, ...b }; }
   if (!q) for (const y of tries) { const v = await yahoo(y); if (v) { q = { sym, ...v }; break; } }
   if (!q) { const b = await backup(sym); if (b) q = { sym, ...b }; }
   qcache.set(sym, { at: Date.now(), q });
@@ -182,17 +182,37 @@ const kstDate = (ms = Date.now()) => new Date(ms + 9 * 3600_000).toISOString().s
 const pctS = (v: number) => `${v >= 0 ? "+" : ""}${(v * 100).toFixed(1)}%`;
 const wonS = (v: number) => `${v >= 0 ? "+" : "-"}${Math.abs(Math.round(v)).toLocaleString("ko-KR")}원`;
 
+// 앱에 미리 없는 국내 상품(단일종목 레버리지 등)은 사이트의 시세 기록에서 기초자산·배율·이름을 가져옴 (1시간 저장)
+let krMap: { at: number; m: Record<string, { u: string; L: number; name?: string }> } = { at: 0, m: {} };
+async function krInfo(code: string) {
+  if (Date.now() - krMap.at > 3600_000) {
+    try {
+      const r = await fetch(SITE + "lev_hist.json", { headers: { "User-Agent": UA } });
+      const j = r.ok ? await r.json() : null;
+      krMap = { at: Date.now(), m: j?.kr?.etf ?? {} };
+    } catch (_) { krMap = { at: Date.now(), m: krMap.m }; }
+  }
+  return krMap.m[code] ?? null;
+}
+const U_KO: Record<string, string> = { "069500": "코스피200", "229200": "코스닥150", "005930": "삼성전자", "000660": "SK하이닉스" };
+
 async function digestFor(db: ReturnType<typeof admin>, userId: string) {
   const { data: ud } = await db.from("user_data").select("data").eq("user_id", userId).maybeSingle();
   let pos: { sym: string; date: string; qty: number; price: number; cur: string }[] = [];
   try { const raw = ud?.data?.["portfit-lev-v1"]; const j = typeof raw === "string" ? JSON.parse(raw) : raw; pos = Array.isArray(j?.pos) ? j.pos : []; } catch (_) { pos = []; }
+  for (const p of pos) {
+    if (!LEV[p.sym] && /^[0-9][0-9A-Z]{5}$/.test(p.sym)) {
+      const k = await krInfo(p.sym);
+      if (k) { LEV[p.sym] = [`${k.u}.KS`, k.L, U_KO[k.u] ?? k.u]; if (k.name) LEV_NAME[p.sym] = k.name; }
+    }
+  }
   pos = pos.filter((p) => LEV[p.sym] && p.qty > 0 && p.price > 0);
   const fxq = await quote("KRW");                       // KRW → 야후 KRW=X
   const fx = fxq?.p ?? null;
   const lines: string[] = [];
   let totalPnl = 0, totalCost = 0, n = 0;
   for (const sym of [...new Set(pos.map((p) => p.sym))]) {
-    const [usym, L, uko] = LEV[sym], kr = /^\d{6}$/.test(sym);
+    const [usym, L, uko] = LEV[sym], kr = /^[0-9][0-9A-Z]{5}$/.test(sym);
     const e = await daily(kr ? `${sym}.KS` : sym);
     if (!e || e.c.length < 2) continue;
     const k = e.c.length - 1, eRet = e.c[k] / e.c[k - 1] - 1;
