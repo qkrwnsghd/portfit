@@ -68,6 +68,17 @@ def closes(df, sym):
 
 
 SINGLE_U = {"삼성전자": "005930", "하이닉스": "000660"}
+# 2026-05-27 상장한 단일종목 레버리지·인버스 (새 종목코드는 영문이 섞여 있어요). 데이터로 실제 배율을 확인해서 맞는 것만 씀
+SINGLE = {
+    "0193W0": ("005930", 2, "KODEX 삼성전자단일종목레버리지"), "0195R0": ("005930", 2, "TIGER 삼성전자단일종목레버리지"),
+    "0194M0": ("005930", 2, "ACE 삼성전자단일종목레버리지"), "0192M0": ("005930", 2, "RISE 삼성전자단일종목레버리지"),
+    "0193K0": ("005930", 2, "PLUS 삼성전자단일종목레버리지"), "0194N0": ("005930", 2, "KIWOOM 삼성전자선물단일종목레버리지"),
+    "0198B0": ("005930", 2, "1Q 삼성전자선물단일종목레버리지"), "0193L0": ("005930", -2, "PLUS 삼성전자선물단일종목인버스2X"),
+    "0193T0": ("000660", 2, "KODEX SK하이닉스단일종목레버리지"), "0195S0": ("000660", 2, "TIGER SK하이닉스단일종목레버리지"),
+    "0194T0": ("000660", 2, "ACE SK하이닉스단일종목레버리지"), "0192L0": ("000660", 2, "RISE SK하이닉스단일종목레버리지"),
+    "0197W0": ("000660", 2, "SOL SK하이닉스단일종목레버리지"), "0194R0": ("000660", 2, "KIWOOM SK하이닉스선물단일종목레버리지"),
+    "0198D0": ("000660", 2, "1Q SK하이닉스선물단일종목레버리지"), "0197X0": ("000660", -2, "SOL SK하이닉스선물단일종목인버스2X"),
+}
 
 
 def discover_single():
@@ -102,9 +113,12 @@ def discover_single():
 
 
 def collect_kr(yf, pd, start, end):
-    single = discover_single()
+    found = discover_single()
+    single = dict(SINGLE)
+    single.update(found)                       # 거래소 목록에서 찾은 이름이 있으면 그걸 씀
     kr_all = dict(KR)
     names = {}
+    debug = {"discovered": sorted(found), "pykrx": [], "missing": [], "badBeta": []}
     for t, (u, L, n) in single.items():
         kr_all[t] = (u, L)
         names[t] = n
@@ -118,11 +132,25 @@ def collect_kr(yf, pd, start, end):
         return None
     dates = [d.date() for d in base.index]
 
+    def pykrx_closes(sym):
+        try:
+            from pykrx import stock
+            o = stock.get_etf_ohlcv_by_date(start.strftime("%Y%m%d"), end.strftime("%Y%m%d"), sym)
+            if o is None or not len(o):
+                o = stock.get_market_ohlcv(start.strftime("%Y%m%d"), end.strftime("%Y%m%d"), sym)
+            if o is not None and len(o):
+                col = "종가" if "종가" in o.columns else "Close"
+                debug["pykrx"].append(sym)
+                return {d.date(): float(v) for d, v in o[col].items() if float(v) > 0}
+        except Exception as ex:                # noqa: BLE001
+            print(f"  {sym} pykrx 실패: {ex}")
+        return {}
+
     def aligned(sym):
         s = closes(df, sym + ".KS")
-        if s is None:
-            return [None] * len(dates)
-        m = {d.date(): float(v) for d, v in s.items()}
+        m = {d.date(): float(v) for d, v in s.items()} if s is not None else {}
+        if len(m) < 20:                        # 야후에 없으면 거래소(pykrx)에서
+            m = pykrx_closes(sym) or m
         return [r6(m.get(d)) for d in dates]
 
     under = {u: aligned(u) for u in {u for u, _ in kr_all.values()}}
@@ -131,6 +159,7 @@ def collect_kr(yf, pd, start, end):
         c = aligned(e)
         if sum(1 for v in c if v) < 20:
             print(f"  {e}: 데이터 부족, 건너뜀")
+            debug["missing"].append(e)
             continue
         etf[e] = {"u": u, "L": L, "c": c}
         if e in names:
@@ -148,10 +177,13 @@ def collect_kr(yf, pd, start, end):
             check[e] = {"beta": r6(beta), "n": len(xs)}
             flag = "" if beta is not None and abs(beta - L) < 0.25 else "  ← 배율 확인 필요"
             print(f"  {e}: 기초 {u} × {L}배, 실제 기울기 {beta:.2f} ({len(xs)}일){flag}")
+            if e in names and flag:            # 종목코드가 틀렸을 수 있으니 빼 둠
+                debug["badBeta"].append([e, r6(beta)])
+                del etf[e]
     ds = [d.isoformat() for d in dates]
     close_ts = [int(pd.Timestamp(f"{d} 15:30", tz="Asia/Seoul").timestamp()) for d in ds]
     print(f"국내: ETF {len(etf)}개, {len(ds)}일, 마지막 날 {ds[-1]}")
-    return {"asof": ds[-1], "dates": ds, "closeTs": close_ts, "fx": [1] * len(ds), "etf": etf, "under": under, "splits": {}, "check": check}
+    return {"asof": ds[-1], "dates": ds, "closeTs": close_ts, "fx": [1] * len(ds), "etf": etf, "under": under, "splits": {}, "check": check, "debug": debug}
 
 
 def main():
