@@ -52,6 +52,9 @@ jobs:
 
       - name: 레버리지 ETF 시세 기록 (레버리지 탭용)
         continue-on-error: true   # 실패하면 이전 기록을 그대로 씀
+        env:
+          KRX_ID: ${{ secrets.KRX_ID }}
+          KRX_PW: ${{ secrets.KRX_PW }}
         run: |
           pip install yfinance
           python lev_hist.py

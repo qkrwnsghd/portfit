@@ -67,8 +67,48 @@ def closes(df, sym):
     return s if len(s) else None
 
 
+SINGLE_U = {"삼성전자": "005930", "하이닉스": "000660"}
+
+
+def discover_single():
+    """한국거래소 ETF 목록에서 삼성전자·SK하이닉스 단일종목 레버리지·인버스를 이름으로 찾음 (새 상품이 나와도 자동 추가)."""
+    out = {}
+    try:
+        import datetime as dt
+        from pykrx import stock
+        tickers = []
+        for back in range(0, 8):
+            day = (dt.date.today() - dt.timedelta(days=back)).strftime("%Y%m%d")
+            try:
+                tickers = stock.get_etf_ticker_list(day)
+            except Exception:                  # noqa: BLE001
+                tickers = []
+            if tickers:
+                break
+        for t in tickers:
+            n = str(stock.get_etf_ticker_name(t) or "")
+            if "단일종목" not in n:
+                continue
+            u = next((c for k, c in SINGLE_U.items() if k in n), None)
+            if not u:
+                continue
+            nn = n.replace(" ", "")
+            L = -2 if "인버스2X" in nn else -1 if "인버스" in nn else 2
+            out[t] = (u, L, n)
+        print(f"단일종목 레버리지 {len(out)}개 찾음: " + ", ".join(f"{t} {v[2]}" for t, v in sorted(out.items())))
+    except Exception as ex:                    # noqa: BLE001
+        print(f"단일종목 레버리지 찾기 실패: {ex}")
+    return out
+
+
 def collect_kr(yf, pd, start, end):
-    syms = sorted(set(KR) | {u for u, _ in KR.values()})
+    single = discover_single()
+    kr_all = dict(KR)
+    names = {}
+    for t, (u, L, n) in single.items():
+        kr_all[t] = (u, L)
+        names[t] = n
+    syms = sorted(set(kr_all) | {u for u, _ in kr_all.values()})
     ys = [s + ".KS" for s in syms]
     print(f"국내 일봉 받는 중: {len(ys)}개")
     df = yf.download(ys, start=start.isoformat(), end=end.isoformat(), interval="1d", auto_adjust=False, progress=False, group_by="column", threads=True)
@@ -85,14 +125,16 @@ def collect_kr(yf, pd, start, end):
         m = {d.date(): float(v) for d, v in s.items()}
         return [r6(m.get(d)) for d in dates]
 
-    under = {u: aligned(u) for u in {u for u, _ in KR.values()}}
+    under = {u: aligned(u) for u in {u for u, _ in kr_all.values()}}
     etf, check = {}, {}
-    for e, (u, L) in sorted(KR.items()):
+    for e, (u, L) in sorted(kr_all.items()):
         c = aligned(e)
         if sum(1 for v in c if v) < 20:
             print(f"  {e}: 데이터 부족, 건너뜀")
             continue
         etf[e] = {"u": u, "L": L, "c": c}
+        if e in names:
+            etf[e]["name"] = names[e]
         xs, ys2 = [], []
         uc = under[u]
         for i in range(max(1, len(dates) - 250), len(dates)):
