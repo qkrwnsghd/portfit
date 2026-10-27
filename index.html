@@ -262,7 +262,11 @@ dialog#acctDlg::backdrop { background: rgba(10, 20, 26, .45); }
 /* 의견 보내기 */
 .fb-fab { position: fixed; right: max(16px, env(safe-area-inset-right, 0px)); bottom: 20px; z-index: 40; border-radius: 999px; padding: 10px 16px; font-weight: 700; background: var(--surface); color: var(--ink); border: 1px solid var(--line); box-shadow: 0 6px 20px rgba(11, 18, 48, .18); }
 .fb-fab:hover { box-shadow: 0 0 0 3px var(--btn-glow), 0 6px 20px rgba(11, 18, 48, .18); }
-@media (max-width: 720px) { .fb-fab { bottom: calc(80px + env(safe-area-inset-bottom, 0px)); padding: 8px 13px; font-size: 13px; } }
+@media (max-width: 720px) { .fb-fab { display: none; } }   /* 폰에서는 숫자를 가려서 숨김 (홈·하단의 '의견 보내기'로) */
+.dd-sub { display: block; font-size: 12px; margin-top: 2px; }
+@media (max-width: 420px) { .lev-tags .ic-btn span { display: none; } }
+.lev-edit > summary { cursor: pointer; font-weight: 700; padding: 10px 0; color: var(--ink); }
+.lev-edit[open] > summary { margin-bottom: 6px; }
 dialog#levTradeDlg::backdrop { background: rgba(6, 10, 24, .55); }
 .lt-side { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 0 0 12px; }
 .lt-side button { border: 1px solid var(--line); background: var(--soft); color: var(--muted); border-radius: 10px; padding: 9px; font-weight: 700; }
@@ -683,7 +687,9 @@ footer a { color: var(--accent); }
       <h2 id="lev-in-title">내 레버리지 ETF</h2>
       <p class="sub">처음 한 번만 넣고, 그 뒤로는 카드의 <b>+ 매수 / − 매도</b>로 수량과 단가만 기록하면 돼요.</p>
       <div id="levImport"></div>
+      <details class="lev-edit" id="levEdit" open><summary id="levEditSum">매수 기록</summary>
       <ul class="lev-list" id="levList"></ul>
+      </details>
       <details class="lev-adv"><summary>고급 설정</summary>
         <label class="lev-fx">토스 환율로 맞추기 (선택) <span class="g-in"><input id="levFx" type="number" inputmode="decimal" min="500" max="3000" step="any" placeholder="비우면 실시간 환율"><span>원</span></span></label>
         <p class="fine">매수할 때의 환율은 매수일로 자동 계산돼요. 이 칸은 지금 환율을 토스와 똑같이 맞추고 싶을 때만 쓰세요.</p>
@@ -3170,6 +3176,12 @@ const wonS = v => `${v >= 0 ? "+" : ""}${won(v)}`;
 let levState = loadJSON(LEV_KEY, null);          // { pos: [{id, sym, date, qty, price, cur, src}], map: {토스이름: 티커} }
 let levSample = !levState || !Array.isArray(levState.pos);
 if (levSample) levState = { pos: [], map: {} };
+else {   // 저장값이 깨져 있으면(다른 기기·옛 버전) 계산할 수 없는 줄만 조용히 뺌
+  levState.pos = levState.pos.filter(p => p && typeof p.sym === "string" && /^[A-Z0-9]{1,8}$/.test(p.sym) && /^\d{4}-\d{2}-\d{2}$/.test(p.date)
+    && Number.isFinite(+p.qty) && +p.qty > 0 && Number.isFinite(+p.price) && +p.price > 0 && (p.cur === "KRW" || p.cur === "USD"))
+    .map(p => ({ ...p, qty: +p.qty, price: +p.price, id: String(p.id || Math.random().toString(36).slice(2, 9)) }));
+  if (!levState.map || typeof levState.map !== "object") levState.map = {};
+}
 let levHist = null, levHistErr = null, levAfterOcr = false;
 const levLive = { crypto: {}, quotes: {}, kline: {}, edgeOff: 0, edgeAt: 0, cryptoAt: 0, err: "" };
 
@@ -3182,7 +3194,8 @@ function levIdx(H, date) {
 // 지금 가격: ETF, 기초자산(기록과 같은 기준으로 이어 붙임), 환율
 function levNow(sym, H, live, nowSec) {
   const m = LEV_MAP[sym], e = H.etf[sym], U = H.under[m.u], uc = LEV_U[m.u].crypto;
-  let T = e.c.length - 1; while (T > 0 && !(e.c[T] && U[T])) T--;
+  // 장 마감 전에 저장된 오늘 줄(마감 시각이 아직 안 옴)은 종가가 아니라서 건너뜀
+  let T = e.c.length - 1; while (T > 0 && (!(e.c[T] && U[T]) || H.closeTs[T] > nowSec)) T--;
   const tsT = H.closeTs[T], E_T = e.c[T], U_T = U[T], FX_T = H.fx[T];
   const fxo = kr0 => { if (kr0) return null; const v = loadJSON(LEV_FX_KEY, null); return v && v.v > 500 ? v : null; };
   const kr = m.kr, fxq = kr ? null : live.quotes["KRW=X"], fxMine = fxo(kr), FXnow = kr ? 1 : fxMine ? fxMine.v : fxq && fxq.p > 0 ? fxq.p : FX_T;
@@ -3212,10 +3225,26 @@ function levNow(sym, H, live, nowSec) {
   return { Enow, Unow, FXnow, fxLive: !!(fxMine || (fxq && fxq.p > 0)), mode, at, T, uLive, state: q ? q.state : null, src };
 }
 // 산 묶음 하나 계산
+// 분배금·배당: 분배락일 j의 하루 총수익 = C[j] / (C[j−1] − D)  →  가격 수익률에 곱할 배수 (i0 다음 날 ~ i1)
+function levTR(dv, c, H, i0, i1) {
+  let f = 1;
+  if (!dv || !dv.length) return f;
+  for (const [d, D] of dv) {
+    if (d <= H.dates[i0] || d > H.dates[i1]) continue;
+    const j = levIdx(H, d); if (H.dates[j] !== d) continue;
+    let k = j - 1; while (k > 0 && !c[k]) k--;
+    if (c[k] > D && D > 0) f *= c[k] / (c[k] - D);
+  }
+  return f;
+}
+const levDivSum = (dv, H, i0, i1) => (dv || []).reduce((a, [d, D]) => a + (d > H.dates[i0] && d <= H.dates[i1] ? D : 0), 0);
 function levLot(p, H, now) {
   const m = LEV_MAP[p.sym], e = H.etf[p.sym], U = H.under[m.u];
   const i1 = levIdx(H, p.date);
-  if (i1 < 0) return { p, err: `${H.dates[0]} 이전에 산 건 계산할 수 없어요(시세 기록이 최근 2년치예요).` };
+  if (i1 < 0) {
+    if (!levOld) setTimeout(levLoadOld, 0);
+    return { p, err: !levOld || levOld === "loading" ? "더 오래된 시세 기록을 불러오는 중이에요…" : `${H.dates[0]} 이전에 산 건 계산할 수 없어요.` };
+  }
   // 액면병합·분할: 매수일 뒤에 있었다면 수량·가격을 지금 기준으로 바꿈
   const ratio = (H.splits && H.splits[p.sym] || []).filter(([d]) => d > p.date).reduce((r, [, x]) => r * x, 1);
   const qty = p.qty * ratio, price = p.price / ratio;
@@ -3225,16 +3254,21 @@ function levLot(p, H, now) {
     const pUsd = p.cur === "USD" ? price : price / H.fx[i], dev = Math.abs(Math.log(pUsd / e.c[i]));
     if (!best || dev < best.dev) best = { i, pUsd, dev };
   }
-  if (!best) return { p, err: "매수일의 시세가 없어요. 날짜를 확인해 주세요." };
+  if (!best) {
+    const f = e.c.findIndex((v, j) => v && U[j]);
+    return { p, err: f > i1 ? `${josa(levName(p.sym), "은는")} ${H.dates[f]}부터 기록이 있어요(상장일 이후). 매수일을 확인해 주세요.` : "매수일의 시세가 없어요. 날짜를 확인해 주세요." };
+  }
   const { i, pUsd } = best, E0 = e.c[i], FX0 = H.fx[i], L = m.L, s = Math.sign(L);
   const Ub = U[i] * Math.max(0.05, 1 + (pUsd / E0 - 1) / L);   // 매수 순간의 기초자산 가격(그날 종가에서 거꾸로 추정)
   const cost = p.cur === "USD" ? p.qty * p.price * FX0 : p.qty * p.price;
-  const ru = now.Unow / Ub - 1, re = now.Enow / pUsd - 1;
+  // 기초자산은 배당까지 넣은 총수익으로 비교 (레버리지 ETF가 따라가는 기준), ETF가 준 분배금은 현금으로 받은 돈
+  const ru = now.Unow / Ub * levTR(H.udv && H.udv[m.u], U, H, i, now.T) - 1, re = now.Enow / pUsd - 1;
+  const dist = qty * levDivSum(e.dv, H, i, now.T) * FX0;
   const actual0 = cost * re, one = cost * s * ru, exact = cost * Math.max(-1, L * ru);
   const fx = qty * now.Enow * (now.FXnow - FX0);
   const path = [];
   for (let j = i; j <= now.T; j++) if (e.c[j] && U[j]) path.push({ d: H.dates[j], re: e.c[j] / pUsd - 1, ru: U[j] / Ub - 1 });
-  return { p, qty, pUsd, Ub, FX0, cost, ru, re, actual0, one, exact, amp: exact - one, decay: actual0 - exact, fx,
+  return { p, qty, pUsd, Ub, FX0, cost, ru, re, actual0, one, exact, amp: exact - one, decay: actual0 + dist - exact, dist, fx,
     total: actual0 + fx, val: qty * now.Enow * now.FXnow, warn: best.dev > Math.log(1.35), path, d0: H.dates[i] };
 }
 // 앞으로 녹을 돈: 기초자산이 n거래일 뒤 지금 가격 그대로일 때 L배 매일 리셋 ETF가 줄어드는 비율 (평균적인 경우)
@@ -3261,8 +3295,8 @@ function levGroup(sym, lots, H, now) {
   const ok = lots.filter(r => !r.err), sum = k => ok.reduce((a, r) => a + r[k], 0);
   const cost = sum("cost"), qty = sum("qty");
   const g = { sym, name: levName(sym), lots, ok, cost, qty, now, m: LEV_MAP[sym] };
-  ["actual0", "one", "exact", "amp", "decay", "fx", "total", "val"].forEach(k => { g[k] = sum(k); });
-  g.lev = g.actual0 - g.one;
+  ["actual0", "one", "exact", "amp", "decay", "dist", "fx", "total", "val"].forEach(k => { g[k] = sum(k); });
+  g.lev = g.actual0 + g.dist - g.one;              // 레버리지 효과 = 정확히 L배 몫 + 변동성 손실 (분배금은 따로)
   if (cost > 0) {
     g.avgUsd = ok.reduce((a, r) => a + r.pUsd * r.qty, 0) / qty;
     g.ru = g.one / cost * Math.sign(g.m.L); g.re = g.actual0 / cost;
@@ -3305,6 +3339,31 @@ async function levLoadHist() {
     setTimeout(() => levRefresh(true), 0);
   } catch (e) { levHistErr = "시세 기록(lev_hist.json)을 아직 못 받았어요. GitHub 자동 수집이 한 번 돌고 나면 나와요."; }
   renderLev(); renderHomeLev();
+}
+
+// 2년보다 오래전에 산 것: 오래된 기록(lev_old.json, 2015년~)을 필요할 때만 받아서 앞에 이어 붙임
+let levOld = null;   // null | "loading" | "done" | "fail"
+function levMergeOld(G, O) {
+  if (!G || !O || !O.dates || !G.dates.length) return;
+  const first = G.dates[0], k = O.dates.findIndex(d => d >= first), n = k < 0 ? O.dates.length : k;
+  if (!n) return;
+  const exp = o => { const a = new Array(n).fill(null); if (o && o.c) for (let i = 0; i < o.c.length && o.o + i < n; i++) a[o.o + i] = o.c[i]; return a; };
+  const dvOld = dv => (dv || []).filter(([d]) => d < first);
+  G.dates = O.dates.slice(0, n).concat(G.dates); G.closeTs = O.closeTs.slice(0, n).concat(G.closeTs); G.fx = O.fx.slice(0, n).concat(G.fx);
+  for (const sym in G.etf) { const o = O.etf && O.etf[sym]; G.etf[sym].c = exp(o).concat(G.etf[sym].c); if (o && o.dv) G.etf[sym].dv = dvOld(o.dv).concat(G.etf[sym].dv || []); }
+  for (const u in G.under) G.under[u] = exp(O.under && O.under[u]).concat(G.under[u]);
+  if (O.udv) { G.udv = G.udv || {}; for (const u in O.udv) G.udv[u] = dvOld(O.udv[u]).concat(G.udv[u] || []); }
+}
+async function levLoadOld() {
+  if (levOld || !levHist) return;
+  levOld = "loading";
+  try {
+    const r = await fetch("lev_old.json"); if (!r.ok) throw new Error(String(r.status));
+    const O = await r.json();
+    levMergeOld(levHist, O); if (O.kr && levHist.kr) levMergeOld(levHist.kr, O.kr);
+    levOld = "done";
+  } catch (e) { levOld = "fail"; }
+  renderLev();
 }
 
 // ----- 실시간 시세 받기 -----
@@ -3448,7 +3507,12 @@ function renderLev() {
     track("lev_capture", { n: files.length });
   });
   const pos = levPositions();
-  const minD = levHist ? levHist.dates[0] : "", maxD = today();     // 국내 기록도 기간이 같아요
+  // 넣은 게 있으면 입력칸은 접어 두고 결과(카드)를 먼저 보여줌. 사용자가 연 상태는 유지
+  const ed = document.getElementById("levEdit"), real = !levSample && pos.length > 0;
+  const rep = document.getElementById("levReport"), res = document.getElementById("levResults");   // 내 카드가 있으면 성적표는 그 아래로
+  if (rep && res) { if (real && rep.nextElementSibling === res) res.after(rep); else if (!real && res.nextElementSibling === rep) res.before(rep); }
+  if (ed) { document.getElementById("levEditSum").textContent = real ? `매수 기록 보기·고치기 (${pos.length}건)` : "매수 기록"; if (ed.dataset.init !== String(real)) { ed.open = !real; ed.dataset.init = String(real); } }
+  const minD = "2015-01-01", maxD = today();     // 2년보다 오래된 건 오래된 기록을 따로 받아서 계산
   list.innerHTML = pos.map((p, k) => `<li class="lev-item" data-k="${k}">
       <div class="lev-row1"><select data-f="sym" aria-label="ETF">${LEV_ETFS.map(([s, u, L]) => `<option value="${s}"${s === p.sym ? " selected" : ""}>${levOpt(s, u, L)}</option>`).join("")}</select>
         <button type="button" class="x" data-del="${k}" aria-label="삭제">×</button></div>
@@ -3617,8 +3681,8 @@ function levCardHTML(g) {
   if (!g.ok.length) return `<section class="panel"><h2>${g.name}</h2><p class="note">${esc(errs[0] ? errs[0].err : "계산할 수 없어요.")}</p></section>`;
   const tag = now.mode === "live" ? `<span class="pill good">● 실시간</span>` : now.mode === "est" ? `<span class="pill warn" title="ETF 마지막 거래 가격 × 그 뒤 코인 움직임 × 배율">추정가</span>` : now.mode === "last" ? `<span class="pill info">마지막 거래가${g.m.kr ? "" : " (애프터장 포함)"}</span>` : `<span class="pill info">${levH(g.sym).dates[now.T].slice(5).replace("-", "/")} 종가 기준</span>`;
   const up = g.ru >= 0, levTxt = g.lev >= 0 ? "레버리지 덕분에 더 번 돈" : "레버리지 때문에 더 잃은 돈";
-  const max = Math.max(...[g.one, g.lev, g.amp, g.decay, g.fx].map(Math.abs));
-  const decayTxt = g.decay <= 0 ? "변동성 손실 (음의 복리·비용)" : "추세 이득 (한 방향으로 움직여 생긴 이득)";
+  const max = Math.max(...[g.one, g.lev, g.amp, g.decay, g.dist, g.fx].map(Math.abs));
+  const decayTxt = g.decay <= 0 ? "변동성 손실 (음의 복리·비용)" : "추세 이득 (한 방향 움직임)";
   const story = `${josa(uName, "이가")} 매수 후 <b>${pctS(g.ru)}</b> 움직이는 동안 ${josa(g.name, "은는")} <b>${pctS(g.re)}</b> 움직였어요${g.m.kr ? "" : "(환율 영향 뺀 값)"}. `
     + (inv ? `${josa(g.name, "은는")} ${josa(uName, "과와")} 반대로 ${-L}배 움직이는 인버스예요. ` : "")
     + `같은 돈으로 ${josa(uName, "을를")} ${inv ? "1배로 공매도했다면" : "그냥 1배로 샀다면"} ${wonS(g.one)}이었을 텐데, 레버리지 때문에 <b class="${g.lev >= 0 ? "pos" : "neg"}">${won(Math.abs(g.lev))} ${g.lev >= 0 ? "더 벌었어요" : "더 잃었어요"}</b>. `
@@ -3634,6 +3698,7 @@ function levCardHTML(g) {
     <dl class="lev-rows">
       <div><dt>레버리지 효과 <small>${uName} 1배였다면 ${wonS(g.one)}</small></dt><dd class="num ${g.lev >= 0 ? "pos" : "neg"}">${wonS(g.lev)}</dd></div>
       <div><dt>${g.decay <= 0 ? "변동성 손실" : "추세 이득"} <small>정확히 ${Math.abs(L)}배였다면 ${wonS(g.exact)}</small></dt><dd class="num ${g.decay >= 0 ? "pos" : "neg"}">${wonS(g.decay)}</dd></div>
+      ${g.dist >= 1 ? `<div><dt>분배금으로 빠진 가격 <small>${won(g.dist)}은 현금으로 받았어요 (세전)</small></dt><dd class="num neg">${wonS(-g.dist)}</dd></div>` : ""}
       ${g.m.kr ? "" : `<div><dt>${g.fx >= 0 ? "환율로 번 돈 (환차익)" : "환율로 잃은 돈 (환차손)"} <small>매수일 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원</small></dt><dd class="num ${g.fx >= 0 ? "pos" : "neg"}">${wonS(g.fx)}</dd></div>`}
       ${g.beU > 0 ? `<div><dt>${g.actual0 >= 0 ? "손실로 바뀌는 선" : "본전까지"} <small>${uName}</small></dt><dd class="num">${levPx(g.sym, g.beU)} <small>${pctS(g.beU / now.Unow - 1)}</small></dd></div>` : ""}
     </dl>
@@ -3649,6 +3714,7 @@ function levCardHTML(g) {
       ${levBar(`정확히 ${Math.abs(L)}배였다면 ${g.amp >= 0 ? "더 생겼을" : "더 잃었을"} 몫`, g.amp, max)}
       ${levBar(decayTxt, g.decay, max, "", "매일 리셋·보수·선물 비용 포함")}
     </div>
+    ${g.dist >= 1 ? levBar("분배금으로 빠진 가격", -g.dist, max, "", `${won(g.dist)}은 계좌에 현금으로 들어왔어요 (세전)`) : ""}
     ${g.m.kr ? "" : levBar("환율로 생긴 손익", g.fx, max, "", `매수일 ${Math.round(g.ok[0].FX0).toLocaleString("ko-KR")}원 → 지금 ${Math.round(now.FXnow).toLocaleString("ko-KR")}원`)}
     <div class="lev-sum"><span>합계 = 지금 손익</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></div>
     <p class="lev-story">${story}</p>
@@ -3678,14 +3744,18 @@ const REP_PERIODS = [["1주", 5], ["1달", 21], ["3달", 63], ["6달", 126], ["1
 let repState = { sym: "", n: 21 };
 function levReport(sym, n) {
   const H = levH(sym); if (!H || !H.etf[sym]) return null;
-  const m = LEV_MAP[sym], e = H.etf[sym].c, U = H.under[m.u];
-  let T = e.length - 1; while (T > 0 && !(e[T] && U[T])) T--;
+  const m = LEV_MAP[sym], e = H.etf[sym].c, U = H.under[m.u], nowS = Date.now() / 1000;
+  let T = e.length - 1; while (T > 0 && (!(e[T] && U[T]) || H.closeTs[T] > nowS)) T--;
   let i0 = Math.max(0, T - n); while (i0 < T && !(e[i0] && U[i0])) i0++;
   if (T - i0 < 2) return null;
-  const pts = [];
-  for (let j = i0; j <= T; j++) if (e[j] && U[j]) pts.push({ d: H.dates[j], e: e[j] / e[i0] - 1, u: U[j] / U[i0] - 1, x: Math.max(-1, m.L * (U[j] / U[i0] - 1)) });
-  const u = U[T] / U[i0] - 1, er = e[T] / e[i0] - 1, exact = Math.max(-1, m.L * u);
-  return { sym, L: m.L, u, e: er, exact, decay: er - exact, d0: H.dates[i0], d1: H.dates[T], pts, short: T - i0 < n * 0.8 };
+  // 분배금·배당까지 넣은 총수익으로 비교 (분배락일에 가격이 빠지는 걸 변동성 손실로 잘못 세지 않게)
+  const edv = H.etf[sym].dv, udv = H.udv && H.udv[m.u], pts = [];
+  for (let j = i0; j <= T; j++) if (e[j] && U[j]) {
+    const uj = U[j] / U[i0] * levTR(udv, U, H, i0, j) - 1;
+    pts.push({ d: H.dates[j], e: e[j] / e[i0] * levTR(edv, e, H, i0, j) - 1, u: uj, x: Math.max(-1, m.L * uj) });
+  }
+  const last = pts[pts.length - 1], u = last.u, er = last.e, exact = Math.max(-1, m.L * u);
+  return { sym, L: m.L, u, e: er, exact, decay: er - exact, d0: H.dates[i0], d1: H.dates[T], pts, short: T - i0 < n * 0.8, div: levDivSum(edv, H, i0, T) > 0 };
 }
 function repChart(r) {
   const W = 640, Ht = 200, Lm = 44, R = 10, T = 12, B = 22, P = r.pts;
@@ -3715,9 +3785,9 @@ function renderReport() {
     <dl class="lev-rows">
       <div><dt>정확히 ${Math.abs(r.L)}배였다면</dt><dd class="num ${r.exact >= 0 ? "pos" : "neg"}">${pctS(r.exact)}</dd></div>
       <div><dt>${r.decay < 0 ? "변동성 손실" : "추세 이득"} <small>실제 − 정확히 ${Math.abs(r.L)}배</small></dt><dd class="num ${r.decay >= 0 ? "pos" : "neg"}">${r.decay >= 0 ? "+" : ""}${fmt(r.decay * 100)}%p</dd></div>
-      <div><dt>100만 원이었다면</dt><dd class="num ${r.e >= 0 ? "pos" : "neg"}">${wonS(1e6 * r.e)} <small>${r.decay < 0 ? `그중 ${won(-1e6 * r.decay)} 변동성 손실` : ""}</small></dd></div>
+      <div><dt>100만 원이었다면</dt><dd class="num ${r.e >= 0 ? "pos" : "neg"}">${wonS(1e6 * r.e)}${r.decay < 0 ? `<small class="dd-sub">그중 ${won(-1e6 * r.decay)} 변동성 손실</small>` : ""}</dd></div>
     </dl>${repChart(r)}
-    <p class="fine"><span style="color:var(--accent)">━</span> ${nm} · <span style="color:var(--c2)">╍</span> 정확히 ${Math.abs(r.L)}배 · <span style="color:var(--muted)">┅</span> ${uName}${r.short ? " · 상장한 지 얼마 안 돼서 기간이 짧아요" : ""} · 보수·추종오차 포함, 환율 제외</p>` : `<p class="fine">이 기간의 시세 기록이 부족해요.</p>`}
+    <p class="fine"><span style="color:var(--accent)">━</span> ${nm} · <span style="color:var(--c2)">╍</span> 정확히 ${Math.abs(r.L)}배 · <span style="color:var(--muted)">┅</span> ${uName}${r.short ? " · 상장한 지 얼마 안 돼서 기간이 짧아요" : ""} · 보수·추종오차 포함, ${r.div ? "분배금·배당은 다시 투자했다고 보고 계산, " : "배당 포함, "}환율 제외</p>` : `<p class="fine">이 기간의 시세 기록이 부족해요.</p>`}
     <div class="btns"><button type="button" id="repMine" class="primary">내 매수가로 계산하기</button><button type="button" id="repShare">링크 공유</button></div><p class="al-msg" id="repMsg" hidden></p>`;
   document.getElementById("repSym").addEventListener("change", e => { repState.sym = e.target.value; renderReport(); track("rep_sym", { s: e.target.value }); });
   box.querySelectorAll("[data-n]").forEach(b => b.addEventListener("click", () => { repState.n = +b.dataset.n; repState.sym = sym; renderReport(); }));
@@ -3742,7 +3812,7 @@ function levRankHTML(n = 21) {
   const rows = [...new Set(pick)].filter(levHas).map(s => levReport(s, n)).filter(Boolean).sort((a, b) => a.decay - b.decay).slice(0, 8);
   if (!rows.length) return "";
   return `<div class="rank"><b>최근 1달 레버리지 성적표</b><small>변동성 손실이 큰 순서 · 누르면 자세히</small>
-    <table class="trades rank-t"><thead><tr><th>ETF</th><th class="r">기초자산</th><th class="r">ETF</th><th class="r">변동성 손실</th></tr></thead><tbody>
+    <table class="trades rank-t"><thead><tr><th>ETF</th><th class="r">기초자산</th><th class="r">ETF</th><th class="r">변동성 손익</th></tr></thead><tbody>
     ${rows.map(r => `<tr data-rep="${r.sym}"><td>${esc(levName(r.sym))}<small>${LEV_U[LEV_MAP[r.sym].u].ko} ${r.L > 0 ? r.L + "배" : "인버스 " + -r.L + "배"}</small></td><td class="r num ${r.u >= 0 ? "pos" : "neg"}">${pctS(r.u)}</td><td class="r num ${r.e >= 0 ? "pos" : "neg"}">${pctS(r.e)}</td><td class="r num ${r.decay >= 0 ? "pos" : "neg"}">${r.decay >= 0 ? "+" : ""}${fmt(r.decay * 100)}%p</td></tr>`).join("")}
     </tbody></table></div>`;
 }
@@ -3766,7 +3836,8 @@ function renderHomeLev() {
           ${ok.some(g => !g.m.kr) ? `<div><dt>환율로 생긴 손익</dt><dd class="num ${sum("fx") >= 0 ? "pos" : "neg"}">${wonS(sum("fx"))}</dd></div>` : ""}
         </dl>
         <ul class="h-lev-list">${ok.map(g => `<li><b>${g.name}</b><span>${LEV_U[g.m.u].ko} ${pctS(g.ru)} → ${pctS(g.re)}</span><b class="num ${g.total >= 0 ? "pos" : "neg"}">${wonS(g.total)}</b></li>`).join("")}</ul>
-        <div class="btns">${go}${act != null ? `<span class="fine" style="align-self:center">🔔 지켜보는 규칙 ${act}개</span>` : ""}</div>`;
+        <div class="btns">${go}${act != null ? `<span class="fine" style="align-self:center">🔔 지켜보는 규칙 ${act}개</span>` : ""}</div>
+        ${levRankHTML()}`;
     }
   }
   box.querySelectorAll("[data-golev]").forEach(b => b.addEventListener("click", () => goTab("lev")));
@@ -3972,7 +4043,7 @@ function renderAlerts() {
         <label>종목<input id="alSym" list="alSyms" value="${esc(pf.sym || syms[0] || "")}" placeholder="SOXL, BTC, 005930" autocapitalize="characters" autocomplete="off"><datalist id="alSyms">${syms.map(s => `<option value="${s}">`).join("")}</datalist></label>
         <label>조건<select id="alKind">${Object.entries(AL_KINDS).map(([k, t]) => `<option value="${k}">${t}</option>`).join("")}</select></label>
         <label id="alValL">수익률<span class="g-in"><input id="alVal" type="number" inputmode="decimal" min="0" step="any" placeholder="20"><span id="alUnit">%</span></span></label>
-        <label id="alBaseL">평균단가<span class="g-in"><input id="alBase" type="number" inputmode="decimal" min="0" step="any" value="${pf.base ?? ""}" placeholder="달러 (국내는 원)"><span>$/원</span></span></label>
+        <label id="alBaseL">평균단가<span class="g-in"><input id="alBase" type="number" inputmode="decimal" min="0" step="any" value="${pf.base ?? ""}" placeholder="예: 17.5"><span>$/원</span></span></label>
         <label class="al-wide">그때의 나에게 남길 말 (알림에 같이 떠요)<textarea id="alNote" maxlength="200" rows="2" placeholder="예: +20%면 절반 판다. 더 오를 것 같아도 욕심내지 말자."></textarea></label>
       </div>
       <div class="btns"><button type="button" class="primary" id="alSave">규칙 저장</button></div>

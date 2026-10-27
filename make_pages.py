@@ -24,6 +24,22 @@ KR_NAME = {"122630": "KODEX 레버리지", "123320": "TIGER 레버리지", "2526
            "233740": "KODEX 코스닥150레버리지", "251340": "KODEX 코스닥150선물인버스"}
 
 
+def tr(dv, c, dates, i0, i1):
+    """분배금·배당 넣은 총수익 배수 (앱 levTR과 같은 계산)."""
+    f = 1.0
+    pos = {d: j for j, d in enumerate(dates)}
+    for d, D in dv or []:
+        j = pos.get(d)
+        if j is None or not (i0 < j <= i1) or not D or D <= 0:
+            continue
+        k = j - 1
+        while k > 0 and not c[k]:
+            k -= 1
+        if c[k] and c[k] > D:
+            f *= c[k] / (c[k] - D)
+    return f
+
+
 def stats(H, sym, n=21):
     e, L = H["etf"][sym]["c"], H["etf"][sym]["L"]
     U = H["under"][H["etf"][sym]["u"]]
@@ -35,7 +51,8 @@ def stats(H, sym, n=21):
         i += 1
     if T - i < 2:
         return None
-    u, r = U[T] / U[i] - 1, e[T] / e[i] - 1
+    u = U[T] / U[i] * tr(H.get("udv", {}).get(H["etf"][sym]["u"]), U, H["dates"], i, T) - 1
+    r = e[T] / e[i] * tr(H["etf"][sym].get("dv"), e, H["dates"], i, T) - 1
     exact = max(-1.0, L * u)
     return {"u": u, "e": r, "exact": exact, "decay": r - exact, "d0": H["dates"][i], "d1": H["dates"][T]}
 

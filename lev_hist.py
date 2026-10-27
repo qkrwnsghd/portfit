@@ -20,6 +20,8 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, "lev_hist.json")
+OUT_OLD = os.path.join(HERE, "lev_old.json")   # 2년보다 오래전에 산 것용 (앱이 필요할 때만 받아요)
+OLD_START = datetime.date(2015, 1, 1)
 DAYS = 729            # 야후 1시간 봉은 최근 730일까지만 줘요
 
 # ETF 티커: (기초자산, 배율). 배율이 음수면 인버스(반대로 움직임)
@@ -57,14 +59,36 @@ def r6(x):
     return round(x, d)
 
 
-def closes(df, sym):
-    """yf.download 결과에서 한 종목의 종가 열을 꺼냄."""
+def closes(df, sym, col="Close"):
+    """yf.download 결과에서 한 종목의 종가 열을 꺼냄. col="Adj Close"면 배당·분배금까지 반영한 종가."""
     try:
-        s = df["Close"][sym] if ("Close", sym) in df.columns else df["Close"]
+        s = df[col][sym] if (col, sym) in df.columns else df[col]
     except KeyError:
-        return None
+        return closes(df, sym) if col != "Close" else None
+    if col != "Close" and getattr(s, "ndim", 1) != 1:
+        return closes(df, sym)
     s = s.dropna()
-    return s if len(s) else None
+    return s if len(s) else (closes(df, sym) if col != "Close" else None)
+
+
+def dists(df, sym, dates):
+    """분배금(배당) 기록: [[날짜, 1주당 금액], ...]. 야후 수정종가(Adj Close)와 종가의 비율이 바뀐 날에서 거꾸로 계산.
+    (야후 방식: 분배락일 j의 하루 총수익 = C[j] / (C[j-1] − D) 이므로 D = C[j-1] − C[j] × A[j-1] / A[j])"""
+    c, a = closes(df, sym), closes(df, sym, "Adj Close")
+    if c is None or a is None:
+        return []
+    cm = {d.date(): float(v) for d, v in c.items()}
+    am = {d.date(): float(v) for d, v in a.items()}
+    out, prev = [], None
+    for d in dates:
+        if d in cm and d in am and cm[d] > 0 and am[d] > 0:
+            if prev:
+                c0, a0 = prev
+                D = c0 - cm[d] * a0 / am[d]
+                if D > c0 * 2e-4:                # 0.02% 미만은 반올림 잡음
+                    out.append([d.isoformat(), r6(D)])
+            prev = (cm[d], am[d])
+    return out
 
 
 SINGLE_U = {"삼성전자": "005930", "하이닉스": "000660"}
@@ -112,6 +136,16 @@ def discover_single():
     return out
 
 
+def drop_open_day(dates, tz, hh, mm):
+    """장이 아직 안 끝났을 때 받은 오늘 일봉(장중 가격)은 종가가 아니라서 뺌."""
+    from zoneinfo import ZoneInfo
+    now = datetime.datetime.now(ZoneInfo(tz))
+    if dates and dates[-1] == now.date() and (now.hour, now.minute) < (hh, mm):
+        print(f"  {tz} 오늘({now.date()})은 장 마감 전이라 빼요.")
+        return dates[:-1]
+    return dates
+
+
 def collect_kr(yf, pd, start, end):
     found = discover_single()
     single = dict(SINGLE)
@@ -131,6 +165,7 @@ def collect_kr(yf, pd, start, end):
         print("KODEX 200 종가가 부족해서 국내는 건너뛰어요.")
         return None
     dates = [d.date() for d in base.index]
+    dates = drop_open_day(dates, "Asia/Seoul", 15, 40)   # 장중에 돌면 오늘 '종가'는 아직 확정 전
 
     def pykrx_closes(sym):
         try:
@@ -146,14 +181,15 @@ def collect_kr(yf, pd, start, end):
             print(f"  {sym} pykrx 실패: {ex}")
         return {}
 
-    def aligned(sym):
-        s = closes(df, sym + ".KS")
+    def aligned(sym, col="Close"):
+        s = closes(df, sym + ".KS", col)
         m = {d.date(): float(v) for d, v in s.items()} if s is not None else {}
         if len(m) < 20:                        # 야후에 없으면 거래소(pykrx)에서
             m = pykrx_closes(sym) or m
         return [r6(m.get(d)) for d in dates]
 
     under = {u: aligned(u) for u in {u for u, _ in kr_all.values()}}
+    udv = {u: v for u in under if (v := dists(df, u + ".KS", dates))}   # 기초자산 배당 (앱이 총수익으로 바꿔 비교)
     etf, check = {}, {}
     for e, (u, L) in sorted(kr_all.items()):
         c = aligned(e)
@@ -162,6 +198,9 @@ def collect_kr(yf, pd, start, end):
             debug["missing"].append(e)
             continue
         etf[e] = {"u": u, "L": L, "c": c}
+        dv = dists(df, e + ".KS", dates)
+        if dv:
+            etf[e]["dv"] = dv
         if e in names:
             etf[e]["name"] = names[e]
         xs, ys2 = [], []
@@ -183,7 +222,93 @@ def collect_kr(yf, pd, start, end):
     ds = [d.isoformat() for d in dates]
     close_ts = [int(pd.Timestamp(f"{d} 15:30", tz="Asia/Seoul").timestamp()) for d in ds]
     print(f"국내: ETF {len(etf)}개, {len(ds)}일, 마지막 날 {ds[-1]}")
-    return {"asof": ds[-1], "dates": ds, "closeTs": close_ts, "fx": [1] * len(ds), "etf": etf, "under": under, "splits": {}, "check": check, "debug": debug}
+    return {"asof": ds[-1], "dates": ds, "closeTs": close_ts, "fx": [1] * len(ds), "etf": etf, "under": under, "udv": udv, "splits": {}, "check": check, "debug": debug}
+
+
+def trim(c):
+    """앞쪽 빈 값(상장 전)을 잘라서 크기 줄임: {"o": 시작 위치, "c": 값들}"""
+    k = next((i for i, v in enumerate(c) if v), len(c))
+    return {"o": k, "c": c[k:]}
+
+
+def build_old(yf, pd, end_old):
+    """OLD_START ~ end_old(최근 기록 첫날 전) 일봉. 코인은 일봉 종가로 대신 (오래된 매수는 이 정도면 충분)."""
+    etfs = sorted(LEV)
+    stocks = sorted({u for u, _ in LEV.values() if u not in CRYPTO})
+    syms = etfs + stocks + list(CRYPTO.values()) + ["KRW=X"]
+    print(f"오래된 일봉 받는 중: {OLD_START} ~ {end_old}")
+    df = yf.download(syms, start=OLD_START.isoformat(), end=end_old.isoformat(), interval="1d",
+                     auto_adjust=False, progress=False, group_by="column", threads=True)
+    spy = closes(df, "SPY")
+    if spy is None or len(spy) < 100:
+        return None
+    dates = [d.date() for d in spy.index if d.date() < end_old]
+
+    def aligned(s):
+        m = {d.date(): float(v) for d, v in s.items()} if s is not None else {}
+        return [r6(m.get(d)) for d in dates]
+    fx = aligned(closes(df, "KRW=X"))
+    last = None
+    for i, v in enumerate(fx):
+        if v is None:
+            fx[i] = last
+        else:
+            last = v
+    first = next((v for v in fx if v), None)
+    fx = [v if v else first for v in fx]
+    under, udv = {}, {}
+    for u in stocks:
+        under[u] = trim(aligned(closes(df, u)))
+        dv = dists(df, u, dates)
+        if dv:
+            udv[u] = dv
+    for u, ysym in CRYPTO.items():
+        under[u] = trim(aligned(closes(df, ysym)))
+    etf = {}
+    for e in etfs:
+        c = aligned(closes(df, e))
+        if sum(1 for v in c if v) < 5:
+            continue
+        etf[e] = trim(c)
+        dv = dists(df, e, dates)
+        if dv:
+            etf[e]["dv"] = dv
+    ds = [d.isoformat() for d in dates]
+    out = {"dates": ds, "closeTs": [int(pd.Timestamp(f"{d} 16:00", tz="America/New_York").timestamp()) for d in ds],
+           "fx": fx, "etf": etf, "under": under, "udv": udv}
+    print(f"  미국 오래된 기록: {len(ds)}일, ETF {len(etf)}개")
+    return out
+
+
+def build_old_kr(yf, pd, end_old):
+    syms = sorted(set(KR) | {u for u, _ in KR.values()})
+    df = yf.download([s + ".KS" for s in syms], start=OLD_START.isoformat(), end=end_old.isoformat(), interval="1d",
+                     auto_adjust=False, progress=False, group_by="column", threads=True)
+    base = closes(df, "069500.KS")
+    if base is None or len(base) < 100:
+        return None
+    dates = [d.date() for d in base.index if d.date() < end_old]
+
+    def aligned(s):
+        m = {d.date(): float(v) for d, v in s.items()} if s is not None else {}
+        return [r6(m.get(d)) for d in dates]
+    under, udv, etf = {}, {}, {}
+    for u in {u for u, _ in KR.values()}:
+        under[u] = trim(aligned(closes(df, u + ".KS")))
+        dv = dists(df, u + ".KS", dates)
+        if dv:
+            udv[u] = dv
+    for e in KR:
+        c = aligned(closes(df, e + ".KS"))
+        if sum(1 for v in c if v) >= 5:
+            etf[e] = trim(c)
+            dv = dists(df, e + ".KS", dates)
+            if dv:
+                etf[e]["dv"] = dv
+    ds = [d.isoformat() for d in dates]
+    print(f"  국내 오래된 기록: {len(ds)}일, ETF {len(etf)}개")
+    return {"dates": ds, "closeTs": [int(pd.Timestamp(f"{d} 15:30", tz="Asia/Seoul").timestamp()) for d in ds],
+            "fx": [1] * len(ds), "etf": etf, "under": under, "udv": udv}
 
 
 def main():
@@ -206,7 +331,7 @@ def main():
     if spy is None or len(spy) < 100:
         print("SPY 종가를 못 받아서 저장하지 않아요.")
         return 1
-    dates = [d.date() for d in spy.index]
+    dates = drop_open_day([d.date() for d in spy.index], "America/New_York", 16, 15)
     ds = [d.isoformat() for d in dates]
 
     def aligned(s):
@@ -228,9 +353,12 @@ def main():
     ny = "America/New_York"
     close_ts = [int(pd.Timestamp(f"{d} 16:00", tz=ny).timestamp()) for d in ds]
 
-    under = {}
+    under, udv = {}, {}
     for u in stocks:
         under[u] = aligned(closes(df, u))
+        dv = dists(df, u, dates)                 # 배당 기록 (레버리지 ETF는 배당까지 포함한 총수익을 따라가서, 앱이 총수익으로 비교)
+        if dv:
+            udv[u] = dv
 
     for u, ysym in CRYPTO.items():
         print(f"코인 1시간 봉: {ysym}")
@@ -260,6 +388,10 @@ def main():
             continue
         u, L = LEV[e]
         etf[e] = {"u": u, "L": L, "c": c}
+        dv = dists(df, e, dates)
+        if dv:
+            etf[e]["dv"] = dv
+            print(f"  {e}: 분배금 {len(dv)}번 " + ", ".join(f"{d} ${v}" for d, v in dv[-3:]))
         # 실제 배율 확인 (최근 250거래일)
         xs, ys = [], []
         uc = under[u]
@@ -277,7 +409,7 @@ def main():
         try:
             sp = yf.Ticker(e).splits
             if sp is not None and len(sp):
-                splits[e] = [[d.date().isoformat(), float(r)] for d, r in sp.items() if d.date() >= start]
+                splits[e] = [[d.date().isoformat(), float(r)] for d, r in sp.items() if d.date() >= OLD_START]
         except Exception as ex:                # noqa: BLE001
             print(f"  {e} 분할 기록 실패: {ex}")
 
@@ -292,7 +424,7 @@ def main():
         "asof": ds[-1],
         "source": "Yahoo Finance (yfinance) 일봉 · 코인은 뉴욕 16시 1시간 봉",
         "dates": ds, "closeTs": close_ts, "fx": fx,
-        "etf": etf, "under": under, "splits": {k: v for k, v in splits.items() if v}, "check": check,
+        "etf": etf, "under": under, "udv": udv, "splits": {k: v for k, v in splits.items() if v}, "check": check,
     }
     txt = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
     print(f"ETF {len(etf)}개, 기초자산 {len(under)}개, {len(ds)}일, 크기 {len(txt) // 1024}KB, 마지막 날 {ds[-1]}")
@@ -301,6 +433,30 @@ def main():
     with open(OUT, "w", encoding="utf-8") as f:
         f.write(txt)
     print(f"저장 완료: {OUT}")
+    # 오래된 기록은 거의 안 바뀌어서, 최근 기록 첫날과 이어지지 않게 될 때만(약 한 달에 한 번) 다시 만듦 → 저장소가 매일 커지지 않게
+    try:
+        prev = json.load(open(OUT_OLD, encoding="utf-8")) if os.path.exists(OUT_OLD) else None
+        need = not prev or prev["dates"][-1] < ds[0] or (kr and (not prev.get("kr") or prev["kr"]["dates"][-1] < kr["dates"][0]))
+    except Exception:                          # noqa: BLE001
+        need = True
+    if not need:
+        print("오래된 기록은 아직 이어져 있어서 그대로 둬요.")
+        return 0
+    end_old = datetime.date.today() - datetime.timedelta(days=690)   # 최근 기록과 한 달쯤 겹치게 (앱이 겹친 날은 버림)
+    try:
+        old = build_old(yf, pd, end_old)
+        if old:
+            try:
+                old["kr"] = build_old_kr(yf, pd, end_old) if kr else None
+            except Exception as ex:            # noqa: BLE001
+                print(f"국내 오래된 기록 실패: {ex}")
+                old["kr"] = None
+            ot = json.dumps(old, ensure_ascii=False, separators=(",", ":"))
+            with open(OUT_OLD, "w", encoding="utf-8") as f:
+                f.write(ot)
+            print(f"오래된 기록 저장: {len(ot) // 1024}KB")
+    except Exception as ex:                    # noqa: BLE001
+        print(f"오래된 기록 실패 (최근 기록은 저장됨): {ex}")
     return 0
 
 
